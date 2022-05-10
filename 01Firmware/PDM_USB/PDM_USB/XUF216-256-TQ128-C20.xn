@@ -15,7 +15,7 @@
       <Nodes>
         <Node Id="0" InPackageId="0" Type="XS2-L16A-512" Oscillator="24MHz" SystemFrequency="500MHz" referencefrequency="100MHz">
           <Boot>
-            <Source Location="SPI:bootFlash"/>
+            <Source Location="bootFlash"/>
           </Boot>
           <Tile Number="0" Reference="tile[0]">
             <Port Location="XS1_PORT_1B" Name="PORT_SQI_CS"/>
@@ -78,7 +78,7 @@
     </Link>
   </Links>
   <ExternalDevices>
-    <Device NodeId="0" Tile="0" Class="SQIFlash" Name="bootFlash" Type="S25FL116K">
+    <Device NodeId="0" Tile="0" Class="SQIFlash" Name="bootFlash" Type="S25LQ016B" PageSize="256" SectorSize="4096" NumPages="8192">
       <Attribute Name="PORT_SQI_CS" Value="PORT_SQI_CS"/>
       <Attribute Name="PORT_SQI_SCLK"   Value="PORT_SQI_SCLK"/>
       <Attribute Name="PORT_SQI_SIO"  Value="PORT_SQI_SIO"/>
