@@ -56,8 +56,8 @@ def parseArguments(third_stage_configs):
 
     to_add = args.add_third_stage
     if to_add:
-    	pdm_rate = float(args.pdm_sample_rate)
-    	print "****** Input rate for custom filter: " + str(args.pdm_sample_rate) + "kHz. ********"
+        pdm_rate = float(args.pdm_sample_rate)
+        print("****** Input rate for custom filter: " + str(args.pdm_sample_rate) + "kHz. ********")
         try:
             divider = int(to_add[0])
             passbw = float(to_add[1])
@@ -88,7 +88,7 @@ def measure_stopband_and_ripple(bands, a, H):
       mag = 20.0 * numpy.log10(abs(H[h]))
       for r in range(0, len(bands), 2):
         if freq > bands[r] and freq < bands[r+1]:
-          if a[r/2] == 0:
+          if a[r>>1] == 0:
             stopband_max = max(stopband_max, mag)
           else:
             passband_max = max(passband_max, mag)
@@ -138,12 +138,12 @@ def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=
       else:
         weight_max = test_weight
 
-      #print str(stop_band_atten) + ' ' + str(passband_max) + ' ' + str(passband_min) + ' ' +str(test_weight)
+      #print(str(stop_band_atten) + ' ' + str(passband_max) + ' ' + str(passband_min) + ' ' + str(test_weight))
       if abs(weight_min - weight_max) < epsilon:
         running=False
     except ValueError:
       if abs(test_weight - weight_max) < epsilon:
-        print "Failed to converge - unable to create filter"
+        print("Failed to converge - unable to create filter")
         return
       else:
         weight_min = test_weight
@@ -173,7 +173,7 @@ def generate_first_stage(header, body, points, pbw, sbw, first_stage_num_taps):
   coefs /= sum(abs(coefs))
 
   total_abs_sum = 0
-  for t in range(0, len(coefs)/(8*2)):
+  for t in range(0, len(coefs)>>4):
     header.write("extern const int g_first_stage_fir_"+str(t)+"[256];\n")
     body.write("const int g_first_stage_fir_"+str(t)+"[256] = {\n\t")
     max_for_block = 0
@@ -192,9 +192,9 @@ def generate_first_stage(header, body, points, pbw, sbw, first_stage_num_taps):
     body.write("};\n\n")
     total_abs_sum = total_abs_sum + max_for_block*2
 
-  #print str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647.0)) + ")"
+  #print(str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647.0)) + ")")
   if abs(total_abs_sum - 2147483647.0) > 6:
-    print "Warning: error in first stage too large"
+    print("Warning: error in first stage too large")
 
   body.write("const int fir1_debug[" + str(first_stage_num_taps) + "] = {\n\n")
   header.write("extern const int fir1_debug[" + str(first_stage_num_taps) + "];\n")
@@ -235,17 +235,17 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
   body.write("const int g_second_stage_fir[8] = {\n")
 
   total_abs_sum = 0
-  for i in range(0, len(coefs)/2):
+  for i in range(0, len(coefs)>>1):
     if coefs[i] > 0.5:
-      print "Single coefficient too big in second stage FIR"
+      print("Single coefficient too big in second stage FIR")
     d_int = int(coefs[i]*2147483647.0*2.0);
     total_abs_sum += abs(d_int*2)
     body.write("\t0x{:08x},\n".format(ctypes.c_uint(d_int).value))
   body.write("};\n\n")
 
-  #print str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647*2)) + ")"
+  #print(str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647*2)) + ")")
   if abs(total_abs_sum - 2147483647*2) > 10:
-    print "Warning: error in second stage too large"
+    print("Warning: error in second stage too large")
 
   body.write("const int fir2_debug[" + str(second_stage_num_taps) + "] = {\n")
   header.write("extern const int fir2_debug[" + str(second_stage_num_taps) + "];\n\n")
@@ -305,7 +305,7 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
       for i in range(coefs_per_phase):
         index = coefs_per_phase*divider - divider - (i*divider - phase);
         if coefs[i] > 0.5:
-          print "Single coefficient too big in third stage FIR"
+          print("Single coefficient too big in third stage FIR")
         d_int = int(coefs[index]*2147483647.0*2.0);
         total_abs_sum += abs(d_int)
         body.write("0x{:08x}, ".format(ctypes.c_uint(d_int).value))
@@ -331,9 +331,9 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
 
     body.write("};\n");
 
-    #print str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647.0*2.0)) + ")"
+    #print(str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647.0*2.0)) + ")")
     if abs(total_abs_sum - 2147483647.0*2.0) > 32*divider:
-      print "Warning: error in third stage too large"
+      print("Warning: error in third stage too large")
 
     body.write("const int fir3_"+ name+"_debug[" + str(max_coefs_per_phase*divider)+ "] = {\n\t");
     header.write("extern const int fir3_"+ name+"_debug[" + str(max_coefs_per_phase*divider) + "];\n");
@@ -384,20 +384,20 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
       plt.xlabel('Normalised Output Freq')
     plt.savefig("output_" + name +'.pdf', format='pdf', dpi=1000)
 
-    print "Filter name: " + name
-    print "Final stage divider: " + str(divider)
-    print "Output sample rate: " + str(input_sample_rate/divider)+ "kHz"
-    print "Pass bandwidth: " + str(input_sample_rate*passband/divider) + "kHz of " + str(input_sample_rate/(divider*2)) + "kHz total bandwidth."
-    print "Pass bandwidth(normalised): " + str(passband*2) + " of Nyquist."
-    print "Stop band start: " + str(input_sample_rate*stopband/divider) + "kHz of " + str(input_sample_rate/(divider*2)) + "kHz total bandwidth."
-    print "Stop band start(normalised): " + str(stopband*2) + " of Nyquist."
-    print "Stop band attenuation: " + str(stop_band_atten)+ "dB."
+    print("Filter name: " + name)
+    print("Final stage divider: " + str(divider))
+    print("Output sample rate: " + str(input_sample_rate/divider)+ "kHz")
+    print("Pass bandwidth: " + str(input_sample_rate*passband/divider) + "kHz of " + str(input_sample_rate/(divider*2)) + "kHz total bandwidth.")
+    print("Pass bandwidth(normalised): " + str(passband*2) + " of Nyquist.")
+    print("Stop band start: " + str(input_sample_rate*stopband/divider) + "kHz of " + str(input_sample_rate/(divider*2)) + "kHz total bandwidth.")
+    print("Stop band start(normalised): " + str(stopband*2) + " of Nyquist.")
+    print("Stop band attenuation: " + str(stop_band_atten)+ "dB.")
 
-   # print "(3.072MHz) Passband:" + str(48000*2*passband/divider) + "Hz Stopband:"+ str(48000*2*stopband/divider) + "Hz"
-   # print "(2.822MHz) Passband:" + str(44100*2*passband/divider) + "Hz Stopband:"+ str(44100*2*stopband/divider) + "Hz"
+   # print("(3.072MHz) Passband:" + str(48000*2*passband/divider) + "Hz Stopband:"+ str(48000*2*stopband/divider) + "Hz")
+   # print("(2.822MHz) Passband:" + str(44100*2*passband/divider) + "Hz Stopband:"+ str(44100*2*stopband/divider) + "Hz")
     
     if 1.0/passband_max > 8.0:
-      print "Error: Compensation factor is too large"
+      print("Error: Compensation factor is too large")
 
     #The compensation factor should be in Q(5.27) format
     comp_factor = ((1<<27) - 1)/passband_max
@@ -405,7 +405,7 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
     header.write("#define FIR_COMPENSATOR_" + name.upper() + " (" + str(int(comp_factor)) +")\n")
 
     header.write("\n")
-    print "Passband ripple = " + str(abs(20.0*numpy.log10(passband_min/passband_max))) +" dB\n"
+    print("Passband ripple = " + str(abs(20.0*numpy.log10(passband_min/passband_max))) +" dB\n")
   return
 
 ###############################################################################
@@ -431,16 +431,16 @@ if __name__ == "__main__":
 
 #warnings
   if first_stage_stop_band_atten > 0:
-  	print "Warning first stage stop band attenuation is positive."
+      print("Warning first stage stop band attenuation is positive.")
 
-  print "Filer Configuration:"
-  print "Input(PDM) sample rate: " + str(input_sample_rate) + "kHz"
-  print "First Stage"
-  print "Num taps: " + str(first_stage_num_taps)
-  print "Pass bandwidth: " + str(args.first_stage_pass_bw) + "kHz of " + str(input_band_width) + "kHz total bandwidth."
-  print "Pass bandwidth(normalised): " + str(first_stage_pbw*2) + " of Nyquist."
-  print "Stop band attenuation: " + str(first_stage_stop_band_atten)+ "dB."
-  print "Stop bandwidth: " + str(args.first_stage_stop_bw) + "kHz"
+  print("Filter Configuration:")
+  print("Input(PDM) sample rate: " + str(input_sample_rate) + "kHz")
+  print("First Stage")
+  print("Num taps: " + str(first_stage_num_taps))
+  print("Pass bandwidth: " + str(args.first_stage_pass_bw) + "kHz of " + str(input_band_width) + "kHz total bandwidth.")
+  print("Pass bandwidth(normalised): " + str(first_stage_pbw*2) + " of Nyquist.")
+  print("Stop band attenuation: " + str(first_stage_stop_band_atten)+ "dB.")
+  print("Stop bandwidth: " + str(args.first_stage_stop_bw) + "kHz")
 
 
   header = open ("fir_coefs.h", 'w')
@@ -455,7 +455,7 @@ if __name__ == "__main__":
 
   first_stage_response = generate_first_stage(header, body, points, first_stage_pbw, first_stage_sbw, first_stage_num_taps)
   #Save the response between 0 and 48kHz
-  for r in range(0, points/(8*4)+1):
+  for r in range(0, (points>>5)+1):
     combined_response.append(abs(first_stage_response[r]))
 
   second_stage_num_taps = 16
@@ -463,30 +463,30 @@ if __name__ == "__main__":
   second_stage_sbw = args.second_stage_stop_bw/(input_sample_rate/8.0)
   second_stage_stop_band_atten = args.second_stage_stop_atten
 
-  print ""
+  print("")
 #warnings
   if second_stage_stop_band_atten > 0:
-  	print "Warning second stage stop band attenuation is positive."
+      print("Warning second stage stop band attenuation is positive.")
 
-  print "Second Stage"
-  print "Num taps: " + str(second_stage_num_taps)
-  print "Pass bandwidth: " + str(args.second_stage_pass_bw) + "kHz of " + str(input_sample_rate/8.0) + "kHz total bandwidth."
-  print "Pass bandwidth(normalised): " + str(second_stage_pbw*2) + " of Nyquist."
-  print "Stop band attenuation: " + str(second_stage_stop_band_atten)+ "dB."
-  print "Stop bandwidth: " + str(args.second_stage_stop_bw) + "kHz"
+  print("Second Stage")
+  print("Num taps: " + str(second_stage_num_taps))
+  print("Pass bandwidth: " + str(args.second_stage_pass_bw) + "kHz of " + str(input_sample_rate/8.0) + "kHz total bandwidth.")
+  print("Pass bandwidth(normalised): " + str(second_stage_pbw*2) + " of Nyquist.")
+  print("Stop band attenuation: " + str(second_stage_stop_band_atten)+ "dB.")
+  print("Stop bandwidth: " + str(args.second_stage_stop_bw) + "kHz")
 
-  second_stage_response = generate_second_stage(header, body, points/8, second_stage_pbw, second_stage_sbw, second_stage_num_taps, second_stage_stop_band_atten)
-  for r in range(0, points/(8*4)):
+  second_stage_response = generate_second_stage(header, body, points>>3, second_stage_pbw, second_stage_sbw, second_stage_num_taps, second_stage_stop_band_atten)  
+  for r in range(0, points>>5):
     combined_response[r] = combined_response[r] * abs(second_stage_response[r])
 
   third_stage_stop_band_atten = args.third_stage_stop_atten
-  print ""
+  print("")
 #warnings
   if third_stage_stop_band_atten > 0:
-  	print "Warning third stage stop band attenuation is positive."
+      print("Warning third stage stop band attenuation is positive.")
 
-  print "Third Stage"
-  generate_third_stage(header, body, third_stage_configs, combined_response, points/(8*4), input_sample_rate/8.0/4.0, third_stage_stop_band_atten)
+  print("Third Stage")
+  generate_third_stage(header, body, third_stage_configs, combined_response, points>>5, input_sample_rate/8.0/4.0, third_stage_stop_band_atten)
 
   header.write("#define THIRD_STAGE_COEFS_PER_STAGE (32)\n")
   
