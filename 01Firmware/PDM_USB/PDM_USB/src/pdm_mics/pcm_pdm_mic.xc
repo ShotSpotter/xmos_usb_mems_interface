@@ -1,5 +1,6 @@
 #include "devicedefines.h"
 #include "../core/customdefines.h"
+#include "pcm_pdm_mic.h"
 
 /* This file includes an example integration of lib_array_mic into USB Audio */
 
@@ -34,8 +35,12 @@ in port p_clk_src_sel           = PORT_CLK_SRC_SEL;
 clock clk_audio_wclk            = on tile[PDM_TILE]: XS1_CLKBLK_4;
 
 // Mic input ports
+#if (NUM_PDM_MICS > 0)
 in buffered port:32 p_pdm_mics_0_to_7   = PORT_PDM_DATA_0_to_7;
+#endif
+#if (NUM_PDM_MICS > 8)
 in buffered port:32 p_pdm_mics_8_to_15  = PORT_PDM_DATA_8_to_15;
+#endif
 
 /* User hooks */
 unsafe void user_pdm_process(mic_array_frame_time_domain * unsafe audio, int output[]);
@@ -93,10 +98,16 @@ void pdm_process(streaming chanend c_ds_output[NUM_PDM_MICS/4], chanend c_audio)
                                                             MIC_GAIN_COMPENSATION, FIR_GAIN_COMPENSATION,
                                                             DECIMATOR_NO_FRAME_OVERLAP, NUM_PDM_MICS/4};
             // Decimator specific config
-            mic_array_decimator_config_t dc[NUM_PDM_MICS/4] = {{&dcc, data_0, {0, 0, 0, 0}, 4},
-                                                               {&dcc, data_1, {0, 0, 0, 0}, 4},
-                                                               {&dcc, data_2, {0, 0, 0, 0}, 4},
-                                                               {&dcc, data_3, {0, 0, 0, 0}, 4}};
+            mic_array_decimator_config_t dc[NUM_PDM_MICS/4] = {
+#if (NUM_PDM_MICS > 0)
+                                                                {&dcc, data_0, {0, 0, 0, 0}, 4}
+                                                               ,{&dcc, data_1, {0, 0, 0, 0}, 4}
+#endif
+#if (NUM_PDM_MICS > 8)
+                                                               ,{&dcc, data_2, {0, 0, 0, 0}, 4}
+                                                               ,{&dcc, data_3, {0, 0, 0, 0}, 4}
+#endif
+                                                               };
 
             mic_array_decimator_configure(c_ds_output, NUM_PDM_MICS/4, dc);
 
@@ -138,30 +149,42 @@ void pdm_process(streaming chanend c_ds_output[NUM_PDM_MICS/4], chanend c_audio)
 
 void pcm_pdm_mic(chanend c_pcm_out)
 {
-    streaming chan c_pdm_mic_0_to_3, c_pdm_mic_4_to_7, c_pdm_mic_8_to_11, c_pdm_mic_12_to_15;
+#if (NUM_PDM_MICS > 0)
+    streaming chan c_pdm_mic_0_to_3, c_pdm_mic_4_to_7;
+#endif
+#if (NUM_PDM_MICS > 8)
+    streaming chan c_pdm_mic_8_to_11, c_pdm_mic_12_to_15;
+#endif
     streaming chan c_ds_output[NUM_PDM_MICS/4];
 
     /* Note, this divide should be based on master clock freq */
-    configure_clock_src_divide(pdmclk, p_mclk, 2);
+    configure_clock_src_divide(pdmclk, p_mclk, MCLK_48 / ( 2 * PDM_MIC_CLK));
     configure_port_clock_output(p_pdm_clk, pdmclk);
+
+#if (NUM_PDM_MICS > 0)
     //Mics 1 to 8
     configure_in_port(p_pdm_mics_0_to_7, pdmclk);
+#endif
+#if (NUM_PDM_MICS > 8)
     //Mics 9 to 16
     configure_in_port(p_pdm_mics_8_to_15, pdmclk);
+#endif
     start_clock(pdmclk);
 
     par
     {
+#if (NUM_PDM_MICS > 0)
         // Mics 1 to 8
         mic_array_pdm_rx(p_pdm_mics_0_to_7, c_pdm_mic_0_to_3, c_pdm_mic_4_to_7);
         mic_array_decimate_to_pcm_4ch(c_pdm_mic_0_to_3, c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
         mic_array_decimate_to_pcm_4ch(c_pdm_mic_4_to_7, c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
-
+#endif
+#if (NUM_PDM_MICS > 8)
         // Mics 9 to 16
         mic_array_pdm_rx(p_pdm_mics_8_to_15, c_pdm_mic_8_to_11, c_pdm_mic_12_to_15);
         mic_array_decimate_to_pcm_4ch(c_pdm_mic_8_to_11, c_ds_output[2], MIC_ARRAY_NO_INTERNAL_CHANS);
         mic_array_decimate_to_pcm_4ch(c_pdm_mic_12_to_15, c_ds_output[3], MIC_ARRAY_NO_INTERNAL_CHANS);
-
+#endif
         // Process decimated data
         pdm_process(c_ds_output, c_pcm_out);
     }

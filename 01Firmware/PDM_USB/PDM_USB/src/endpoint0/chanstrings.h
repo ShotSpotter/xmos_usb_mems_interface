@@ -7,20 +7,27 @@
 //.outputChanStr_2          = "Analogue 2",
 
 /* Input Strings */
+#if (NUM_USB_CHAN_IN > 0)
 .inputChanStr_1          = "PDM 01",
 .inputChanStr_2          = "PDM 02",
 .inputChanStr_3          = "PDM 03",
 .inputChanStr_4          = "PDM 04",
+#endif
+#if (NUM_USB_CHAN_IN > 4)
 .inputChanStr_5          = "PDM 05",
 .inputChanStr_6          = "PDM 06",
 .inputChanStr_7          = "PDM 07",
 .inputChanStr_8          = "PDM 08",
+#endif
+#if (NUM_USB_CHAN_IN > 8)
 .inputChanStr_9          = "PDM 09",
 .inputChanStr_10         = "PDM 10",
 .inputChanStr_11         = "PDM 11",
 .inputChanStr_12         = "PDM 12",
+#endif
+#if (NUM_USB_CHAN_IN > 12)
 .inputChanStr_13         = "PDM 13",
 .inputChanStr_14         = "PDM 14",
 .inputChanStr_15         = "PDM 15",
 .inputChanStr_16         = "PDM 16",
-
+#endif

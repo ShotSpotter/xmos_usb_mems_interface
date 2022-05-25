@@ -43,100 +43,57 @@ typedef struct
     STR_TABLE_ENTRY(dfuStr);                      /* iInterface for DFU interface */
 
     //TODO: Leaving the input side since we want to expand to 32 inputs
+
+#if (NUM_USB_CHAN_IN % 4 != 0)
+#error NUM_USB_CHAN_IN must be multiple of 4
+#endif
+
 #if (NUM_USB_CHAN_IN > 0)
     STR_TABLE_ENTRY(inputChanStr_1);
-#endif
-#if (NUM_USB_CHAN_IN > 1)
     STR_TABLE_ENTRY(inputChanStr_2);
-#endif
-#if (NUM_USB_CHAN_IN > 2)
     STR_TABLE_ENTRY(inputChanStr_3);
-#endif
-#if (NUM_USB_CHAN_IN > 3)
     STR_TABLE_ENTRY(inputChanStr_4);
 #endif
 #if (NUM_USB_CHAN_IN > 4)
     STR_TABLE_ENTRY(inputChanStr_5);
-#endif
-#if (NUM_USB_CHAN_IN > 5)
     STR_TABLE_ENTRY(inputChanStr_6);
-#endif
-#if (NUM_USB_CHAN_IN > 6)
     STR_TABLE_ENTRY(inputChanStr_7);
-#endif
-#if (NUM_USB_CHAN_IN > 7)
     STR_TABLE_ENTRY(inputChanStr_8);
 #endif
 #if (NUM_USB_CHAN_IN > 8)
     STR_TABLE_ENTRY(inputChanStr_9);
-#endif
-#if (NUM_USB_CHAN_IN > 9)
     STR_TABLE_ENTRY(inputChanStr_10);
-#endif
-#if (NUM_USB_CHAN_IN > 10)
     STR_TABLE_ENTRY(inputChanStr_11);
-#endif
-#if (NUM_USB_CHAN_IN > 11)
     STR_TABLE_ENTRY(inputChanStr_12);
 #endif
 #if (NUM_USB_CHAN_IN > 12)
     STR_TABLE_ENTRY(inputChanStr_13);
-#endif
-#if (NUM_USB_CHAN_IN > 13)
     STR_TABLE_ENTRY(inputChanStr_14);
-#endif
-#if (NUM_USB_CHAN_IN > 14)
     STR_TABLE_ENTRY(inputChanStr_15);
-#endif
-#if (NUM_USB_CHAN_IN > 15)
     STR_TABLE_ENTRY(inputChanStr_16);
 #endif
 #if (NUM_USB_CHAN_IN > 16)
     STR_TABLE_ENTRY(inputChanStr_17);
-#endif
-#if (NUM_USB_CHAN_IN > 17)
     STR_TABLE_ENTRY(inputChanStr_18);
-#endif
-#if (NUM_USB_CHAN_IN > 18)
     STR_TABLE_ENTRY(inputChanStr_19);
-#endif
-#if (NUM_USB_CHAN_IN > 19)
     STR_TABLE_ENTRY(inputChanStr_20);
 #endif
 #if (NUM_USB_CHAN_IN > 20)
     STR_TABLE_ENTRY(inputChanStr_21);
-#endif
-#if (NUM_USB_CHAN_IN > 21)
     STR_TABLE_ENTRY(inputChanStr_22);
-#endif
-#if (NUM_USB_CHAN_IN > 22)
     STR_TABLE_ENTRY(inputChanStr_23);
-#endif
-#if (NUM_USB_CHAN_IN > 23)
     STR_TABLE_ENTRY(inputChanStr_24);
 #endif
 #if (NUM_USB_CHAN_IN > 24)
     STR_TABLE_ENTRY(inputChanStr_25);
-#endif
-#if (NUM_USB_CHAN_IN > 25)
     STR_TABLE_ENTRY(inputChanStr_26);
-#endif
-#if (NUM_USB_CHAN_IN > 26)
     STR_TABLE_ENTRY(inputChanStr_27);
-#endif
-#if (NUM_USB_CHAN_IN > 27)
     STR_TABLE_ENTRY(inputChanStr_28);
 #endif
 #if (NUM_USB_CHAN_IN > 28)
     STR_TABLE_ENTRY(inputChanStr_29);
-#endif
-#if (NUM_USB_CHAN_IN > 29)
     STR_TABLE_ENTRY(inputChanStr_30);
-#endif
-#if (NUM_USB_CHAN_IN > 30)
     STR_TABLE_ENTRY(inputChanStr_31);
-#endif
-#if (NUM_USB_CHAN_IN > 31)
     STR_TABLE_ENTRY(inputChanStr_32);
 #endif
 
