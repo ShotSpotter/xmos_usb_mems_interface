@@ -146,32 +146,8 @@ USB_Descriptor_Device_t devDesc_Audio2 =
     .iManufacturer                  = offsetof(StringDescTable_t, vendorStr)/sizeof(char *),
     .iProduct                       = offsetof(StringDescTable_t, productStr_Audio2)/sizeof(char *),
     .iSerialNumber                  = 0,
-    .bNumConfigurations             = 0x02  /* Set to 2 such that windows does not load composite driver */
+    .bNumConfigurations             = 0x01  /* Drop support for Windows XP, see https://www.xcore.com/viewtopic.php?t=5045 */
 };
-
-/* Device Descriptor for Null Device */
-unsigned char devDesc_Null[] =
-{
-    18,                             /* 0  bLength : Size of descriptor in Bytes (18 Bytes) */
-    USB_DESCTYPE_DEVICE,            /* 1  bdescriptorType */
-    0,                              /* 2  bcdUSB */
-    2,                              /* 3  bcdUSB */
-    0x0,                            /* 4  bDeviceClass */
-    0x0  ,                          /* 5  bDeviceSubClass */
-    0x00,                           /* 6  bDeviceProtocol */
-    64,                             /* 7  bMaxPacketSize */
-    (VENDOR_ID & 0xFF),             /* 8  idVendor */
-    (VENDOR_ID >> 8),               /* 9  idVendor */
-    (PID_AUDIO_2 & 0xFF),           /* 10 idProduct */
-    (PID_AUDIO_2 >> 8),             /* 11 idProduct */
-    (BCD_DEVICE & 0xFF),            /* 12 bcdDevice : Device release number */
-    (BCD_DEVICE >> 8),              /* 13 bcdDevice : Device release number */
-    offsetof(StringDescTable_t, vendorStr)/sizeof(char *),
-    offsetof(StringDescTable_t, productStr_Audio2)/sizeof(char *),
-    0,                              /* 16 iSerialNumber : Index of serial number decriptor */
-    0x01                            /* 17 bNumConfigurations : Number of possible configs */
-};
-
 
 /****** Device Qualifier Descriptors *****/
 
@@ -185,21 +161,6 @@ unsigned char devQualDesc_Audio2[] =
     0xEF,                           /* 4  bDeviceClass */
     0x02,                           /* 5  bDeviceSubClass */
     0x01,                           /* 6  bDeviceProtocol */
-    64,                             /* 7  bMaxPacketSize */
-    0x01,                           /* 8  bNumConfigurations : Number of possible configs */
-    0x00                            /* 9  bReserved (must be zero) */
-};
-
-/* Device Qualifier Descriptor for Null Device (Use when running at high-speed) */
-unsigned char devQualDesc_Null[] =
-{
-    10,                             /* 0  bLength (10 Bytes) */
-    USB_DESCTYPE_DEVICE_QUALIFIER,  /* 1  bDescriptorType */
-    0x00,                           /* 2  bcdUSB (Binary Coded Decimal of usb version) */
-    0x02,                           /* 3  bcdUSB */
-    0x00,                           /* 4  bDeviceClass */
-    0x00,                           /* 5  bDeviceSubClass */
-    0x00,                           /* 6  bDeviceProtocol */
     64,                             /* 7  bMaxPacketSize */
     0x01,                           /* 8  bNumConfigurations : Number of possible configs */
     0x00                            /* 9  bReserved (must be zero) */
