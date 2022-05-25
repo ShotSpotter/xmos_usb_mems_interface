@@ -139,7 +139,6 @@ int main(){
         on tile[AUDIO_IO_TILE]: usb_audio_io(c_mix_out, c_adc, c_aud_cfg, c_spdif_rx, c_adat_rx, c_clk_ctl, c_clk_int, dfuInterface, c_pdm_pcm);
 
         on stdcore[PDM_TILE]: pcm_pdm_mic(c_pdm_pcm);
-        on tile[PDM_TILE]: generate_wordclock();
         USER_MAIN_CORES
     }
 

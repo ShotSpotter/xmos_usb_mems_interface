@@ -29,7 +29,7 @@ void genclock();
 
 /* Enable PDM and PDM->PCM conversion code */
 /*** Number of PDM mics also needs to be adapted in "pdm_mics/mic_array_conf.h" ***/
-#define NUM_PDM_MICS       16
+#define NUM_PDM_MICS       8
 
 /* Defines relating to channel count and channel arrangement (Set to 0 for disable) */
 //:audio_defs
@@ -52,8 +52,8 @@ void genclock();
 #endif
 
 /* Master clock defines (in Hz) */
-#define MCLK_441           (256*44100)   /* 44.1, 88.2 etc */
-#define MCLK_48            (256*48000)   /* 48, 96 etc */
+#define MCLK_441           (512*44100)   /* 44.1, 88.2 etc */
+#define MCLK_48            (512*48000)   /* 48 kHz, 96 kHz etc with 24.576 MHz master clock */
 #define PDM_MIC_CLK         (64*48000)   /* input clock speed for PDM mic (3.072 MHz) */
 
 /* Maximum frequency device runs at */
@@ -79,8 +79,8 @@ void genclock();
 /***** Defines relating to USB descriptors etc *****/
 //:usb_defs
 #define VENDOR_ID          (0x20B1) /* XMOS VID */
-#define PID_AUDIO_2        (0x0008) 
-#define PID_AUDIO_1        (0x0009) 
+#define PID_AUDIO_2        (0x0008)
+#define PID_AUDIO_1        (0x0009)
 #define PRODUCT_STR_A2     "PDM Mic Converter UAC2.0"
 #define PRODUCT_STR_A1     "PDM Mic Converter UAC1.0"
 
