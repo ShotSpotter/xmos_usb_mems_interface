@@ -104,8 +104,7 @@ void usb_audio_io(chanend c_aud_in, chanend ?c_adc, chanend ?c_aud_cfg, streamin
         /* Audio I/O Core (pars additional S/PDIF TX Core) */
         {
             thread_speed();
-#define AUDIO_CHANNEL c_aud_in
-            audio(AUDIO_CHANNEL,c_aud_cfg, c_adc, dfuInterface, c_pdm_pcm);
+            audio(c_aud_in, c_aud_cfg, c_adc, dfuInterface, c_pdm_pcm);
         }
     }
 }
