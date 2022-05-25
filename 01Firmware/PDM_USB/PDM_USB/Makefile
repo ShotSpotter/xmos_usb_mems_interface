@@ -35,8 +35,7 @@ USED_MODULES = \
 	lib_logging \
 	lib_mic_array \
 	lib_xassert \
-	module_dfu module_i2c_shared \
-	module_i2c_single_port \
+	module_dfu \
 	module_locks \
 	module_usb_device \
 	module_usb_shared \
