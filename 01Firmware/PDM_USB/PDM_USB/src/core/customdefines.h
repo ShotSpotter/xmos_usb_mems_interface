@@ -54,6 +54,7 @@ void genclock();
 /* Master clock defines (in Hz) */
 #define MCLK_441           (256*44100)   /* 44.1, 88.2 etc */
 #define MCLK_48            (256*48000)   /* 48, 96 etc */
+#define PDM_MIC_CLK         (64*48000)   /* input clock speed for PDM mic (3.072 MHz) */
 
 /* Maximum frequency device runs at */
 #ifndef MIN_FREQ
