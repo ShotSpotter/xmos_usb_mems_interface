@@ -81,30 +81,35 @@ void genclock();
 #define VENDOR_ID          (0x20B1) /* XMOS VID */
 #define PID_AUDIO_2        (0x0008)
 #define PID_AUDIO_1        (0x0009)
-#define PRODUCT_STR_A2     "PDM Mic Converter UAC2.0"
-#define PRODUCT_STR_A1     "PDM Mic Converter UAC1.0"
-
-//#define PRODUCT_STR_A2     "XMOS Microphone Array UAC2.0"
-//#define PRODUCT_STR_A1     "XMOS Microphone Array UAC1.0"
-//:
+#define PRODUCT_STR_A2     "SST-XMOS-001 UAC2.0"
+#define PRODUCT_STR_A1     "SST-XMOS-001 UAC1.0"
 
 /* Avoid compiler warnings by defining vars that will be defaulted */
+
 #define DEFAULT_FREQ            (48000)
 #define SPDIF_TX_INDEX          (0)
+// DFU name will be "{VENDOR_STR} DFU"
 #define VENDOR_STR              "SST"
-//  bcdDevice is x.y.z bitpacked into bytes 12 and 13 of descriptor
-// from src/devicedefines.h
-// User code should not modify [BCD_DEVICE] but should modify
-// BCD_DEVICE_J, BCD_DEVICE_M, BCD_DEVICE_N instead
-// regardless of complaints about BCD_DEVICE being undefined,
+
+// BCD_DEVICE is j.m.n version bitpacked into bytes 12 and 13 of the
+// USB descriptor as "bcdDevice". This is important for firmware upgrades.
+
+// warnings.h complains about BCD_DEVICE being undefined, but
 // code will overwrite with BCD_DEVICE_J, BCD_DEVICE_M, BCD_DEVICE_N
+
+// From src/devicedefines.h:
+// "User code should not modify [BCD_DEVICE] but should modify
+// BCD_DEVICE_J, BCD_DEVICE_M, BCD_DEVICE_N instead"
+
 // #define BCD_DEVICE              0x0001
 #define BCD_DEVICE_J            0
 #define BCD_DEVICE_M            1
-#define CD_DEVICE_N             0
+#define BCD_DEVICE_N            0
 #define AUDIO_CLASS             2
 #define AUDIO_CLASS_FALLBACK    0
 
+/* this is the default devicedefines.h but add here to be explicit */
+#define DFU (1)
 
 
 #endif
