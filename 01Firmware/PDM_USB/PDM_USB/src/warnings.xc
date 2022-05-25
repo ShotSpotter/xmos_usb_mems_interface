@@ -39,9 +39,10 @@ Warnings relating to configuration defines located in this XC source file rather
 #warning PRODUCT_STR_A1 not defined. Using default XMOS string
 #endif
 
-#ifndef BCD_DEVICE
-#warning BCD_DEVICE not defined. Using XMOS release version number
-#endif
+// bad warning, code overwrites BCD_DEVICE if defined
+// #ifndef BCD_DEVICE
+// #warning BCD_DEVICE not defined. Using XMOS release version number
+// #endif
 
 #if (AUDIO_CLASS==1) || defined(AUDIO_CLASS_FALLBACK)
 #ifndef PID_AUDIO_1
