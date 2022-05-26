@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# Copyright 2016-2021 XMOS LIMITED.
+# This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 import argparse
 import numpy
@@ -9,7 +11,11 @@ import sys
 import math
 import datetime
 from scipy import signal
+import numpy as np
 import matplotlib.pyplot as plt
+
+int32_max = np.int64(np.iinfo(np.int32).max)
+int64_max = np.int64(np.iinfo(np.int64).max)
 
 ###############################################################################
 
@@ -21,15 +27,18 @@ def parseArguments(third_stage_configs):
                         help='The sample rate (in kHz) of the PDM microphones',
                         metavar='kHz')
 
+    parser.add_argument('--use-low-ripple-first-stage', type=bool, default=False,
+      help='Use the lowest ripple possible for the given output passband.')
+
     parser.add_argument('--first-stage-num-taps', type=int, default=48,
       help='The number of FIR taps in the first stage of decimation.')
-    parser.add_argument('--first-stage-pass-bw', type=float, default = 30.0,
+    parser.add_argument('--first-stage-pass-bw', type=float, default = 20.0,
       help='The pass bandwidth (in kHz) of the first stage filter.'
           ' Starts at 0Hz and ends at this frequency', metavar='kHz')
-    parser.add_argument('--first-stage-stop-bw', type=float, default = 30.0,
+    parser.add_argument('--first-stage-stop-bw', type=float, default = 24.0,
       help='The stop bandwidth (in kHz) of the first stage filter.',
       metavar='kHz')
-    parser.add_argument('--first-stage-stop-atten', type=float, default = -100.0,
+    parser.add_argument('--first-stage-stop-atten', type=float, default = -120.0,
       help='The stop band attenuation(in dB) of the first stage filter(Normally negative).', metavar='dB')
 
     parser.add_argument('--second-stage-pass-bw', type=float, default=16,
@@ -82,13 +91,16 @@ def measure_stopband_and_ripple(bands, a, H):
     passband_min = float('inf');
     stopband_max = float('-inf');
 
+    # freq = 0.5*np.arange(len(h))/len(h)
+    # mag  = 20.0*np.log10(H)
+
     #The bands are evenly spaced throughout 0 to 0.5 of the bandwidth
     for h in range(0, H.size):
       freq = 0.5*h/(H.size)
       mag = 20.0 * numpy.log10(abs(H[h]))
       for r in range(0, len(bands), 2):
         if freq > bands[r] and freq < bands[r+1]:
-          if a[r>>1] == 0:
+          if a[r//2] == 0:
             stopband_max = max(stopband_max, mag)
           else:
             passband_max = max(passband_max, mag)
@@ -111,8 +123,8 @@ def plot_response(H, file_name):
 
 
 def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=2048, stopband_attenuation = -65.0):
-  
-  w = [1] * len(a)
+
+  w = np.ones(len(a))
 
   weight_min = 0.0
   weight_max = 1024.0
@@ -126,6 +138,8 @@ def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=
     for i in range(0, len(a)-1):
       if a[i] != 0:
         w[i] = test_weight*weights[i]
+    # w = weights*test_weight*(a!= 0.0)
+
     try:
       h = signal.remez(num_taps, bands, a, w)
       
@@ -154,29 +168,44 @@ def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=
 
 ###############################################################################
 
-def generate_first_stage(header, body, points, pbw, sbw, first_stage_num_taps):
+def generate_first_stage(header, body, points, pbw, sbw, first_stage_num_taps, first_stage_stop_atten):
 
   nulls = 1.0/8.0
-  a = [1, 0, 0, 0, 0]
-  w = [1, 1, 1, 1, 1]
+  a = np.zeros(2)
+  a[0] = 1.0
+  w = np.ones(len(a))
 
+  bands = [ 0, pbw, nulls-sbw, 0.5]
+
+  return first_stage_output_coefficients(header, body, points, first_stage_num_taps, first_stage_stop_atten, nulls, a, w, bands)
+
+def generate_first_stage_low_ripple(header, body, points, pbw, sbw, first_stage_num_taps, first_stage_stop_atten):
+
+  nulls = 1.0/8.0
+  a = np.zeros(5)
+  a[0] = 1.0
+  w = np.ones(len(a))
   bands = [ 0,           pbw,
             nulls*1-sbw, nulls*1+sbw,
             nulls*2-sbw, nulls*2+sbw,
             nulls*3-sbw, nulls*3+sbw,
             nulls*4-sbw, 0.5]
 
+  return first_stage_output_coefficients(header, body, points, first_stage_num_taps, first_stage_stop_atten, nulls, a, w, bands)
+
+def first_stage_output_coefficients(header, body, points, first_stage_num_taps, first_stage_stop_atten, nulls, a, w, bands):
+
   first_stage_response, coefs =  generate_stage( 
-    first_stage_num_taps, bands, a, w)
+    first_stage_num_taps, bands, a, w, stopband_attenuation = first_stage_stop_atten)
 
   #ensure the there is never any overflow 
   coefs /= sum(abs(coefs))
 
   total_abs_sum = 0
-  for t in range(0, len(coefs)>>4):
+  for t in range(0, len(coefs)//(8*2)):
     header.write("extern const int g_first_stage_fir_"+str(t)+"[256];\n")
     body.write("const int g_first_stage_fir_"+str(t)+"[256] = {\n\t")
-    max_for_block = 0
+    max_for_block = np.int64(0)
     for x in range(0, 256):
       d=0.0
       for b in range(0, 8):
@@ -184,22 +213,23 @@ def generate_first_stage(header, body, points, pbw, sbw, first_stage_num_taps):
           d = d + coefs[t*8 + b]
         else:
           d = d - coefs[t*8 + b]
-      d_int = int(d*2147483647.0)
-      max_for_block = max(max_for_block, d_int)
+      d_int = np.int32(d*np.float64(int32_max))
+      max_for_block = max(max_for_block, np.abs(np.int64(d_int)))
       body.write("0x{:08x}, ".format(ctypes.c_uint(d_int).value))
       if (x&7)==7:
         body.write("\n\t")
     body.write("};\n\n")
-    total_abs_sum = total_abs_sum + max_for_block*2
+    total_abs_sum += (max_for_block*2)
 
-  #print(str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647.0)) + ")")
-  if abs(total_abs_sum - 2147483647.0) > 6:
-    print("Warning: error in first stage too large")
+  if total_abs_sum > int32_max:
+    print("WARNING: error in first stage too large")
+  else:
+    print("Max output of first stage: " + str(total_abs_sum))
 
   body.write("const int fir1_debug[" + str(first_stage_num_taps) + "] = {\n\n")
   header.write("extern const int fir1_debug[" + str(first_stage_num_taps) + "];\n")
   for i in range(0, len(coefs)):
-    body.write("{:10d}, ".format(int(2147483647.0*coefs[i])))
+    body.write("{:10d}, ".format(int(float(int32_max)*coefs[i])))
     if((i&7)==7):
       body.write("\n")
   body.write("};\n")
@@ -207,11 +237,12 @@ def generate_first_stage(header, body, points, pbw, sbw, first_stage_num_taps):
   (_, H) = signal.freqz(coefs, worN=points)
   plot_response(H, 'first_stage')
   [stop, passband_min, passband_max] = measure_stopband_and_ripple(bands, a, H)
-  max_passband_output = int(2147483647.0 * 10.0 ** (passband_max/20.0) + 1)
+  max_passband_output = int(float(int32_max) * 10.0 ** (passband_max/20.0) + 1)
   header.write("#define FIRST_STAGE_MAX_PASSBAND_OUTPUT (" + str(max_passband_output) +")\n")
   header.write("\n")
 
   return H
+
 
 ###############################################################################
 
@@ -228,29 +259,30 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
   second_stage_response, coefs =  generate_stage( 
     second_stage_num_taps, bands, a, w, stopband_attenuation = stop_band_atten)
 
+
   #ensure the there is never any overflow 
   coefs /= sum(abs(coefs))
 
   header.write("extern const int g_second_stage_fir[8];\n")
   body.write("const int g_second_stage_fir[8] = {\n")
 
-  total_abs_sum = 0
-  for i in range(0, len(coefs)>>1):
+  total_abs_sum = np.int64(0)
+  for i in range(0, len(coefs)//2):
     if coefs[i] > 0.5:
       print("Single coefficient too big in second stage FIR")
-    d_int = int(coefs[i]*2147483647.0*2.0);
-    total_abs_sum += abs(d_int*2)
+    d_int = np.int32(coefs[i]*float(int32_max)*2.0);
+    total_abs_sum += np.abs(np.int64(d_int)*2)
     body.write("\t0x{:08x},\n".format(ctypes.c_uint(d_int).value))
   body.write("};\n\n")
 
-  #print(str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647*2)) + ")")
-  if abs(total_abs_sum - 2147483647*2) > 10:
-    print("Warning: error in second stage too large")
+  if total_abs_sum*int32_max > int64_max:
+    print("WARNING: error in second stage too large")
+
 
   body.write("const int fir2_debug[" + str(second_stage_num_taps) + "] = {\n")
   header.write("extern const int fir2_debug[" + str(second_stage_num_taps) + "];\n\n")
   for i in range(0, len(coefs)):
-    body.write("{:10d}, ".format(int(2147483647.0*coefs[i])))
+    body.write("{:10d}, ".format(int(float(int32_max)*coefs[i])))
     if((i&7)==7):
       body.write("\n")
   body.write("};\n\n")
@@ -260,6 +292,9 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
 
   [stop, passband_min, passband_max] = measure_stopband_and_ripple(bands, a, H)
 
+  # plt.clf()
+  # plt.plot(np.log10(np.abs(H))*20.)
+  # plt.show()
   return H
 
 ###############################################################################
@@ -281,14 +316,10 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
     pbw = passband/divider
     sbw = stopband/divider
 
-    a = [1, 1, 0]
-    w = [1, 1, 1]
+    a = [1, 0]
+    w = [1, 1]
 
-    thing1 = (00.0/48000.0)/divider
-    thing2 = (200.0/48000.0)/divider
-
-    bands = [0, 0, thing2, pbw, sbw, 0.5]
-
+    bands = [0, pbw, sbw, 0.5]
 
     third_stage_response, coefs =  generate_stage( 
       coefs_per_phase*divider, bands, a, w, stopband_attenuation = stop_band_atten)
@@ -306,8 +337,8 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
         index = coefs_per_phase*divider - divider - (i*divider - phase);
         if coefs[i] > 0.5:
           print("Single coefficient too big in third stage FIR")
-        d_int = int(coefs[index]*2147483647.0*2.0);
-        total_abs_sum += abs(d_int)
+        d_int = np.int32(coefs[index]*float(int32_max)*2.0);
+        total_abs_sum += np.abs(np.int64(d_int))
         body.write("0x{:08x}, ".format(ctypes.c_uint(d_int).value))
         if (i%8)==7: 
           body.write("\n\t");
@@ -318,7 +349,7 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
 
       for i in range(coefs_per_phase-1):
         index = coefs_per_phase*divider - divider - (i*divider - phase);
-        d_int = int(coefs[index]*2147483647.0*2.0);
+        d_int = int(coefs[index]*float(int32_max)*2.0);
         body.write("0x{:08x}, ".format(ctypes.c_uint(d_int).value))
         if (i%8)==7: 
           body.write("\n\t");
@@ -331,15 +362,15 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
 
     body.write("};\n");
 
-    #print(str(total_abs_sum) + "(" + str(abs(total_abs_sum - 2147483647.0*2.0)) + ")")
-    if abs(total_abs_sum - 2147483647.0*2.0) > 32*divider:
-      print("Warning: error in third stage too large")
+    max_macc = total_abs_sum*int32_max
+    if total_abs_sum*int32_max > int64_max:
+      print("WARNING: error in third stage too large")
 
     body.write("const int fir3_"+ name+"_debug[" + str(max_coefs_per_phase*divider)+ "] = {\n\t");
     header.write("extern const int fir3_"+ name+"_debug[" + str(max_coefs_per_phase*divider) + "];\n");
 
     for i in range(coefs_per_phase*divider):
-      body.write("{:10d}, ".format(int(2147483647.0*coefs[i])))
+      body.write("{:10d}, ".format(int(float(int32_max)*coefs[i])))
       if (i%8)==7: 
         body.write("\n\t");
     
@@ -428,6 +459,7 @@ if __name__ == "__main__":
   first_stage_sbw = args.first_stage_stop_bw/args.pdm_sample_rate
   first_stage_num_taps = int(args.first_stage_num_taps)
   first_stage_stop_band_atten = args.first_stage_stop_atten
+  first_stage_low_ripple = args.use_low_ripple_first_stage
 
 #warnings
   if first_stage_stop_band_atten > 0:
@@ -441,6 +473,7 @@ if __name__ == "__main__":
   print("Pass bandwidth(normalised): " + str(first_stage_pbw*2) + " of Nyquist.")
   print("Stop band attenuation: " + str(first_stage_stop_band_atten)+ "dB.")
   print("Stop bandwidth: " + str(args.first_stage_stop_bw) + "kHz")
+  print("Lowest Ripple: " + str(first_stage_low_ripple) )
 
 
   header = open ("fir_coefs.h", 'w')
@@ -453,9 +486,12 @@ if __name__ == "__main__":
   points = 8192*8
   combined_response = []
 
-  first_stage_response = generate_first_stage(header, body, points, first_stage_pbw, first_stage_sbw, first_stage_num_taps)
+  if first_stage_low_ripple:
+    first_stage_response = generate_first_stage_low_ripple(header, body, points, first_stage_pbw, first_stage_sbw, first_stage_num_taps, first_stage_stop_band_atten)
+  else:
+    first_stage_response = generate_first_stage(header, body, points, first_stage_pbw, first_stage_sbw, first_stage_num_taps, first_stage_stop_band_atten)
   #Save the response between 0 and 48kHz
-  for r in range(0, (points>>5)+1):
+  for r in range(0, (points//(8*4))+1):
     combined_response.append(abs(first_stage_response[r]))
 
   second_stage_num_taps = 16
@@ -475,8 +511,8 @@ if __name__ == "__main__":
   print("Stop band attenuation: " + str(second_stage_stop_band_atten)+ "dB.")
   print("Stop bandwidth: " + str(args.second_stage_stop_bw) + "kHz")
 
-  second_stage_response = generate_second_stage(header, body, points>>3, second_stage_pbw, second_stage_sbw, second_stage_num_taps, second_stage_stop_band_atten)  
-  for r in range(0, points>>5):
+  second_stage_response = generate_second_stage(header, body, points//8, second_stage_pbw, second_stage_sbw, second_stage_num_taps, second_stage_stop_band_atten)
+  for r in range(0, points//(8*4)):
     combined_response[r] = combined_response[r] * abs(second_stage_response[r])
 
   third_stage_stop_band_atten = args.third_stage_stop_atten
@@ -486,7 +522,7 @@ if __name__ == "__main__":
       print("Warning third stage stop band attenuation is positive.")
 
   print("Third Stage")
-  generate_third_stage(header, body, third_stage_configs, combined_response, points>>5, input_sample_rate/8.0/4.0, third_stage_stop_band_atten)
+  generate_third_stage(header, body, third_stage_configs, combined_response, points//(8*4), input_sample_rate/8.0/4.0, third_stage_stop_band_atten)
 
   header.write("#define THIRD_STAGE_COEFS_PER_STAGE (32)\n")
   
