@@ -32,13 +32,13 @@ def parseArguments(third_stage_configs):
 
     parser.add_argument('--first-stage-num-taps', type=int, default=48,
       help='The number of FIR taps in the first stage of decimation.')
-    parser.add_argument('--first-stage-pass-bw', type=float, default = 20.0,
+    parser.add_argument('--first-stage-pass-bw', type=float, default = 30.0,
       help='The pass bandwidth (in kHz) of the first stage filter.'
           ' Starts at 0Hz and ends at this frequency', metavar='kHz')
-    parser.add_argument('--first-stage-stop-bw', type=float, default = 24.0,
+    parser.add_argument('--first-stage-stop-bw', type=float, default = 30.0,
       help='The stop bandwidth (in kHz) of the first stage filter.',
       metavar='kHz')
-    parser.add_argument('--first-stage-stop-atten', type=float, default = -120.0,
+    parser.add_argument('--first-stage-stop-atten', type=float, default = -100.0,
       help='The stop band attenuation(in dB) of the first stage filter(Normally negative).', metavar='dB')
 
     parser.add_argument('--second-stage-pass-bw', type=float, default=16,
