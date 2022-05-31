@@ -142,7 +142,7 @@ def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=
 
     try:
       h = signal.remez(num_taps, bands, a, w)
-      
+
       (_, H) = signal.freqz(h, worN=2048)
 
       [stop_band_atten, passband_min, passband_max ] = measure_stopband_and_ripple(bands, a, H)
@@ -161,9 +161,9 @@ def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=
         return
       else:
         weight_min = test_weight
-    
+
   (_, H) = signal.freqz(h, worN=num_frequency_points)
-  
+
   return H, h
 
 ###############################################################################
@@ -195,10 +195,10 @@ def generate_first_stage_low_ripple(header, body, points, pbw, sbw, first_stage_
 
 def first_stage_output_coefficients(header, body, points, first_stage_num_taps, first_stage_stop_atten, nulls, a, w, bands):
 
-  first_stage_response, coefs =  generate_stage( 
+  first_stage_response, coefs =  generate_stage(
     first_stage_num_taps, bands, a, w, stopband_attenuation = first_stage_stop_atten)
 
-  #ensure the there is never any overflow 
+  #ensure the there is never any overflow
   coefs /= sum(abs(coefs))
 
   total_abs_sum = 0
@@ -256,11 +256,11 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
             nulls*1-sbw, nulls*1+sbw,
             nulls*2-sbw, 0.5]
 
-  second_stage_response, coefs =  generate_stage( 
+  second_stage_response, coefs =  generate_stage(
     second_stage_num_taps, bands, a, w, stopband_attenuation = stop_band_atten)
 
 
-  #ensure the there is never any overflow 
+  #ensure the there is never any overflow
   coefs /= sum(abs(coefs))
 
   header.write("extern const int g_second_stage_fir[8];\n")
@@ -287,7 +287,7 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
       body.write("\n")
   body.write("};\n\n")
 
-  (_, H) = signal.freqz(coefs, worN=points) # this is where the ripple is derived from 
+  (_, H) = signal.freqz(coefs, worN=points) # this is where the ripple is derived from
   plot_response(H, 'second_stage')
 
   [stop, passband_min, passband_max] = measure_stopband_and_ripple(bands, a, H)
@@ -321,15 +321,15 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
 
     bands = [0, pbw, sbw, 0.5]
 
-    third_stage_response, coefs =  generate_stage( 
+    third_stage_response, coefs =  generate_stage(
       coefs_per_phase*divider, bands, a, w, stopband_attenuation = stop_band_atten)
 
-    #ensure the there is never any overflow 
+    #ensure the there is never any overflow
     coefs /= sum(abs(coefs))
 
     body.write("const int g_third_stage_" +name+ "_fir["+str(divider*(2*max_coefs_per_phase - 1))+ "] = {\n");
     header.write("extern const int g_third_stage_" +name+ "_fir["+str(divider*(2*max_coefs_per_phase - 1))+ "];\n");
-    
+
     total_abs_sum = 0
     for phase in reversed(range(divider)):
       body.write("//Phase " + str(phase)+"\n\t")
@@ -340,22 +340,22 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
         d_int = np.int32(coefs[index]*float(int32_max)*2.0);
         total_abs_sum += np.abs(np.int64(d_int))
         body.write("0x{:08x}, ".format(ctypes.c_uint(d_int).value))
-        if (i%8)==7: 
+        if (i%8)==7:
           body.write("\n\t");
       for i in range(coefs_per_phase, max_coefs_per_phase):
         body.write("0x{:08x}, ".format(ctypes.c_uint(0).value))
-        if (i%8)==7: 
+        if (i%8)==7:
           body.write("\n\t");
 
       for i in range(coefs_per_phase-1):
         index = coefs_per_phase*divider - divider - (i*divider - phase);
         d_int = int(coefs[index]*float(int32_max)*2.0);
         body.write("0x{:08x}, ".format(ctypes.c_uint(d_int).value))
-        if (i%8)==7: 
+        if (i%8)==7:
           body.write("\n\t");
       for i in range(coefs_per_phase-1, max_coefs_per_phase-1):
         body.write("0x{:08x}, ".format(ctypes.c_uint(0).value))
-        if (i%8)==7: 
+        if (i%8)==7:
           body.write("\n\t");
 
       body.write("\n");
@@ -371,17 +371,17 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
 
     for i in range(coefs_per_phase*divider):
       body.write("{:10d}, ".format(int(float(int32_max)*coefs[i])))
-      if (i%8)==7: 
+      if (i%8)==7:
         body.write("\n\t");
-    
+
     for i in range(coefs_per_phase*divider, max_coefs_per_phase*divider):
       body.write("{:10d}, ".format(int(0)))
-      if (i%8)==7: 
+      if (i%8)==7:
         body.write("\n\t");
-    
+
     body.write("};\n");
 
-    (_, H) = signal.freqz(coefs, worN=points) 
+    (_, H) = signal.freqz(coefs, worN=points)
 
     plot_response(H, 'third_stage_' + str(name))
 
@@ -426,7 +426,7 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
 
    # print("(3.072MHz) Passband:" + str(48000*2*passband/divider) + "Hz Stopband:"+ str(48000*2*stopband/divider) + "Hz")
    # print("(2.822MHz) Passband:" + str(44100*2*passband/divider) + "Hz Stopband:"+ str(44100*2*stopband/divider) + "Hz")
-    
+
     if 1.0/passband_max > 8.0:
       print("Error: Compensation factor is too large")
 
@@ -525,6 +525,3 @@ if __name__ == "__main__":
   generate_third_stage(header, body, third_stage_configs, combined_response, points//(8*4), input_sample_rate/8.0/4.0, third_stage_stop_band_atten)
 
   header.write("#define THIRD_STAGE_COEFS_PER_STAGE (32)\n")
-  
-
-
