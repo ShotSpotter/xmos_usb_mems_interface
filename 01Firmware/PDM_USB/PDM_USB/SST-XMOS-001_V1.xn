@@ -31,11 +31,6 @@
             <Port Location="XS1_PORT_1F" Name="PORT_PDM_MCLK"/>
             <!-- LED ports -->
             <Port Location="XS1_PORT_1O" Name="PORT_LED12"/>
-
-            <!-- unwired ports to make code compile, pin 88 89 90-->
-            <Port Location="XS1_PORT_1I" Name="PORT_WCLK_MCLK"/>
-            <Port Location="XS1_PORT_1J" Name="PORT_WCLK_OUT"/>
-            <Port Location="XS1_PORT_1K" Name="PORT_CLK_SRC_SEL"/>
           </Tile>
           <Tile Number="1" Reference="tile[1]">
             <!-- USB internal ports. These will be defined by xud if not listed here-->

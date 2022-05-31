@@ -28,12 +28,6 @@ in port p_pdm_clk                = PORT_PDM_CLK;
 in port p_mclk                   = PORT_PDM_MCLK;
 clock pdmclk                     = on tile[PDM_TILE]: XS1_CLKBLK_3;
 
-/* Wordclock */
-in port p_wclk_mclk             = PORT_WCLK_MCLK;
-in port p_wclk_out              = PORT_WCLK_OUT;
-in port p_clk_src_sel           = PORT_CLK_SRC_SEL;
-clock clk_audio_wclk            = on tile[PDM_TILE]: XS1_CLKBLK_4;
-
 // Mic input ports
 #if (NUM_PDM_MICS > 0)
 in buffered port:32 p_pdm_mics_0_to_7   = PORT_PDM_DATA_0_to_7;
@@ -54,24 +48,6 @@ int data_2[4*THIRD_STAGE_COEFS_PER_STAGE * MAX_DECIMATION_FACTOR] = {0};
 int data_3[4*THIRD_STAGE_COEFS_PER_STAGE * MAX_DECIMATION_FACTOR] = {0};
 
 mic_array_frame_time_domain mic_audio[NUM_PDM_MICS/4];
-
-void generate_wordclock(){
-    unsigned int src_sel;
-    p_clk_src_sel :> src_sel;
-    //When board uses its internal clock, the Wordclock is derived from that
-    if(src_sel){
-        /*For whatever reason (did not find any documentation of this)
-         * the division factor is off by 1 bit. Dividing by 12.288MHz by 256
-         * results in the factor 128
-         */
-        configure_clock_src_divide(clk_audio_wclk, p_wclk_mclk, 128);
-        configure_port_clock_output(p_wclk_out, clk_audio_wclk);
-        start_clock(clk_audio_wclk);
-    }
-    else {
-        stop_clock(clk_audio_wclk);
-    }
-}
 
 void pdm_process(streaming chanend c_ds_output[NUM_PDM_MICS/4], chanend c_audio)
 {
