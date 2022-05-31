@@ -22,6 +22,11 @@
 #define WINDOWING_FUNCTION 0
 #define MIC_GAIN_COMPENSATION 0
 #define FIR_GAIN_COMPENSATION 0
+// from lib_mic_array docs:
+// The DC offset removal is implemented as a single pole IIR filer obeying the relation::
+//   Y[n] = Y[n-1] * alpha + (x[n] - x[n-1])
+// Where ``alpha`` is defined as ``1 - 2^MIC_ARRAY_DC_OFFSET_LOG2``. (Default 8)
+#define MIC_ARRAY_DC_OFFSET_LOG2 12
 
 /* Hardware resources */
 in port p_pdm_clk                = PORT_PDM_CLK;
@@ -69,10 +74,18 @@ void pdm_process(streaming chanend c_ds_output[NUM_PDM_MICS/4], chanend c_audio)
                                                 g_third_stage_div_8_fir, 0, g_third_stage_div_12_fir};
 
             // General config for the decimator
-            mic_array_decimator_conf_common_t dcc = {MIC_ARRAY_MAX_FRAME_SIZE_LOG2, DC_OFFSET_REMOVAL, INDEX_BIT_REVERSAL,
-                                                            WINDOWING_FUNCTION, decimationfactor, fir_coefs[decimationfactor/2],
-                                                            MIC_GAIN_COMPENSATION, FIR_GAIN_COMPENSATION,
-                                                            DECIMATOR_NO_FRAME_OVERLAP, NUM_PDM_MICS/4};
+            mic_array_decimator_conf_common_t dcc = {
+                MIC_ARRAY_MAX_FRAME_SIZE_LOG2,
+                DC_OFFSET_REMOVAL,
+                INDEX_BIT_REVERSAL,
+                WINDOWING_FUNCTION,
+                decimationfactor,
+                fir_coefs[decimationfactor/2],
+                MIC_GAIN_COMPENSATION,
+                FIR_GAIN_COMPENSATION,
+                DECIMATOR_NO_FRAME_OVERLAP,
+                NUM_PDM_MICS/4
+            };
             // Decimator specific config
             mic_array_decimator_config_t dc[NUM_PDM_MICS/4] = {
 #if (NUM_PDM_MICS > 0)
