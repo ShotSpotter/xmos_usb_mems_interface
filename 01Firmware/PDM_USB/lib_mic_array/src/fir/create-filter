@@ -1,0 +1,11 @@
+#!/bin/sh
+python3 fir_design.py \
+--first-stage-pass-bw 24.0 \
+--first-stage-stop-bw 48.0 \
+--first-stage-stop-atten -95.0 \
+--second-stage-pass-bw 12.0 \
+--second-stage-stop-bw 24.0 \
+--second-stage-stop-atten -60.0 \
+--third-stage-num-taps 32 \
+--third-stage-stop-atten -70.0 \
+--add-third-stage 2 6.0 12.0 custom_div_2 32
