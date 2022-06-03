@@ -28,8 +28,8 @@ extern const int g_third_stage_div_12_fir[756];
 extern const int fir3_div_12_debug[384];
 #define FIR_COMPENSATOR_DIV_12 (311131710)
 
-extern const int g_third_stage_custom_div_2_fir[126];
-extern const int fir3_custom_div_2_debug[64];
-#define FIR_COMPENSATOR_CUSTOM_DIV_2 (258960416)
+extern const int g_third_stage_custom_div_1_fir[63];
+extern const int fir3_custom_div_1_debug[32];
+#define FIR_COMPENSATOR_CUSTOM_DIV_1 (192667744)
 
 #define THIRD_STAGE_COEFS_PER_STAGE (32)
