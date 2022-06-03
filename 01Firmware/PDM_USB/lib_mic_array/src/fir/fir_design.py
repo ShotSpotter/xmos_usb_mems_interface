@@ -27,35 +27,32 @@ def parseArguments(third_stage_configs):
                         help='The sample rate (in kHz) of the PDM microphones',
                         metavar='kHz')
 
-    parser.add_argument('--use-low-ripple-first-stage', type=bool, default=False,
-      help='Use the lowest ripple possible for the given output passband.')
+    parser.add_argument('--use-low-ripple-first-stage', type=bool, default=False, metavar='[True|False]',
+      help='Use the lowest ripple possible for the given output passband (False).')
 
-    parser.add_argument('--first-stage-num-taps', type=int, default=48,
-      help='The number of FIR taps in the first stage of decimation.')
-    parser.add_argument('--first-stage-pass-bw', type=float, default = 20.0,
-      help='The pass bandwidth (in kHz) of the first stage filter.'
-          ' Starts at 0Hz and ends at this frequency', metavar='kHz')
-    parser.add_argument('--first-stage-stop-bw', type=float, default = 24.0,
-      help='The stop bandwidth (in kHz) of the first stage filter.',
-      metavar='kHz')
-    parser.add_argument('--first-stage-stop-atten', type=float, default = -120.0,
-      help='The stop band attenuation(in dB) of the first stage filter(Normally negative).', metavar='dB')
+    parser.add_argument('--first-stage-num-taps', type=int, default=48, metavar='N',
+      help='The number of FIR taps in the first stage of decimation (48).')
+    parser.add_argument('--first-stage-pass-bw', type=float, default = 20.0, metavar='kHz',
+      help='The pass bandwidth (in kHz) of the first stage filter (20.0).')
+    parser.add_argument('--first-stage-stop-bw', type=float, default = 24.0, metavar='kHz',
+      help='The stop bandwidth (in kHz) of the first stage filter (24.0).')
+    parser.add_argument('--first-stage-stop-atten', type=float, default = -120.0, metavar='dB',
+      help='The stop band attenuation (in dB) of the first stage filter (-120.0).')
 
-    parser.add_argument('--second-stage-pass-bw', type=float, default=16,
-       help='The number of FIR taps per stage '
-          ' Starts at 0Hz and ends at this frequency', metavar='kHz')
-    parser.add_argument('--second-stage-stop-bw', type=float, default=16,
-       help='The number of FIR taps per stage '
-          ' Starts at 0Hz and ends at this frequency', metavar='kHz')
-    parser.add_argument('--second-stage-stop-atten', type=float, default = -70.0,
-      help='The stop band attenuation(in dB) of the second stage filter(Normally negative).', metavar='dB')
+    parser.add_argument('--second-stage-num-taps', type=int, default=16, metavar='N',
+      help='The number of FIR taps in the second stage of decimation (16). Must match SECOND_STAGE_COEF_COUNT.')
+    parser.add_argument('--second-stage-pass-bw', type=float, default=16.0, metavar='kHz',
+      help='The pass bandwidth (in kHz) of the second stage filter (16.0).')
+    parser.add_argument('--second-stage-stop-bw', type=float, default=16.0, metavar='kHz',
+      help='The stop bandwidth (in kHz) of the second stage filter (16.0).')
+    parser.add_argument('--second-stage-stop-atten', type=float, default = -70.0, metavar='dB',
+      help='The stop band attenuation (in dB) of the second stage filter (-70.0).')
 
-    parser.add_argument('--third-stage-num-taps', type=int, default=32,
-       help='The number of FIR taps per stage '
-      '(decimation factor). The fewer there are the lower the group delay.')
+    parser.add_argument('--third-stage-num-taps', type=int, default=32, metavar='N',
+      help='The number of FIR taps per stage/decimation factor (32). Must match THIRD_STAGE_COEFS_PER_STAGE.')
 
-    parser.add_argument('--third-stage-stop-atten', type=float, default = -70.0,
-      help='The stop band attenuation(in dB) of the third stage filter(Normally negative).', metavar='dB')
+    parser.add_argument('--third-stage-stop-atten', type=float, default = -70.0, metavar='dB',
+      help='The stop band attenuation (in dB) of the third stage filter (-70.0).')
 
     parser.add_argument('--add-third-stage', nargs=5,
       help='Add a custom third stage filter; e.g. 6 6.2 8.1 custom_16k_filt 32',
@@ -494,7 +491,7 @@ if __name__ == "__main__":
   for r in range(0, (points//(8*4))+1):
     combined_response.append(abs(first_stage_response[r]))
 
-  second_stage_num_taps = 16
+  second_stage_num_taps = args.second_stage_num_taps
   second_stage_pbw = args.second_stage_pass_bw/(input_sample_rate/8.0)
   second_stage_sbw = args.second_stage_stop_bw/(input_sample_rate/8.0)
   second_stage_stop_band_atten = args.second_stage_stop_atten
