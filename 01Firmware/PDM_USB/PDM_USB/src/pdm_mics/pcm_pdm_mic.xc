@@ -44,13 +44,17 @@ in buffered port:32 p_pdm_mics_8_to_15  = PORT_PDM_DATA_8_to_15;
 /* User hooks */
 unsafe void user_pdm_process(mic_array_frame_time_domain * unsafe audio, int output[]);
 
+#if (NUM_PDM_MICS > 0)
 // data mics 1-8
 int data_0[4*THIRD_STAGE_COEFS_PER_STAGE * MAX_DECIMATION_FACTOR] = {0};
 int data_1[4*THIRD_STAGE_COEFS_PER_STAGE * MAX_DECIMATION_FACTOR] = {0};
+#endif
 
+#if (NUM_PDM_MICS > 8)
 //data mics 9-16
 int data_2[4*THIRD_STAGE_COEFS_PER_STAGE * MAX_DECIMATION_FACTOR] = {0};
 int data_3[4*THIRD_STAGE_COEFS_PER_STAGE * MAX_DECIMATION_FACTOR] = {0};
+#endif
 
 mic_array_frame_time_domain mic_audio[NUM_PDM_MICS/4];
 
@@ -70,8 +74,15 @@ void pdm_process(streaming chanend c_ds_output[NUM_PDM_MICS/4], chanend c_audio)
         unsafe
         {
             // FIR coefficients for different sample rates
-            const int * unsafe fir_coefs[7] = {0, g_third_stage_div_2_fir, g_third_stage_div_4_fir, g_third_stage_div_6_fir,
-                                                g_third_stage_div_8_fir, 0, g_third_stage_div_12_fir};
+            const int * unsafe fir_coefs[7] = {
+                0,
+                g_third_stage_div_2_fir,
+                g_third_stage_div_4_fir,
+                g_third_stage_div_6_fir,
+                g_third_stage_div_8_fir,
+                0,
+                g_third_stage_div_12_fir
+            };
 
             // General config for the decimator
             mic_array_decimator_conf_common_t dcc = {
@@ -86,47 +97,47 @@ void pdm_process(streaming chanend c_ds_output[NUM_PDM_MICS/4], chanend c_audio)
                 DECIMATOR_NO_FRAME_OVERLAP,
                 NUM_PDM_MICS/4
             };
+
             // Decimator specific config
             mic_array_decimator_config_t dc[NUM_PDM_MICS/4] = {
-#if (NUM_PDM_MICS > 0)
-                                                                {&dcc, data_0, {0, 0, 0, 0}, 4}
-                                                               ,{&dcc, data_1, {0, 0, 0, 0}, 4}
-#endif
-#if (NUM_PDM_MICS > 8)
-                                                               ,{&dcc, data_2, {0, 0, 0, 0}, 4}
-                                                               ,{&dcc, data_3, {0, 0, 0, 0}, 4}
-#endif
-                                                               };
+                #if (NUM_PDM_MICS > 0)
+                 {&dcc, data_0, {0, 0, 0, 0}, 4}
+                ,{&dcc, data_1, {0, 0, 0, 0}, 4}
+                #endif
+                #if (NUM_PDM_MICS > 8)
+                ,{&dcc, data_2, {0, 0, 0, 0}, 4}
+                ,{&dcc, data_3, {0, 0, 0, 0}, 4}
+                #endif
+            };
 
             mic_array_decimator_configure(c_ds_output, NUM_PDM_MICS/4, dc);
 
-        mic_array_init_time_domain_frame(c_ds_output, NUM_PDM_MICS/4, buffer, mic_audio, dc);
+            mic_array_init_time_domain_frame(c_ds_output, NUM_PDM_MICS/4, buffer, mic_audio, dc);
 
-        while(1)
-        {
-            mic_array_frame_time_domain * unsafe current = mic_array_get_next_time_domain_frame(c_ds_output, NUM_PDM_MICS/4,
-                                                                                                buffer, mic_audio, dc);
-
-            unsafe
+            while(1)
             {
-                int req;
-                user_pdm_process(current, output);
+                mic_array_frame_time_domain * unsafe current = mic_array_get_next_time_domain_frame(c_ds_output, NUM_PDM_MICS/4,
+                                                                                                    buffer, mic_audio, dc);
 
-                c_audio :> req;
-
-                if(req)
+                unsafe
                 {
-                    for(int i = 0; i < NUM_PDM_MICS; i++)
+                    int req;
+                    user_pdm_process(current, output);
+
+                    c_audio :> req;
+
+                    if(req)
                     {
-                        //TODO: Multiply by -1 to compensate for false differential signaling
-                        c_audio <: output[i];
+                        for(int i = 0; i < NUM_PDM_MICS; i++)
+                        {
+                            c_audio <: output[i];
+                        }
+                    }
+                    else
+                    {
+                        break;
                     }
                 }
-                else
-                {
-                    break;
-                }
-            }
             }
         }
     }
