@@ -75,7 +75,7 @@ void pdm_process(streaming chanend c_ds_output[NUM_PDM_MICS/4], chanend c_audio)
         {
             // FIR coefficients for different sample rates
             const int * unsafe fir_coefs[7] = {
-                0,
+                g_third_stage_div_1_fir,
                 g_third_stage_custom_div_2_fir,
                 g_third_stage_div_4_fir,
                 g_third_stage_div_6_fir,
@@ -142,10 +142,6 @@ void pdm_process(streaming chanend c_ds_output[NUM_PDM_MICS/4], chanend c_audio)
         }
     }
 }
-
-#if MAX_FREQ > 48000
-#error MAX_FREQ > 48000 NOT CURRENTLY SUPPORTED
-#endif
 
 void pcm_pdm_mic(chanend c_pcm_out)
 {

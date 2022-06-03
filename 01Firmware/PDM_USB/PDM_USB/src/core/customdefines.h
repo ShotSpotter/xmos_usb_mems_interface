@@ -67,7 +67,7 @@ void genclock();
 
 /* Maximum frequency device runs at */
 #ifndef MAX_FREQ
-#define MAX_FREQ           (48000)
+#define MAX_FREQ           (96000)
 #endif
 
 /* Maximum frequency in full-speed mode */
