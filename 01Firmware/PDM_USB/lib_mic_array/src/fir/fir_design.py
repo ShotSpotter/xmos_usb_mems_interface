@@ -442,6 +442,7 @@ if __name__ == "__main__":
   # Each entry generates a output
   third_stage_configs = [
       #divider, normalised pb, normalised sb, name, taps per phase, is_custom
+      [1,   1/6,  1/4, "div_1", 32, False],
       [2,  0.38, 0.50, "div_2", 32, False],
       [4,  0.42, 0.52, "div_4", 32, False],
       [6,  0.42, 0.52, "div_6", 32, False],

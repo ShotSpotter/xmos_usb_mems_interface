@@ -8,6 +8,10 @@ extern const int fir1_debug[48];
 extern const int g_second_stage_fir[8];
 extern const int fir2_debug[16];
 
+extern const int g_third_stage_div_1_fir[63];
+extern const int fir3_div_1_debug[32];
+#define FIR_COMPENSATOR_DIV_1 (253489988)
+
 extern const int g_third_stage_div_2_fir[126];
 extern const int fir3_div_2_debug[64];
 #define FIR_COMPENSATOR_DIV_2 (300982049)
