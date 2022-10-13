@@ -316,15 +316,24 @@ int read_dfu_image(char *file)
 
     while (1)
     {
-        unsigned int numBytes = 0;
-        numBytes = dfu_upload(0, block_count, 64, block_data);
-        if (numBytes == 0)
+        int ret = 0;
+        ret = dfu_upload(0, block_count, block_size, block_data);
+        printf("... Uploading block number (%04d), loaded %04d bytes\r", block_count, block_size * block_count);
+        if (ret < 0) {
+            fprintf(stderr, "dfu_upload failed: %s (%d)\n", libusb_strerror(ret), ret);
+            break;
+        }
+
+        if (ret == 0)
         {
             break;
         }
+
         fwrite(block_data, 1, block_size, outFile);
         block_count++;
     }
+    printf("\x1B[2K\r");
+    printf("... Upload complete (%04d bytes)\n", block_size * block_count);
 
     fclose(outFile);
     return 0;
