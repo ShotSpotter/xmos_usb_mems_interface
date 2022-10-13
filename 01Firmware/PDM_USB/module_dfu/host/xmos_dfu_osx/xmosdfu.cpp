@@ -292,6 +292,7 @@ int write_dfu_image(char *file)
     dfu_download(0, 0, 0, NULL);
     dfu_getStatus(0, &dfuState, &timeout, &nextDfuState, &strIndex);
 
+    printf("\x1B[2K\r");
     printf("... Download complete\n");
 
     return 0;
