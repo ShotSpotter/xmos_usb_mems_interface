@@ -66,7 +66,10 @@ static int find_xmos_device(unsigned int id, unsigned int pid, unsigned int list
         int foundDev = 0;
         struct libusb_device_descriptor desc;
         libusb_get_device_descriptor(dev, &desc);
-        printf("VID = 0x%x, PID = 0x%x, BCDDevice: 0x%x\n", desc.idVendor, desc.idProduct, desc.bcdDevice);
+
+        if (list) {
+            printf("VID = 0x%x, PID = 0x%x, BCDDevice: 0x%x\n", desc.idVendor, desc.idProduct, desc.bcdDevice);
+        }
 
         if(desc.idVendor == XMOS_VID)
         {
