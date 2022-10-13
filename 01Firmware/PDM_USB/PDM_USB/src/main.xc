@@ -95,7 +95,7 @@ void usb_audio_core(chanend c_mix_out, chanend ?c_clk_int, chanend ?c_clk_ctl, c
 }
 
 void usb_audio_io(chanend c_aud_in, chanend ?c_adc, chanend ?c_aud_cfg, streaming chanend ?c_spdif_rx, chanend ?c_adat_rx,
-                    chanend ?c_clk_ctl, chanend ?c_clk_int, server interface i_dfu dfuInterface, chanend c_pdm_pcm)
+                    chanend ?c_clk_ctl, chanend ?c_clk_int, chanend c_pdm_pcm)
 {
     #define c_dig_rx null
 
@@ -104,7 +104,7 @@ void usb_audio_io(chanend c_aud_in, chanend ?c_adc, chanend ?c_aud_cfg, streamin
         /* Audio I/O Core (pars additional S/PDIF TX Core) */
         {
             thread_speed();
-            audio(c_aud_in, c_aud_cfg, c_adc, dfuInterface, c_pdm_pcm);
+            audio(c_aud_in, c_aud_cfg, c_adc, c_pdm_pcm);
         }
     }
 }
@@ -136,9 +136,13 @@ int main(){
             usb_audio_core(c_mix_out, c_clk_int, c_clk_ctl, dfuInterface);
         }
 
-        on tile[AUDIO_IO_TILE]: usb_audio_io(c_mix_out, c_adc, c_aud_cfg, c_spdif_rx, c_adat_rx, c_clk_ctl, c_clk_int, dfuInterface, c_pdm_pcm);
+        on tile[AUDIO_IO_TILE]: usb_audio_io(c_mix_out, c_adc, c_aud_cfg, c_spdif_rx, c_adat_rx, c_clk_ctl, c_clk_int, c_pdm_pcm);
 
-        on stdcore[PDM_TILE]: pcm_pdm_mic(c_pdm_pcm);
+        on stdcore[PDM_TILE]: par {
+            DFUHandler(dfuInterface, null);
+
+            pcm_pdm_mic(c_pdm_pcm);
+        }
         USER_MAIN_CORES
     }
 

@@ -15,7 +15,7 @@
  *  \param c_config An optional channel that will be passed on to the
  *                  CODEC configuration functions.
  */
-void audio(chanend c_in, chanend ?c_config, chanend ?c_adc, server interface i_dfu dfuInterface, chanend c_pdm_in);
+void audio(chanend c_in, chanend ?c_config, chanend ?c_adc, chanend c_pdm_in);
 
 void SpdifTxWrapper(chanend c_spdif_tx);
 

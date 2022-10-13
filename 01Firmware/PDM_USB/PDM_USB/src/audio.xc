@@ -110,12 +110,6 @@ unsigned static deliver(chanend c_out, chanend ?c_spd_out, unsigned divide, unsi
 }
 
 
-/* This function is a dummy version of the deliver thread that does not
-   connect to the codec ports. It is used during DFU reset. */
-[[distributable]]
-void DFUHandler(server interface i_dfu i, chanend ?c_user_cmd);
-
-
 #pragma select handler
 void testct_byref(chanend c, int &returnVal) {
 	returnVal = 0;
@@ -154,7 +148,7 @@ static void dummy_deliver(chanend c_out, unsigned &command) {
 #define SAMPLES_PER_PRINT 1
 
 
-void audio(chanend c_mix_out, chanend ?c_config, chanend ?c, server interface i_dfu dfuInterface, chanend c_pdm_in) {
+void audio(chanend c_mix_out, chanend ?c_config, chanend ?c, chanend c_pdm_in) {
 	unsigned curSamFreq = DEFAULT_FREQ;
 	unsigned curSamRes_DAC = STREAM_FORMAT_OUTPUT_1_RESOLUTION_BITS; /* Default to something reasonable */
 	unsigned curSamRes_ADC = STREAM_FORMAT_INPUT_1_RESOLUTION_BITS; /* Default to something reasonable - note, currently this never changes*/
@@ -210,11 +204,7 @@ void audio(chanend c_mix_out, chanend ?c_config, chanend ?c, server interface i_
 				  	outct(c_mix_out, XS1_CT_END);
 					outuint(c_mix_out, 0);
 				  	while (1) {
-						[[combine]]
-						par {
-							DFUHandler(dfuInterface, null);
-							dummy_deliver(c_mix_out, command);
-						}
+						dummy_deliver(c_mix_out, command);
 						curSamFreq = inuint(c_mix_out);
 						if (curSamFreq == AUDIO_START_FROM_DFU) {
 					  		outct(c_mix_out, XS1_CT_END);
