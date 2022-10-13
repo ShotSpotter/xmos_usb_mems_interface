@@ -13,12 +13,7 @@ typedef struct device_pid_t
 } device_pid_t;
 
 device_pid_t pidList[] = {
-    { "XMOS_XCORE_AUDIO_AUDIO2_PID", 0x3066},
-    { "XMOS_L1_AUDIO2_PID",          0x0002},
-    { "XMOS_L1_AUDIO1_PID",          0x0003},
-    { "XMOS_L2_AUDIO2_PID",          0x0004},
-    { "XMOS_SU1_AUDIO2_PID",         0x0008},
-    { "XMOS_U8_MFA_AUDIO2_PID",      0x000A}
+    { "SST_XMOS_001_V1",         0x0008},
 };
 
 unsigned int XMOS_DFU_IF = 0;
