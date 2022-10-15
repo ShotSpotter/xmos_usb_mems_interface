@@ -316,7 +316,7 @@ int AudioClassRequests_2(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket_t &sp, c
 							if (datalength == 1) {
 								if (!isnull(c_clk_ctl)) {
 									outuint(c_clk_ctl, SET_SEL);
-									outuint(c_clk_ctl, buffer[0]);
+									outuint(c_clk_ctl, (buffer, unsigned char[])[0]);
 									outct(c_clk_ctl, XS1_CT_END);
 								}
 								/* Send 0 Length as status stage */
@@ -324,11 +324,11 @@ int AudioClassRequests_2(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket_t &sp, c
 							}
 						} else {
 							/* Direction: Device-to-host: Send Current Selection */
-							buffer[0] = 1;
+							(buffer, unsigned char[])[0] = 1;
 							if (!isnull(c_clk_ctl)) {
 								outuint(c_clk_ctl, GET_SEL);
 								outct(c_clk_ctl, XS1_CT_END);
-								buffer[0] = inuint(c_clk_ctl);
+								(buffer, unsigned char[])[0] = inuint(c_clk_ctl);
 								chkct(c_clk_ctl, XS1_CT_END);
 							}
 							return XUD_DoGetRequest(ep0_out, ep0_in, (buffer, unsigned char[]), 1, sp.wLength );
@@ -347,13 +347,13 @@ int AudioClassRequests_2(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket_t &sp, c
 									return result;
 								if (unitID == FU_USBOUT) {
 									if ((sp.wValue & 0xff) <= NUM_USB_CHAN_OUT) {
-										volsOut[sp.wValue&0xff] = buffer[0] | (((int)(signed char)buffer[1]) << 8);
+										volsOut[sp.wValue&0xff] = (buffer, unsigned char[])[0] | (((int)(buffer, signed char[])[1]) << 8);
 										updateVol(unitID, sp.wValue & 0xff, c_mix_ctl);
 										return XUD_DoSetRequestStatus(ep0_in);
 									}
 								} else {
 									if ((sp.wValue & 0xff) <= NUM_USB_CHAN_IN) {
-										volsIn[sp.wValue&0xff] = buffer[0] | (((int)(signed char)buffer[1]) << 8);
+										volsIn[sp.wValue&0xff] = (buffer, unsigned char[])[0] | (((int)(buffer, signed char[])[1]) << 8);
 										updateVol(unitID, (sp.wValue & 0xff), c_mix_ctl);
 										return XUD_DoSetRequestStatus(ep0_in);
 									}
@@ -362,14 +362,14 @@ int AudioClassRequests_2(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket_t &sp, c
 								/* Direction: Device-to-host */
 								if (unitID == FU_USBOUT) {
 									if ((sp.wValue & 0xff) <= NUM_USB_CHAN_OUT) {
-										buffer[0] = volsOut[sp.wValue&0xff];
-										buffer[1] = volsOut[sp.wValue&0xff] >> 8;
+										(buffer, unsigned char[])[0] = volsOut[sp.wValue&0xff];
+										(buffer, unsigned char[])[1] = volsOut[sp.wValue&0xff] >> 8;
 										return XUD_DoGetRequest(ep0_out, ep0_in, (buffer, unsigned char[]), 2, sp.wLength);
 									}
 								} else {
 									if ((sp.wValue & 0xff) <= NUM_USB_CHAN_IN) {
-										buffer[0] = volsIn[sp.wValue&0xff];
-										buffer[1] = volsIn[sp.wValue&0xff] >> 8;
+										(buffer, unsigned char[])[0] = volsIn[sp.wValue&0xff];
+										(buffer, unsigned char[])[1] = volsIn[sp.wValue&0xff] >> 8;
 										return XUD_DoGetRequest(ep0_out, ep0_in, (buffer, unsigned char[]), 2, sp.wLength);
 									}
 								}
@@ -382,13 +382,13 @@ int AudioClassRequests_2(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket_t &sp, c
 									return result;
 								if (unitID == FU_USBOUT) {
 									if ((sp.wValue & 0xff) <= NUM_USB_CHAN_OUT) {
-										mutesOut[sp.wValue & 0xff] = buffer[0];
+										mutesOut[sp.wValue & 0xff] = (buffer, unsigned char[])[0];
 										updateVol(unitID, sp.wValue & 0xff, c_mix_ctl);
 										return XUD_DoSetRequestStatus(ep0_in);
 									}
 								} else {
 									if ((sp.wValue & 0xff) <= NUM_USB_CHAN_IN) {
-										mutesIn[sp.wValue&0xff] = buffer[0];
+										mutesIn[sp.wValue&0xff] = (buffer, unsigned char[])[0];
 										updateVol(unitID, sp.wValue & 0xff, c_mix_ctl);
 										return XUD_DoSetRequestStatus(ep0_in);
 									}
@@ -397,12 +397,12 @@ int AudioClassRequests_2(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket_t &sp, c
 								// Direction: Device-to-host
 								if (unitID == FU_USBOUT) {
 									if ((sp.wValue & 0xff) <= NUM_USB_CHAN_OUT) {
-										buffer[0] = mutesOut[sp.wValue&0xff];
+										(buffer, unsigned char[])[0] = mutesOut[sp.wValue&0xff];
 										return XUD_DoGetRequest(ep0_out, ep0_in, (buffer, unsigned char[]), sp.wLength, sp.wLength);
 									}
 								} else {
 									if ((sp.wValue & 0xff) <= NUM_USB_CHAN_IN) {
-										buffer[0] = mutesIn[sp.wValue&0xff];
+										(buffer, unsigned char[])[0] = mutesIn[sp.wValue&0xff];
 										return XUD_DoGetRequest(ep0_out, ep0_in, (buffer, unsigned char[]), sp.wLength, sp.wLength);
 									}
 								}
