@@ -31,11 +31,11 @@ These will be installed from the sensor's dfu tool, but we need to format the fi
 
 We use "upgrade 1" to be the last digit of our version.
 
-Factory image => 1.0.0
-Upgrade 1     => 1.0.1
+Factory image => 2.0.0
+Upgrade 1     => 2.0.1
 
 ```
-xflash --factory-version 15.1 --upgrade 1 bin/SST-XMOS-001_v1.0.1.xe -o SST-XMOS-001_v1.0.1.bin
+xflash --factory-version 15.1 --upgrade 1 bin/SST-XMOS-001_v2.0.1.xe -o SST-XMOS-001_v2.0.1.bin
 ```
 
 Add this to the root file system via buildroot
@@ -43,27 +43,26 @@ Add this to the root file system via buildroot
 
 Then on the sensor, check version using xmosdfu. Our devices is VID 0x20b1, PID 0x8.
 
-The version is "0x100", which is "1.0.0".
+The version is "0x200", which is "2.0.0".
 
 ```
-Application (eMMC:2p5):~ $ xmosdfu --listdevices
+$ xmosdfu --listdevices
 VID = 0x1bc7, PID = 0x1201, BCDDevice: 0x318
 VID = 0x1d6b, PID = 0x2, BCDDevice: 0x515
-VID = 0x20b1, PID = 0x8, BCDDevice: 0x100
+VID = 0x20b1, PID = 0x8, BCDDevice: 0x200
 VID = 0x1d6b, PID = 0x2, BCDDevice: 0x515
-Application (eMMC:2p5):~ $
 ```
 
  install the upgrade using:
 ```
-Application (eMMC:2p5):~ $ xmosdfu SST_XMOS_001_V1 --download SST-XMOS-001_v1.0.1.bin
+$ xmosdfu SST_XMOS_001_V1 --download SST-XMOS-001_v2.0.1.bin
 
 XMOS DFU application started - Interface 2 claimed
 Detaching device from application mode.
 Waiting for device to restart and enter DFU mode...
 DFU device plugged on bus 1, dev 3
 ... DFU firmware upgrade device opened
-... Downloading image (SST-XMOS-001_v1.0.1.bin) to device
+... Downloading image (SST-XMOS-001_v2.0.1.bin) to device
 ... Download complete
 ... Returning device to application mode
 
