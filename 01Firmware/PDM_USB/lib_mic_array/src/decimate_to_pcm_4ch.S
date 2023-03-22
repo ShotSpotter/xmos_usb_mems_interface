@@ -108,7 +108,7 @@
 #define S_THIRD_STAGE_PHASE 			0		//need to be 0-11 for divide_by_four
 #define S_THIRD_STAGE_PHASE_COUNT 		1
 #define S_THIRD_STAGE_DATA_POINTER      2
-#define S_THIRD_STAGE_COEFS_POINER		3
+#define S_THIRD_STAGE_COEFS_POINTER		3
 #define S_THIRD_STAGE_COEFS_PHASE		4
 #define S_THIRD_STAGE_UNUSED			5
 #define S_THIRD_STAGE_SIZE				(16)
@@ -218,7 +218,7 @@
 	{ldw r7, r0[S_THIRD_STAGE_PHASE]; ldc r6, THIRD_STAGE_COEFS_PER_ROW};\
 	mul r6, r6, r7;\
 	{ldw r5, r0[S_THIRD_STAGE_COEFS_PHASE]; ldc r8, THIRD_STAGE_COEFS_PER_STAGE};\
-	{sub r6, r6, r5; ldw r9, r0[S_THIRD_STAGE_COEFS_POINER]};\
+	{sub r6, r6, r5; ldw r9, r0[S_THIRD_STAGE_COEFS_POINTER]};\
 	ldaw r9, r9[r6];\
 	mul r7, r7, r8;\
 	ldw r6, sp[S_CHAN_COUNT];\
@@ -474,7 +474,7 @@ take_config_from_application:
 	{ldw r11, r3[5];} //coef pointer
 	ldc r9, (THIRD_STAGE_COEFS_PER_STAGE-1)			//move the coef pointer along by (THIRD_STAGE_COEFS_PER_STAGE-1)
 	ldaw r11, r11[r9]
-	stw r11, r10[S_THIRD_STAGE_COEFS_POINER]
+	stw r11, r10[S_THIRD_STAGE_COEFS_POINTER]
 
 	here_is_the_data_pointer:
 	{ldw r11, r2[1];} //data pointer
