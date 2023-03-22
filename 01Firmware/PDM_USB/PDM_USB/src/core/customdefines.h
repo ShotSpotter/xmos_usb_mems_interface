@@ -22,11 +22,6 @@ void genclock();
  * Note, we check if they are already defined in Makefile
  */
 
-/* Tile defines */
-#define AUDIO_IO_TILE      1
-#define XUD_TILE           1
-#define PDM_TILE           0
-
 /* Enable PDM and PDM->PCM conversion code */
 /*** Number of PDM mics also needs to be adapted in "pdm_mics/mic_array_conf.h" ***/
 #define NUM_PDM_MICS       8

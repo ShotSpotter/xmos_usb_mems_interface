@@ -25,11 +25,11 @@
 void DFUHandler(server interface i_dfu i, chanend ?c_user_cmd);
 
 /* Audio I/O - Port declarations */
-on tile[AUDIO_IO_TILE] : port p_mclk_in                     = PORT_MCLK_IN;
-on tile[XUD_TILE] : in port p_for_mclk_count                = PORT_MCLK_COUNT;
+on tile[1] : port p_mclk_in                     = PORT_MCLK_IN;
+on tile[1] : in port p_for_mclk_count                = PORT_MCLK_COUNT;
 
 /* Clock blocks */
-on tile[AUDIO_IO_TILE] : clock    clk_audio_mclk            = CLKBLK_MCLK;       /* Master clock */
+on tile[1] : clock    clk_audio_mclk            = CLKBLK_MCLK;       /* Master clock */
 
 /* L/G Series needs a port to use for USB reset */
 #define p_usb_rst   null
@@ -130,15 +130,15 @@ int main(){
 
     par
     {
-        on tile[XUD_TILE]:
+        on tile[1]:
         par
         {
             usb_audio_core(c_mix_out, c_clk_int, c_clk_ctl, dfuInterface);
         }
 
-        on tile[AUDIO_IO_TILE]: usb_audio_io(c_mix_out, c_adc, c_aud_cfg, c_spdif_rx, c_adat_rx, c_clk_ctl, c_clk_int, c_pdm_pcm);
+        on tile[1]: usb_audio_io(c_mix_out, c_adc, c_aud_cfg, c_spdif_rx, c_adat_rx, c_clk_ctl, c_clk_int, c_pdm_pcm);
 
-        on stdcore[PDM_TILE]: par {
+        on stdcore[0]: par {
             DFUHandler(dfuInterface, null);
 
             pcm_pdm_mic(c_pdm_pcm);

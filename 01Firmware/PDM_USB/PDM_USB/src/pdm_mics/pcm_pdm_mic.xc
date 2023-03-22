@@ -31,7 +31,7 @@
 /* Hardware resources */
 in port p_pdm_clk                = PORT_PDM_CLK;
 in port p_mclk                   = PORT_PDM_MCLK;
-clock pdmclk                     = on tile[PDM_TILE]: XS1_CLKBLK_3;
+clock pdmclk                     = on tile[0]: XS1_CLKBLK_3;
 
 // Mic input ports
 #if (NUM_PDM_MICS > 0)
@@ -70,8 +70,7 @@ void pdm_process(streaming chanend c_ds_output[NUM_PDM_MICS/4], chanend c_audio)
         unsafe
         {
             // FIR coefficients for different sample rates
-            const int * unsafe fir_coefs[7] = {0, g_third_stage_div_2_fir, g_third_stage_div_4_fir, g_third_stage_div_6_fir,
-                                                g_third_stage_div_8_fir, 0, g_third_stage_div_12_fir};
+            const int * unsafe fir_coefs[4] = {0, g_third_stage_div_2_fir, g_third_stage_div_4_fir, g_third_stage_div_6_fir};
 
             // General config for the decimator
             mic_array_decimator_conf_common_t dcc = {

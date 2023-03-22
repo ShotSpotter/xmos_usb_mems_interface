@@ -8,28 +8,6 @@
 
 #include "customdefines.h"
 
-/* Default tile arrangement */
-
-/**
- * @brief Location (tile) of IAP. Default: AUDIO_IO_TILE
- */
-#ifndef IAP_TILE
-#define IAP_TILE        AUDIO_IO_TILE
-#endif
-
-/**
- * @brief Location (tile) of MIDI I/O. Default: AUDIO_IO_TILE
- */
-#ifndef MIDI_TILE
-#define MIDI_TILE       AUDIO_IO_TILE
-#endif
-
-/**
- * @brief Location (tile) of SPDIF Tx. Default: AUDIO_IO_TILE
- */
-#ifndef SPDIF_TX_TILE
-#define SPDIF_TX_TILE   AUDIO_IO_TILE
-#endif
 
 /**
  * @brief Number of DSD output channels. Default: 0 (disabled)
@@ -131,21 +109,21 @@
  * @brief Device firmware version number in Binary Coded Decimal format: 0xJJMN where JJ: major, M: minor, N: sub-minor version number.
  */
 #ifndef BCD_DEVICE_J
-#define BCD_DEVICE_J             0
+#define BCD_DEVICE_J             2
 #endif
 
 /**
  * @brief Device firmware version number in Binary Coded Decimal format: 0xJJMN where JJ: major, M: minor, N: sub-minor version number.
  */
 #ifndef BCD_DEVICE_M
-#define BCD_DEVICE_M             1
+#define BCD_DEVICE_M             0
 #endif
 
 /**
  * @brief Device firmware version number in Binary Coded Decimal format: 0xJJMN where JJ: major, M: minor, N: sub-minor version number.
  */
 #ifndef BCD_DEVICE_N
-#define BCD_DEVICE_N             0
+#define BCD_DEVICE_N             3
 #endif
 
 /**
