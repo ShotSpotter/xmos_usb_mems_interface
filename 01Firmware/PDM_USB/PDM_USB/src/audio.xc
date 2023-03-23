@@ -88,7 +88,7 @@ unsigned static deliver(chanend c_out, chanend ?c_spd_out, unsigned divide, unsi
 			/* Get samples from PDM->PCM comverter */
 			c_pdm_pcm <: 1;
 #pragma loop unroll
-			for (int i = 0; i < NUM_PDM_MICS; i++)
+			for (int i = 0; i < 8; i++)
 				c_pdm_pcm :> samplesIn_0[i];
 		}
 		index = 0;

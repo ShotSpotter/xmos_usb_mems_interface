@@ -23,14 +23,12 @@ void genclock();
  */
 
 /* Enable PDM and PDM->PCM conversion code */
-/*** Number of PDM mics also needs to be adapted in "pdm_mics/mic_array_conf.h" ***/
-#define NUM_PDM_MICS       8
 
 /* Defines relating to channel count and channel arrangement (Set to 0 for disable) */
 //:audio_defs
 /* Number of USB streaming channels - Default is 8 in 2 out */
 #ifndef NUM_USB_CHAN_IN
-#define NUM_USB_CHAN_IN    (NUM_PDM_MICS)         /* Device to Host */
+#define NUM_USB_CHAN_IN    (8)         /* Device to Host */
 #endif
 #ifndef NUM_USB_CHAN_OUT
 #define NUM_USB_CHAN_OUT   (0)         /* Host to Device */
@@ -99,7 +97,7 @@ void genclock();
 // #define BCD_DEVICE              0x0001
 #define BCD_DEVICE_J            2
 #define BCD_DEVICE_M            0
-#define BCD_DEVICE_N            5
+#define BCD_DEVICE_N            6
 #define AUDIO_CLASS             2
 #define AUDIO_CLASS_FALLBACK    0
 

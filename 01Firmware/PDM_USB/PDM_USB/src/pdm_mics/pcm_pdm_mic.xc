@@ -43,13 +43,13 @@ unsafe void user_pdm_process(mic_array_frame_time_domain * unsafe audio, int out
 int data_0[4 * THIRD_STAGE_COEFS_PER_STAGE * MAX_DECIMATION_FACTOR] = {0};
 int data_1[4 * THIRD_STAGE_COEFS_PER_STAGE * MAX_DECIMATION_FACTOR] = {0};
 
-mic_array_frame_time_domain mic_audio[NUM_PDM_MICS / 4];
+mic_array_frame_time_domain mic_audio[2];
 
 
-void pdm_process(streaming chanend c_ds_output[NUM_PDM_MICS / 4], chanend c_audio) {
+void pdm_process(streaming chanend c_ds_output[2], chanend c_audio) {
 	// Buffer index
 	unsigned buffer = 1;
-	int output[NUM_PDM_MICS];
+	int output[8];
 	while (1) {
 		unsigned samplerate;
 		c_audio :> samplerate;
@@ -68,24 +68,24 @@ void pdm_process(streaming chanend c_ds_output[NUM_PDM_MICS / 4], chanend c_audi
 					MIC_GAIN_COMPENSATION,
 					FIR_GAIN_COMPENSATION,
 					DECIMATOR_NO_FRAME_OVERLAP,
-					NUM_PDM_MICS/4
+					2
 			};
 			// Decimator specific config
-			mic_array_decimator_config_t dc[NUM_PDM_MICS / 4] = {
+			mic_array_decimator_config_t dc[2] = {
 					{&dcc, data_0, {0, 0, 0, 0}, 4},
 					{&dcc, data_1, {0, 0, 0, 0}, 4}
 			};
-			mic_array_decimator_configure(c_ds_output, NUM_PDM_MICS / 4, dc);
-			mic_array_init_time_domain_frame(c_ds_output, NUM_PDM_MICS / 4, buffer, mic_audio, dc);
+			mic_array_decimator_configure(c_ds_output, 2, dc);
+			mic_array_init_time_domain_frame(c_ds_output, 2, buffer, mic_audio, dc);
 			while (1) {
 				mic_array_frame_time_domain * unsafe current =
-						mic_array_get_next_time_domain_frame(c_ds_output, NUM_PDM_MICS / 4, buffer, mic_audio, dc);
+						mic_array_get_next_time_domain_frame(c_ds_output, 2, buffer, mic_audio, dc);
 				unsafe {
 					int req;
 					user_pdm_process(current, output);
 					c_audio :> req;
 					if (req) {
-						for(int i = 0; i < NUM_PDM_MICS; ++i) {
+						for (int i = 0; i < 8; ++i) {
 							//TODO: Multiply by -1 to compensate for false differential signaling
 							c_audio <: output[i];
 						}
@@ -100,18 +100,18 @@ void pdm_process(streaming chanend c_ds_output[NUM_PDM_MICS / 4], chanend c_audi
 
 
 void pcm_pdm_mic(chanend c_pcm_out) {
-    streaming chan c_pdm_mic_0_to_3, c_pdm_mic_4_to_7;
-    streaming chan c_ds_output[NUM_PDM_MICS/4];
-    /* Note, this divide should be based on master clock freq */
-    configure_clock_src_divide(pdmclk, p_mclk, MCLK_48 / ( 2 * PDM_MIC_CLK));
-    configure_port_clock_output(p_pdm_clk, pdmclk);
-    configure_in_port(p_pdm_mics_0_to_7, pdmclk);
-    start_clock(pdmclk);
-    par {
-        mic_array_pdm_rx(p_pdm_mics_0_to_7, c_pdm_mic_0_to_3, c_pdm_mic_4_to_7);
-        mic_array_decimate_to_pcm_4ch(c_pdm_mic_0_to_3, c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
-        mic_array_decimate_to_pcm_4ch(c_pdm_mic_4_to_7, c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
-        // Process decimated data
-        pdm_process(c_ds_output, c_pcm_out);
-    }
+	streaming chan c_pdm_mic_0_to_3, c_pdm_mic_4_to_7;
+	streaming chan c_ds_output[2];
+	// Note, this divide should be based on master clock freq
+	configure_clock_src_divide(pdmclk, p_mclk, MCLK_48 / (2 * PDM_MIC_CLK));
+	configure_port_clock_output(p_pdm_clk, pdmclk);
+	configure_in_port(p_pdm_mics_0_to_7, pdmclk);
+	start_clock(pdmclk);
+	par {
+		mic_array_pdm_rx(p_pdm_mics_0_to_7, c_pdm_mic_0_to_3, c_pdm_mic_4_to_7);
+		mic_array_decimate_to_pcm_4ch(c_pdm_mic_0_to_3, c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
+		mic_array_decimate_to_pcm_4ch(c_pdm_mic_4_to_7, c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
+		// Process decimated data
+		pdm_process(c_ds_output, c_pcm_out);
+	}
 }
