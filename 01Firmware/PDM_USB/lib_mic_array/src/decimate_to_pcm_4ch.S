@@ -178,33 +178,33 @@
 //This is used for commenting within marcos
 #define comment(X)
 
-//TODO - use this when everything works
-//TODO then reduce the memory usage
-//Note: there could be two implementations of this where one never writes to
-//memory 28-32 as they are never used
+// TODO - use this when everything works
+// TODO then reduce the memory usage
+// Note: there could be two implementations of this where one never writes to
+// memory 28-32 as they are never used
+// The range for immediate indexing is 0..63.
 #define INPUT_TO_OFFSET_12_15(OFFSET) \
 	ldw r1, sp[S_C_INPUT]; \
 	in r0, res[r1];\
 	{stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + OFFSET]; in r0, res[r1]};\
 	{stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + OFFSET]; in r0, res[r1]};\
-	stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + OFFSET];\
-	in r0, res[r1];\
-	{stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + OFFSET]}
+	stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + OFFSET]; in r0, res[r1];\
+	stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + OFFSET]
 
-//This inputs from the channel to the pdm interface and saves it twice in the
-//second stage FIR at offset OFFSET and OFFSET + 16
+// This inputs from the channel to the pdm interface and saves it twice in the
+// second stage FIR at offset OFFSET and OFFSET + 16.
+// The range for immediate indexing is 0..63.
 #define INPUT_TO_OFFSET(OFFSET) \
 	ldw r1, sp[S_C_INPUT]; \
 	in r0, res[r1];\
-	{stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
+	stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + OFFSET];\
 	{stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]; in r0, res[r1]};\
-	{stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
+	stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + OFFSET];\
 	{stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]; in r0, res[r1]};\
-	{stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
-	{stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]};\
-	in r0, res[r1];\
-	{stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
-	{stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]}
+	stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + OFFSET];\
+	stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]; in r0, res[r1];\
+	stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + OFFSET];\
+	stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]
 
 
 //setup divider by N registers (coefs, data, accumulators)
