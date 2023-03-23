@@ -831,22 +831,8 @@ enum USBEndpointNumber_Out
 
 
 /* Setup DEFAULT_MCLK_FREQ based on MCLK_ and DEFAULT_FREQ defines */
-#if ((MCLK_441 % DEFAULT_FREQ) == 0)
-#define DEFAULT_MCLK_FREQ MCLK_441
-#elif ((MCLK_48 % DEFAULT_FREQ) == 0)
 #define DEFAULT_MCLK_FREQ MCLK_48
-#else
-#error Bad DEFAULT_MCLK_FREQ
-#endif
 
-#if ((MCLK_441 % MIN_FREQ) == 0)
-#define MIN_FREQ_44 MIN_FREQ
-#define MIN_FREQ_48 ((48000 * 512)/((44100 * 512)/MIN_FREQ))
-#endif
-
-#if ((MCLK_48 % MIN_FREQ) == 0)
 #define MIN_FREQ_48 MIN_FREQ
 /* * 2 required since we want the next 44.1 based freq above MIN_FREQ */
 #define MIN_FREQ_44 (((44100*512)/((48000 * 512)/MIN_FREQ))*2)
-#endif
-

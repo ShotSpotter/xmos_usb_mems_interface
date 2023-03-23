@@ -122,15 +122,7 @@ void buffer(register chanend c_aud_out, register chanend c_aud_in, chanend c_sof
                             int min, mid, max;
                             GetADCCounts(sampleFreq, min, mid, max);
                             g_speed = mid<<16;
-
-                            if((MCLK_48 % sampleFreq) == 0)
-                            {
-                                masterClockFreq = MCLK_48;
-                            }
-                            else
-                            {
-                                masterClockFreq = MCLK_441;
-                            }
+                            masterClockFreq = MCLK_48;
                         }
                         /* Ideally we want to wait for handshake (and pass back up) here.  But we cannot keep this
                         * core locked, it must stay responsive to packets (MIDI etc) and SOFs.  So, set a flag and check for

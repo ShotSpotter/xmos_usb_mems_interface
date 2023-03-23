@@ -162,16 +162,12 @@ void audio(chanend c_mix_out, chanend ?c_config, chanend ?c, chanend c_pdm_in) {
 	/* Perform required CODEC/ADC/DAC initialisation */
 	AudioHwInit(c_config);
 	while (1) {
-		/* Calculate what master clock we should be using */
-		if ((MCLK_441 % curSamFreq) == 0)
-			mClk = MCLK_441;
-		else if ((MCLK_48 % curSamFreq) == 0)
-			mClk = MCLK_48;
+		mClk = MCLK_48;
 		/* Calculate master clock to bit clock (or DSD clock) divide for current sample freq
 		 * e.g. 11.289600 / (176400 * 64)  = 1 */
 		/* I2S has 32 bits per sample. *2 as 2 channels */
 		unsigned numBits = 64;
-		divide = mClk / ( curSamFreq * numBits);
+		divide = mClk / (curSamFreq * numBits);
 		/* TODO; we should catch and handle the case when divide is 0. Currently design will lock up */
 		unsigned curFreq = curSamFreq;
 		/* Configure Clocking/CODEC/DAC/ADC for SampleFreq/MClk */
@@ -191,7 +187,7 @@ void audio(chanend c_mix_out, chanend ?c_config, chanend ?c, chanend c_pdm_in) {
 				command = deliver(c_mix_out, null, divide, curSamFreq, c_pdm_in, c);
 				if (command == SET_SAMPLE_FREQ)
 					curSamFreq = inuint(c_mix_out);
-				else if(command == SET_STREAM_FORMAT_OUT) {
+				else if (command == SET_STREAM_FORMAT_OUT) {
 					/* Off = 0
 					 * DOP = 1
 					 * Native = 2
