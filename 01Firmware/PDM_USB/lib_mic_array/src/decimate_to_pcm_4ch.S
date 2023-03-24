@@ -185,26 +185,26 @@
 // The range for immediate indexing is 0..63.
 #define INPUT_TO_OFFSET_12_15(OFFSET) \
 	ldw r1, sp[S_C_INPUT]; \
-	in r0, res[r1];\
-	{stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + OFFSET]; in r0, res[r1]};\
-	{stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + OFFSET]; in r0, res[r1]};\
-	stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + OFFSET]; in r0, res[r1];\
-	stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + OFFSET]
+	in r0, res[r1]; \
+	{stw r0, dp[0 * SECOND_STAGE_BUFFER_SIZE + OFFSET]; in r0, res[r1]}; \
+	{stw r0, dp[1 * SECOND_STAGE_BUFFER_SIZE + OFFSET]; in r0, res[r1]}; \
+	stw r0, dp[2 * SECOND_STAGE_BUFFER_SIZE + OFFSET]; in r0, res[r1]; \
+	stw r0, dp[3 * SECOND_STAGE_BUFFER_SIZE + OFFSET]
 
 // This inputs from the channel to the pdm interface and saves it twice in the
 // second stage FIR at offset OFFSET and OFFSET + 16.
 // The range for immediate indexing is 0..63.
 #define INPUT_TO_OFFSET(OFFSET) \
 	ldw r1, sp[S_C_INPUT]; \
-	in r0, res[r1];\
-	stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + OFFSET];\
-	{stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]; in r0, res[r1]};\
-	stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + OFFSET];\
-	{stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]; in r0, res[r1]};\
-	stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + OFFSET];\
-	stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]; in r0, res[r1];\
-	stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + OFFSET];\
-	stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]
+	in r0, res[r1]; \
+	stw r0, dp[0 * SECOND_STAGE_BUFFER_SIZE + OFFSET]; \
+	{stw r0, dp[0 * SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]; in r0, res[r1]}; \
+	stw r0, dp[1 * SECOND_STAGE_BUFFER_SIZE + OFFSET]; \
+	{stw r0, dp[1 * SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]; in r0, res[r1]}; \
+	stw r0, dp[2 * SECOND_STAGE_BUFFER_SIZE + OFFSET]; \
+	stw r0, dp[2 * SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]; in r0, res[r1]; \
+	stw r0, dp[3 * SECOND_STAGE_BUFFER_SIZE + OFFSET]; \
+	stw r0, dp[3 * SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]
 
 
 //setup divider by N registers (coefs, data, accumulators)
@@ -213,146 +213,141 @@
 	//coef = coef[THIRD_STAGE_COEFS_PER_ROW*S_THIRD_STAGE_PHASE - S_THIRD_STAGE_COEFS_PHASE]
 	//data0 = data[THIRD_STAGE_COEFS_PER_STAGE*S_THIRD_STAGE_PHASE*4]
 	//data1 = data0[THIRD_STAGE_COEFS_PER_STAGE]
-#define DIVIDE_BY_N_0()\
-	ldaw r0, sp[S_THIRD_STAGE];\
-	{ldw r7, r0[S_THIRD_STAGE_PHASE]; ldc r6, THIRD_STAGE_COEFS_PER_ROW};\
-	mul r6, r6, r7;\
-	{ldw r5, r0[S_THIRD_STAGE_COEFS_PHASE]; ldc r8, THIRD_STAGE_COEFS_PER_STAGE};\
-	{sub r6, r6, r5; ldw r9, r0[S_THIRD_STAGE_COEFS_POINTER]};\
-	ldaw r9, r9[r6];\
-	mul r7, r7, r8;\
-	ldw r6, sp[S_CHAN_COUNT];\
-	mul r7, r7, r6;\
-	ldw r10, r0[S_THIRD_STAGE_DATA_POINTER];\
-	ldaw r10, r10[r7];\
-	ldaw r11, r10[r8];\
-	ldd r8, r7, r0[S_D_THIRD_STAGE_CH0_ACC];\
-	ldd r6, r5, r0[S_D_THIRD_STAGE_CH1_ACC];\
-	bl third_stage_fir_impl;\
-	ldaw r0, sp[S_THIRD_STAGE];\
-	std r8, r7, r0[S_D_THIRD_STAGE_CH0_ACC];\
+#define DIVIDE_BY_N_0() \
+	ldaw r0, sp[S_THIRD_STAGE]; \
+	{ldw r7, r0[S_THIRD_STAGE_PHASE]; ldc r6, THIRD_STAGE_COEFS_PER_ROW}; \
+	mul r6, r6, r7; \
+	{ldw r5, r0[S_THIRD_STAGE_COEFS_PHASE]; ldc r8, THIRD_STAGE_COEFS_PER_STAGE}; \
+	{sub r6, r6, r5; ldw r9, r0[S_THIRD_STAGE_COEFS_POINTER]}; \
+	ldaw r9, r9[r6]; \
+	mul r7, r7, r8; \
+	ldw r6, sp[S_CHAN_COUNT]; \
+	mul r7, r7, r6; \
+	ldw r10, r0[S_THIRD_STAGE_DATA_POINTER]; \
+	ldaw r10, r10[r7]; \
+	ldaw r11, r10[r8]; \
+	ldd r8, r7, r0[S_D_THIRD_STAGE_CH0_ACC]; \
+	ldd r6, r5, r0[S_D_THIRD_STAGE_CH1_ACC]; \
+	bl third_stage_fir_impl; \
+	ldaw r0, sp[S_THIRD_STAGE]; \
+	std r8, r7, r0[S_D_THIRD_STAGE_CH0_ACC]; \
 	std r6, r5, r0[S_D_THIRD_STAGE_CH1_ACC]
 
-#define N_DIVIDE_BY_N_1()\
-	{ldc r0, THIRD_STAGE_COEFS_PER_STAGE};\
-	ldaw r9, r9[-r0];\
-	ldc r0, THIRD_STAGE_COEFS_PER_STAGE-24;\
-	ldaw r10, r11[r0];\
-	{ldc r0, THIRD_STAGE_COEFS_PER_STAGE};\
-	ldaw r11, r10[r0];\
-	ldaw r0, sp[S_THIRD_STAGE];\
-	ldd r8, r7, r0[S_D_THIRD_STAGE_CH2_ACC];\
-	ldd r6, r5, r0[S_D_THIRD_STAGE_CH3_ACC];\
-	bl third_stage_fir_impl;\
-	ldaw r0, sp[S_THIRD_STAGE];\
-	std r8, r7, r0[S_D_THIRD_STAGE_CH2_ACC];\
+#define N_DIVIDE_BY_N_1() \
+	{ldc r0, THIRD_STAGE_COEFS_PER_STAGE}; \
+	ldaw r9, r9[-r0]; \
+	ldc r0, THIRD_STAGE_COEFS_PER_STAGE-24; \
+	ldaw r10, r11[r0]; \
+	{ldc r0, THIRD_STAGE_COEFS_PER_STAGE}; \
+	ldaw r11, r10[r0]; \
+	ldaw r0, sp[S_THIRD_STAGE]; \
+	ldd r8, r7, r0[S_D_THIRD_STAGE_CH2_ACC]; \
+	ldd r6, r5, r0[S_D_THIRD_STAGE_CH3_ACC]; \
+	bl third_stage_fir_impl; \
+	ldaw r0, sp[S_THIRD_STAGE]; \
+	std r8, r7, r0[S_D_THIRD_STAGE_CH2_ACC]; \
 	std r6, r5, r0[S_D_THIRD_STAGE_CH3_ACC]
 
 #define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
-	ldd r6, r5, r4[PREV_Y];\
-	ldc r7, MIC_ARRAY_DC_OFFSET_LOG2;\
-	ashr r9, r6, r7;\
-	lextract r8, r6, r5, r7, 32;\
+	ldd r6, r5, r4[PREV_Y]; \
+	ldc r7, MIC_ARRAY_DC_OFFSET_LOG2; \
+	ashr r9, r6, r7; \
+	lextract r8, r6, r5, r7, 32; \
 	lsub r11, r5, r5, r8, r4; 		comment(using the lowest bit of r4 which is always 0) \
     lsub r11, r6, r6, r9, r11; \
-    {ldw r7, r4[PREV_X]};\
-    ashr r9, REGISTER, 32;\
-    ashr r10, r7, 32;\
+    {ldw r7, r4[PREV_X]}; \
+    ashr r9, REGISTER, 32; \
+    ashr r10, r7, 32; \
     lsub r11, r8, REGISTER, r7, r4; 	comment(same here) \
-    lsub r11, r9, r9, r10, r11;\
-    {ldc r10, 16};\
-    lextract r9, r9, r8, r10, 32;\
-    {shl r8, r8, r10; stw REGISTER, r4[PREV_X]};\
+    lsub r11, r9, r9, r10, r11; \
+    {ldc r10, 16}; \
+    lextract r9, r9, r8, r10, 32; \
+    {shl r8, r8, r10; stw REGISTER, r4[PREV_X]}; \
     lsub r11, r5, r5, r8, r4; 		comment(same here) \
-    lsub r11, r6, r6, r9, r11;\
-	std r6, r5, r4[PREV_Y];\
+    lsub r11, r6, r6, r9, r11; \
+	std r6, r5, r4[PREV_Y]; \
 	lextract REGISTER, r6, r5, r10, 32
 
 //r6 is the AUDIO_POINTER_INDEX		--note that on the second pass r0-r3 will need to be reloaded as this modified them
-#define APPLY_WINDOW_FN(P)\
-	ldaw r9, sp[S_SETTINGS_OFFSET];\
-	ldw r9, r9[S_WINDOWING_ENABLED];\
-	bf r9, done_windowing ## P;\
+#define APPLY_WINDOW_FN(P) \
+	ldaw r9, sp[S_SETTINGS_OFFSET]; \
+	ldw r9, r9[S_WINDOWING_ENABLED]; \
+	bf r9, done_windowing ## P; \
 	apply_windowing ## P:;\
-		ldw r5, r4[S_FRAME_SIZE_LOG2];\
-		{shl r5, r6, 1; mkmsk r8, r5};\
-		{lss r5, r8, r5; ldc r7, 31};\
-		{bf r5, skip ## P ; mov r4, r6};\
-			sub r4, r8, r6;\
-		skip ## P:;\
-		{ldc r10, 0; ldc r11, 0};\
-		{ldw r4, r9[r4]};\
-		maccs r10, r11, r4, r0;\
-		lextract r0, r10, r11, r7, 32;\
-		{ldc r10, 0; ldc r11, 0};\
-		maccs r10, r11, r4, r1;\
-		lextract r1, r10, r11, r7, 32;\
-		{ldc r10, 0; ldc r11, 0};\
-		maccs r10, r11, r4, r2;\
-		lextract r2, r10, r11, r7, 32;\
-		{ldc r10, 0; ldc r11, 0};\
-		maccs r10, r11, r4, r3;\
-		lextract r3, r10, r11, r7, 32;\
+		ldw r5, r4[S_FRAME_SIZE_LOG2]; \
+		{shl r5, r6, 1; mkmsk r8, r5}; \
+		{lss r5, r8, r5; ldc r7, 31}; \
+		{bf r5, skip ## P ; mov r4, r6}; \
+			sub r4, r8, r6; \
+		skip ## P:; \
+		{ldc r10, 0; ldc r11, 0}; \
+		{ldw r4, r9[r4]}; \
+		maccs r10, r11, r4, r0; \
+		lextract r0, r10, r11, r7, 32; \
+		{ldc r10, 0; ldc r11, 0}; \
+		maccs r10, r11, r4, r1; \
+		lextract r1, r10, r11, r7, 32; \
+		{ldc r10, 0; ldc r11, 0}; \
+		maccs r10, r11, r4, r2; \
+		lextract r2, r10, r11, r7, 32; \
+		{ldc r10, 0; ldc r11, 0}; \
+		maccs r10, r11, r4, r3; \
+		lextract r3, r10, r11, r7, 32; \
 	done_windowing ## P:
 
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
 #if MIC_ARRAY_WORD_LENGTH_SHORT
-	#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
-		{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32};\
-		{bitrev r6, r6; ldc r8, 2};\
-		{sub r9, r7, r5;ldw r11, sp[S_CHAN_COUNT]};\
-		{lsu r11, r8, r11 ;ldc r8, (MIC_ARRAY_MAX_FRAME_SIZE_LOG2+2)};\
-		{shl r8, r11, r8;ldw r7, r4[POINTER]  };\
-		{add r8, r7, r8;shr r6, r6, r9;};\
-		{shr r0, r0, 16; shr r1, r1, 16};\
-		{shr r2, r2, 16; shr r3, r3, 16};\
-		{shl r1, r1, 16; shl r3, r3, 16};\
-		{add r1, r1, r0; add r3, r3, r2};\
-		stw r3, r8[r6];\
+	#define SAVE_SAMPLES_BIT_REVERSED(POINTER) \
+		{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32}; \
+		{bitrev r6, r6; ldc r8, 2}; \
+		{sub r9, r7, r5; ldw r11, sp[S_CHAN_COUNT]}; \
+		{lsu r11, r8, r11 ;ldc r8, (MIC_ARRAY_MAX_FRAME_SIZE_LOG2+2)}; \
+		{shl r8, r11, r8;ldw r7, r4[POINTER]  }; \
+		{add r8, r7, r8;shr r6, r6, r9;}; \
+		{shr r0, r0, 16; shr r1, r1, 16}; \
+		{shr r2, r2, 16; shr r3, r3, 16}; \
+		{shl r1, r1, 16; shl r3, r3, 16}; \
+		{add r1, r1, r0; add r3, r3, r2}; \
+		stw r3, r8[r6]; \
 		stw r1, r7[r6]
-
 #else
-	#define SAVE_SAMPLES_BIT_REVERSED(POINTER)\
-			{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32};\
-			{bitrev r6, r6; ldc r8, 2};\
-			{sub r9, r7, r5;ldw r11, sp[S_CHAN_COUNT]};\
-			{lsu r11, r8, r11 ;ldc r8, (MIC_ARRAY_MAX_FRAME_SIZE_LOG2+3)};\
-			{shl r8, r11, r8;ldw r7, r4[POINTER]  };\
-			{add r8, r7, r8;shr r6, r6, r9;};\
-			std r3, r2, r8[r6];\
+	#define SAVE_SAMPLES_BIT_REVERSED(POINTER) \
+			{ldw r5, r4[S_FRAME_SIZE_LOG2]; ldc r7, 32}; \
+			{bitrev r6, r6; ldc r8, 2}; \
+			{sub r9, r7, r5;ldw r11, sp[S_CHAN_COUNT]}; \
+			{lsu r11, r8, r11 ;ldc r8, (MIC_ARRAY_MAX_FRAME_SIZE_LOG2+3)}; \
+			{shl r8, r11, r8;ldw r7, r4[POINTER]  }; \
+			{add r8, r7, r8;shr r6, r6, r9;}; \
+			std r3, r2, r8[r6]; \
 			std r1, r0, r7[r6]
-
 #endif
 
 //r4 is the address of the S_FRAME_OFFSET_SECTION
 //r6 is the AUDIO_POINTER_INDEX
 #if MIC_ARRAY_WORD_LENGTH_SHORT
-	#define SAVE_SAMPLES_NORMAL(POINTER, N)\
-		{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
-    	{add r7, r6, r5; ldw r8, r4[POINTER]};\
-    	{add r5, r5, r5};\
-		{shr r0, r0, 16; shr r1, r1, 16};\
-		{shr r2, r2, 16; shr r3, r3, 16};\
-		st16 r1, r8[r7];\
-		st16 r0, r8[r6];\
-		{add r7, r7, r5; add r6, r6, r5};\
-		st16 r3, r8[r7];\
+	#define SAVE_SAMPLES_NORMAL(POINTER, N) \
+		{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)}; \
+    	{add r7, r6, r5; ldw r8, r4[POINTER]}; \
+    	{add r5, r5, r5}; \
+		{shr r0, r0, 16; shr r1, r1, 16}; \
+		{shr r2, r2, 16; shr r3, r3, 16}; \
+		st16 r1, r8[r7]; \
+		st16 r0, r8[r6]; \
+		{add r7, r7, r5; add r6, r6, r5}; \
+		st16 r3, r8[r7]; \
 		st16 r2, r8[r6]
-
 #else
-	#define SAVE_SAMPLES_NORMAL(POINTER, N)\
-		{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
-    	{add r7, r6, r5; ldw r8, r4[POINTER]};\
-    	{add r5, r5, r5};\
-		stw r1, r8[r7];\
-		stw r0, r8[r6];\
-		{add r7, r7, r5; add r6, r6, r5};\
-		stw r3, r8[r7];\
+	#define SAVE_SAMPLES_NORMAL(POINTER, N) \
+		{ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)}; \
+    	{add r7, r6, r5; ldw r8, r4[POINTER]}; \
+    	{add r5, r5, r5}; \
+		stw r1, r8[r7]; \
+		stw r0, r8[r6]; \
+		{add r7, r7, r5; add r6, r6, r5}; \
+		stw r3, r8[r7]; \
 		stw r2, r8[r6]
-
 #endif
-
 
 
 #define SETUP_INTERNAL_CHANNEL(ID)\
@@ -404,7 +399,7 @@ mic_array_decimate_to_pcm_4ch:
 	inct r2, res[r1]		//they say CONFIGURE_DECIMATOR
 
 	// Initialise the DC offset removal.
-	ldaw r0, sp[S_DC_ELIMINATE];
+	ldaw r0, sp[S_DC_ELIMINATE]
 	ldc r1, 0
 	std r1, r1, r0[S_D_PREV_X_01]
 	std r1, r1, r0[S_D_PREV_X_23]
@@ -424,7 +419,7 @@ configure:
 	DUALENTSP_lu6 0
 	//Initialise the stack -- TODO optimise this
 	ldc r0, (S_DC_ELIMINATE - S_SECOND_STAGE_DATA)/2
-	{ldaw r1, sp[S_SECOND_STAGE_DATA];ldc r2, 0}
+	{ldaw r1, sp[S_SECOND_STAGE_DATA]; ldc r2, 0}
 stack_init_loop:
 	std r2, r2, r1[r0]
 	{bt r0, stack_init_loop; sub r0, r0, 1}
@@ -441,7 +436,7 @@ take_config_from_application:
 	//get the pointer for the config over the output channel
 	ldw r0, sp[S_C_OUTPUT]
 	in r2, res[r0]		//deciamtor_config
-	ldw r3, r2[0];		//r3 is the pointer to the decimator_config_common
+	ldw r3, r2[0]		//r3 is the pointer to the decimator_config_common
 
 //copy the setting out of the struct
 	ldaw r0, sp[S_FRAME_OFFSET]
@@ -472,7 +467,7 @@ take_config_from_application:
 
 	here_is_the_coef_pointer:
 	{ldw r11, r3[5];} //coef pointer
-	ldc r9, (THIRD_STAGE_COEFS_PER_STAGE-1)			//move the coef pointer along by (THIRD_STAGE_COEFS_PER_STAGE-1)
+	ldc r9, (THIRD_STAGE_COEFS_PER_STAGE - 1)			//move the coef pointer along by (THIRD_STAGE_COEFS_PER_STAGE-1)
 	ldaw r11, r11[r9]
 	stw r11, r10[S_THIRD_STAGE_COEFS_POINTER]
 
@@ -515,7 +510,7 @@ get_frame_pointer:
 	    {in r1, res[r2];stw r5, r11[S_OVERLAPPING_FRAMES]}
 	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
 	    saving_non_overlapping_metadata_pointer:
-		{stw r1, r11[S_METADATA_POINTER_0];ldc r2, 0 }
+		{stw r1, r11[S_METADATA_POINTER_0]; ldc r2, 0}
 		std r2, r2, r1[0]	//init the sig bits
 		std r2, r2, r1[1]	//init the sig bits
 		bu setup_phase_counters
@@ -531,7 +526,7 @@ get_frame_pointer:
 	    {in r1, res[r2];stw r5, r11[S_OVERLAPPING_FRAMES]}
 	    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
 	    saving_overlapping_metadata_pointer_0:
-		{stw r1, r11[S_METADATA_POINTER_1];ldc r2, 0 }
+		{stw r1, r11[S_METADATA_POINTER_1]; ldc r2, 0}
 		std r2, r2, r1[0]	//init the sig bits
 		std r2, r2, r1[1]	//init the sig bits
 
@@ -541,7 +536,7 @@ setup_phase_counters:
 	sub r9, r9, 1
 	stw r9, r10[S_THIRD_STAGE_PHASE]
 
-	ldc r9, (THIRD_STAGE_COEFS_PER_STAGE-1)
+	ldc r9, (THIRD_STAGE_COEFS_PER_STAGE - 1)
 	stw r9, r10[S_THIRD_STAGE_COEFS_PHASE]
 
 confirm_init_complete:
@@ -650,9 +645,9 @@ post_process:
 
 	//increment THIRD_STAGE_PHASE mod THIRD_STAGE_PHASE_COUNT
 	ldaw r11, sp[S_THIRD_STAGE]
-	ldw r10, r11[S_THIRD_STAGE_PHASE];
+	ldw r10, r11[S_THIRD_STAGE_PHASE]
 	{add r9, r10, 1; ldw r8, r11[S_THIRD_STAGE_PHASE_COUNT]}
-	{stw r9, r11[S_THIRD_STAGE_PHASE];eq r8, r8, r9}
+	{stw r9, r11[S_THIRD_STAGE_PHASE]; eq r8, r8, r9}
 
 	bt r8, output_phase		//do this on phase S_THIRD_STAGE_PHASE_COUNT-1 (last phase)
 	{sub r10, r10, 1; bf r10, process_phase}	//do this on phase 0
@@ -680,7 +675,7 @@ post_process:
 		mov r9, r8
 	update_sig_bits:
 
-	{lss r4, r0, r11;lss r5, r1, r11}
+	{lss r4, r0, r11; lss r5, r1, r11}
 	{bf r4, r0_done; mov r4, r0}
 	neg r4, r0
 	r0_done:
@@ -696,7 +691,7 @@ post_process:
 	{or r6, r6, r4; or r7, r7, r5}
 	std r7, r6, r9[0]
 
-	{lss r4, r2, r11;lss r5, r3, r11}
+	{lss r4, r2, r11; lss r5, r3, r11}
 	{bf r4, r2_done; mov r4, r2}
 	neg r4, r2
 	r2_done:
@@ -717,9 +712,9 @@ post_process:
 	process_phase:
 	//r0, r1, r2, r3 are used as storage for the output of the 3rd stage FIR
 	//copy the accumulators in to registers
-	ldaw r4, sp[S_OUTPUT_STORAGE];
-	ldd r0, r1, r4[S_D_OUTPUT_STORAGE_01];
-	ldd r2, r3, r4[S_D_OUTPUT_STORAGE_23];
+	ldaw r4, sp[S_OUTPUT_STORAGE]
+	ldd r0, r1, r4[S_D_OUTPUT_STORAGE_01]
+	ldd r2, r3, r4[S_D_OUTPUT_STORAGE_23]
 
 	//DC offset removal
 	ldaw r4, sp[S_SETTINGS_OFFSET]
@@ -728,26 +723,26 @@ post_process:
 
 		ldaw r4, sp[S_DC_ELIMINATE]
 		dc_offset_removal_ch0:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, r0);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, r0)
 		dc_offset_removal_ch1:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_1, S_PREV_X_1, r1);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_1, S_PREV_X_1, r1)
 		dc_offset_removal_ch2:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_2, S_PREV_X_2, r2);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_2, S_PREV_X_2, r2)
 		dc_offset_removal_ch3:
-		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, S_PREV_X_3, r3);
+		DC_OFFSET_REMOVAL(S_D_PREV_Y_3, S_PREV_X_3, r3)
 
 dc_offset_removal_complete:
 
-#define COMP(REG)\
-	{ldc r5, 0; ldc r6, 0};\
-	maccs r5, r6, REG, r4;\
-	lsats r5, r6, r7;\
+#define COMP(REG) \
+	{ldc r5, 0; ldc r6, 0}; \
+	maccs r5, r6, REG, r4; \
+	lsats r5, r6, r7; \
 	lextract REG, r5, r6, r7, 32
 
 	//FIR gain compensation
 	fir_compensation:	// This normally turns the volume up to compensate for the FIR
 	ldw r4, sp[S_FIR_GAIN_COMP]  //load the fir gain comp, it is in 1.4.27 format
-	{bf r4, gain_compensation;ldc r7, 27}
+	{bf r4, gain_compensation; ldc r7, 27}
 	COMP(r0)
 	COMP(r1)
 	COMP(r2)
@@ -756,7 +751,7 @@ dc_offset_removal_complete:
 	gain_compensation:	// This always turns the volume down
 	ldaw r4, sp[S_SETTINGS_OFFSET]
 	ldw r4, r4[S_MIC_GAIN_COMP]
-	{bf r4, gain_comp_complete;ldc r7, 31}
+	{bf r4, gain_comp_complete; ldc r7, 31}
 	apply_mic_gain_compensation:
 		ldaw r4, sp[S_MIC_CALIB_OFFSET]
 		ldd r6, r5, r4[S_D_MIC_CALIB_01]
@@ -777,8 +772,8 @@ dc_offset_removal_complete:
 
 
 internal_channel_overwrite_begin:
-		 setsr 0x1
-		 nop
+		setsr 0x1
+		nop
 	    {bu internal_channel_overwrite_complete; clrsr 0x1}
 		internal_channel_0_event_vector:
 		get r11, ed
@@ -798,9 +793,9 @@ internal_channel_overwrite_begin:
 		{out res[r11], r3; bu internal_channel_overwrite_begin}	//output another token to the channel to let it know we have more space
 	internal_channel_overwrite_complete:
 
-	ldaw r4, sp[S_OUTPUT_STORAGE];
-	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
-	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
+	ldaw r4, sp[S_OUTPUT_STORAGE]
+	std r0, r1, r4[S_D_OUTPUT_STORAGE_01]
+	std r2, r3, r4[S_D_OUTPUT_STORAGE_23]
 	retsp 0
 
 	output_phase:
@@ -808,9 +803,9 @@ internal_channel_overwrite_begin:
 #define EXCHANGE_BUFFERS 0
 #define CONFIGURE_DECIMATOR 1
 
-		ldaw r4, sp[S_OUTPUT_STORAGE];
-		ldd r0, r1, r4[S_D_OUTPUT_STORAGE_01];
-		ldd r2, r3, r4[S_D_OUTPUT_STORAGE_23];
+		ldaw r4, sp[S_OUTPUT_STORAGE]
+		ldd r0, r1, r4[S_D_OUTPUT_STORAGE_01]
+		ldd r2, r3, r4[S_D_OUTPUT_STORAGE_23]
 
 		ldaw r4, sp[S_FRAME_OFFSET]
 
@@ -823,14 +818,14 @@ internal_channel_overwrite_begin:
 		ldw r5, r5[S_INDEX_BITREVERSING_ENABLED]
 		bt r5, index_bitrev_order_0
 			index_normal_order_0:
-				SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_0, 0);
+				SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_0, 0)
 				bu save_to_frame_complete_0
 			index_bitrev_order_0:
-				SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_0);
+				SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_0)
 		save_to_frame_complete_0:
 
 		ldw r5, r4[S_FRAME_0_INDEX]
-		{add r5, r5, 1;ldw r6, r4[S_OVERLAPPING_FRAMES]}
+		{add r5, r5, 1; ldw r6, r4[S_OVERLAPPING_FRAMES]}
 		stw r5, r4[S_FRAME_0_INDEX]
 
 		bt r6, overlapping_frames
@@ -838,7 +833,7 @@ internal_channel_overwrite_begin:
 
 		ldw r6, r4[S_FRAME_SIZE_LOG2]
 		{shr r5, r5, r6; ldc r6, 0}
-		bf r5, do_the_rest;
+		bf r5, do_the_rest
 
 			reset_the_frame_index:
 			stw r6, r4[S_FRAME_0_INDEX]
@@ -865,11 +860,11 @@ internal_channel_overwrite_begin:
 
 			do_the_exchange:
 	        {in r3, res[r6]; ldc r0, 0}
-	        {std r0, r3, r4[S_D_FRAME_POINTER_AND_INDEX_0]}
+	        std r0, r3, r4[S_D_FRAME_POINTER_AND_INDEX_0]
 
 	        get_the_new_metadata_pointer:
 	        {in r3, res[r6]}
-	        {stw r3, r4[S_METADATA_POINTER_0]}
+	        stw r3, r4[S_METADATA_POINTER_0]
 			std r0, r0, r3[0]	//set the frame sig bits to 0
 			std r0, r0, r3[1]  	//set the frame sig bits to 0
 
@@ -879,7 +874,6 @@ internal_channel_overwrite_begin:
 			bu do_the_rest
 
 		overlapping_frames:
-
 			ldaw r4, sp[S_FRAME_OFFSET]
 			ldw r6, r4[S_FRAME_1_INDEX] //load second frame index
 
@@ -895,19 +889,19 @@ internal_channel_overwrite_begin:
 			ldw r5, r5[S_INDEX_BITREVERSING_ENABLED]
 			bt r5, index_bitrev_order_1
 				index_normal_order_1:
-					SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_1, 1);
+					SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_1, 1)
 					bu save_to_frame_complete_1
 				index_bitrev_order_1:
-					SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_1);
+					SAVE_SAMPLES_BIT_REVERSED(S_FRAME_POINTER_1)
 			save_to_frame_complete_1:
 
 			ldw r5, r4[S_FRAME_1_INDEX]
-			{add r5, r5, 1;ldw r6, r4[S_FRAME_SIZE_LOG2]}
+			{add r5, r5, 1; ldw r6, r4[S_FRAME_SIZE_LOG2]}
 			stw r5, r4[S_FRAME_1_INDEX]
 
 
 			{shr r5, r5, r6; ldc r6, 0}
-			bf r5, do_the_rest;
+			bf r5, do_the_rest
 			at_the_end_of_the_overlapping_half_frame:
 
 				//set the metadata
@@ -939,11 +933,11 @@ internal_channel_overwrite_begin:
 		        {in r3, res[r6]; ldc r0, 0}
 		        stw r5, r4[S_METADATA_POINTER_0]
 
-		        {std r0, r3, r4[S_D_FRAME_POINTER_AND_INDEX_0]}
+		        std r0, r3, r4[S_D_FRAME_POINTER_AND_INDEX_0]
 
 		        get_the_new_metadata_pointer2:
-		        {in r5, res[r6];ldw r7, sp[S_C_OUTPUT]}
-				{outct res[r7], 8; stw r5, r4[S_METADATA_POINTER_1]}//WARNING: do not change this
+		        {in r5, res[r6]; ldw r7, sp[S_C_OUTPUT]}
+				{outct res[r7], 8; stw r5, r4[S_METADATA_POINTER_1]} //WARNING: do not change this
 				std r0, r0, r5[0]  //reset the frame sig bits to 0
 				std r0, r0, r5[1]  //reset the frame sig bits to 0
 
@@ -963,15 +957,15 @@ internal_channel_overwrite_begin:
 	ldd r5, r6, r11[S_D_THIRD_STAGE_CH3_ACC]
 	lextract r3, r5, r6, r7, 32
 
-	ldaw r4, sp[S_OUTPUT_STORAGE];
-	std r0, r1, r4[S_D_OUTPUT_STORAGE_01];
-	std r2, r3, r4[S_D_OUTPUT_STORAGE_23];
+	ldaw r4, sp[S_OUTPUT_STORAGE]
+	std r0, r1, r4[S_D_OUTPUT_STORAGE_01]
+	std r2, r3, r4[S_D_OUTPUT_STORAGE_23]
 
 	//increment S_THIRD_STAGE_COEFS_PHASE mod THIRD_STAGE_COEFS_PER_STAGE
 	{ldw r1, r11[S_THIRD_STAGE_COEFS_PHASE]; ldc r9, THIRD_STAGE_COEFS_PER_STAGE}
 	//set S_THIRD_STAGE_PHASE to 0
-	{add r1, r1, 1}
-	{stw r10, r11[S_THIRD_STAGE_PHASE];lsu r9, r1, r9}
+	add r1, r1, 1
+	{stw r10, r11[S_THIRD_STAGE_PHASE]; lsu r9, r1, r9}
 	//reset accumulators
 
 	std r10, r10, r11[S_D_THIRD_STAGE_CH0_ACC]
@@ -1007,36 +1001,25 @@ divide_by_four:
 	.issue_mode dual
 
 	ldaw r10, sp[S_THIRD_STAGE]
-	{ldw r8, sp[S_CHAN_COUNT];ldc r11, THIRD_STAGE_COEFS_PER_STAGE}	//r11 = 32
+	{ldw r8, sp[S_CHAN_COUNT]; ldc r11, THIRD_STAGE_COEFS_PER_STAGE}	//r11 = 32
 	mul r8, r8, r11
 	{ldw r11, r10[S_THIRD_STAGE_PHASE]; shl r6, r11, 2}
 	mul r8, r8, r11
 	ldw r11, r10[S_THIRD_STAGE_COEFS_PHASE]
-	{ldw r10, r10[S_THIRD_STAGE_DATA_POINTER];add r8, r8, r11}
+	{ldw r10, r10[S_THIRD_STAGE_DATA_POINTER]; add r8, r8, r11}
 	ldaw r10, r10[r8]
 
-	ldw r8, sp[S_CHAN_COUNT]
-	{dualentsp 1; eq r9, r8, 4}
+	dualentsp 1
 	ldaw r11, cp[g_second_stage_fir]		//------------------------------------------------------------------------------------------------------------ This needs fixing
 
-	{bt r9, mic_array_decimate_to_pcm_4ch_0; eq r9, r8, 3}
-	{bt r9, mic_array_decimate_to_pcm_4ch_1; eq r9, r8, 2}
-	{bt r9, mic_array_decimate_to_pcm_4ch_2; eq r9, r8, 1}
-	{bt r9, mic_array_decimate_to_pcm_4ch_3;}
-	bu divide_by_four_complete
-
-	//r11 = coefs, r10 = pointer to where to put result, r7 = data, r6 = THIRD_STAGE_COEFS_PER_STAGE*sizeof(int)
-mic_array_decimate_to_pcm_4ch_0:
-	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; }// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
+	// r11 = coefs, r10 = pointer to where to put result, r7 = data, r6 = THIRD_STAGE_COEFS_PER_STAGE*sizeof(int)
+	bl mic_array_decimate_to_pcm_4ch_fir_impl // data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
 	{stw r0, r10[0]; add r10, r10, r6}
-mic_array_decimate_to_pcm_4ch_1:
-	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
+	{bl mic_array_decimate_to_pcm_4ch_fir_impl; add r7, r7, r6} // data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
 	{stw r0, r10[0]; add r10, r10, r6}
-mic_array_decimate_to_pcm_4ch_2:
-	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
+	{bl mic_array_decimate_to_pcm_4ch_fir_impl; add r7, r7, r6} // data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
 	{stw r0, r10[0]; add r10, r10, r6}
-mic_array_decimate_to_pcm_4ch_3:
-	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
+	{bl mic_array_decimate_to_pcm_4ch_fir_impl; add r7, r7, r6} // data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
 	stw r0, r10[0]
 
 divide_by_four_complete:

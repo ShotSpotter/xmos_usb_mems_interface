@@ -96,7 +96,7 @@ void genclock();
 // #define BCD_DEVICE              0x0001
 #define BCD_DEVICE_J            2
 #define BCD_DEVICE_M            0
-#define BCD_DEVICE_N            7
+#define BCD_DEVICE_N            8
 #define AUDIO_CLASS             2
 #define AUDIO_CLASS_FALLBACK    0
 
