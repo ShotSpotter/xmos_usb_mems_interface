@@ -544,38 +544,36 @@ confirm_init_complete:
 	outct res[r4], 8 //WARNING: do not change this
 
 input_0_0:
+	// Pull the next sample from each of the 4 audio channels on this XMOS channel.
+	// Save these values in consecutive 2nd-stage buffers at offset 15.
 	INPUT_TO_OFFSET_12_15(15)
-	divide_by_n_0_0:
+	// Multiply & accumulate 32 taps each on 2 channels.
 	DIVIDE_BY_N_0()
-
 input_1_0:
+	// Save next samples in consecutive 2nd-stage buffers at offset 14.
 	INPUT_TO_OFFSET_12_15(14)
-	divide_by_n_0_1:
 	N_DIVIDE_BY_N_1()
-
 input_2_0:
+	// Save next samples in consecutive 2nd-stage buffers at offset 13.
 	INPUT_TO_OFFSET_12_15(13)
 	bl post_process
-
 input_3_0:
+	// Save next samples in consecutive 2nd-stage buffers at offset 12.
 	INPUT_TO_OFFSET_12_15(12)
 	ldaw r7, dp[12]
 	bl divide_by_four
 
 input_4_0:
+	// Pull the next sample from each of the 4 audio channels on this XMOS channel.
+	// Save these values in consecutive 2nd-stage buffers at offsets 11 and 27.
 	INPUT_TO_OFFSET(11)
-	divide_by_n_1_0:
 	DIVIDE_BY_N_0();
-
 input_5_0:
 	INPUT_TO_OFFSET(10)
-	divide_by_n_1_1:
 	N_DIVIDE_BY_N_1()
-
 input_6_0:
 	INPUT_TO_OFFSET(9)
 	bl post_process
-
 input_7_0:
 	INPUT_TO_OFFSET(8)
 	ldaw r7, dp[8]
@@ -583,18 +581,13 @@ input_7_0:
 
 input_0_1:
 	INPUT_TO_OFFSET(7)
-	divide_by_n_2_0:
 	DIVIDE_BY_N_0();
-
 input_1_1:
 	INPUT_TO_OFFSET(6)
-	divide_by_n_2_1:
 	N_DIVIDE_BY_N_1()
-
 input_2_1:
 	INPUT_TO_OFFSET(5)
 	bl post_process
-
 input_3_1:
 	INPUT_TO_OFFSET(4)
 	ldaw r7, dp[4]
@@ -602,22 +595,18 @@ input_3_1:
 
 input_4_1:
 	INPUT_TO_OFFSET(3)
-	divide_by_n_3_0:
 	DIVIDE_BY_N_0();
-
 input_5_1:
 	INPUT_TO_OFFSET(2)
-	divide_by_n_3_1:
 	N_DIVIDE_BY_N_1()
-
 input_6_1:
 	INPUT_TO_OFFSET(1)
 	bl post_process
-
 input_7_1:
 	INPUT_TO_OFFSET(0)
 	ldaw r7, dp[0]
 	bl divide_by_four
+
 	bu input_0_0
 
 	.cc_bottom mic_array_decimate_to_pcm_4ch.function
@@ -1059,7 +1048,11 @@ third_stage_fir_impl:
 	maccs H0, L0, r2, r0;\
 	maccs H1, L1, r4, r0
 
+	// ch0_acc += coef[phase * 63 - coef_phase] * data[phase * 32 * 4] + coef[phase * 63 - coef_phase + 1] * data[phase * 32 * 4 + 1]
+	// ch1_acc += coef[phase * 63 - coef_phase] * data[32] + coef[phase * 63 - coef_phase + 1] * data[33]
 	TWO_TAPS(0, r9, r8, r7, r10, r6, r5, r11)
+	// ch0_acc += coef[phase * 63 - coef_phase] * data[phase * 32 * 4] + coef[phase * 63 - coef_phase + 1] * data[phase * 32 * 4 + 1]
+	// ch1_acc += coef[phase * 63 - coef_phase] * data[32] + coef[phase * 63 - coef_phase + 1] * data[33]
 	TWO_TAPS(1, r9, r8, r7, r10, r6, r5, r11)
 	TWO_TAPS(2, r9, r8, r7, r10, r6, r5, r11)
 	TWO_TAPS(3, r9, r8, r7, r10, r6, r5, r11)
@@ -1138,18 +1131,24 @@ mic_array_decimate_to_pcm_4ch_fir_impl:
 	maccs r0, r1, r4, r3
 	maccs r0, r1, r5, r2
 
+	// c0-c7 => 8 int32 FIR coefficients pointed to by r11 as 4 int64's
+	// d0-d15 => 16 int32 samples pointed to by r7 as 8 int64's
+	// r0 = c0d0 + c1d1 + c1d14 + c0d15 + c2d2 + c3d3 + c3d12 + c2d13 +
+	//      c4d4 + c5d5 + c5d10 + c4d11 + c6d6 + c7d7 + c7d8 + c6d9
+	// Any overflow in r1 is ignored on return.
+
 	retsp 0
 	.cc_bottom mic_array_decimate_to_pcm_4ch_fir_impl.function
 	.set	mic_array_decimate_to_pcm_4ch_fir_impl.nstackwords, 0
 	.globl	mic_array_decimate_to_pcm_4ch_fir_impl.nstackwords
-	.set	mic_array_decimate_to_pcm_4ch_fir_impl.maxcores,1
+	.set	mic_array_decimate_to_pcm_4ch_fir_impl.maxcores, 1
 	.globl	mic_array_decimate_to_pcm_4ch_fir_impl.maxcores
-	.set	mic_array_decimate_to_pcm_4ch_fir_impl.maxtimers,0
+	.set	mic_array_decimate_to_pcm_4ch_fir_impl.maxtimers, 0
 	.globl	mic_array_decimate_to_pcm_4ch_fir_impl.maxtimers
-	.set	mic_array_decimate_to_pcm_4ch_fir_impl.maxchanends,0
+	.set	mic_array_decimate_to_pcm_4ch_fir_impl.maxchanends, 0
 	.globl	mic_array_decimate_to_pcm_4ch_fir_impl.maxchanends
 .Lmic_array_decimate_to_pcm_4ch_fir_impl_tmp:
-	.size	mic_array_decimate_to_pcm_4ch_fir_impl, .Lmic_array_decimate_to_pcm_4ch_fir_impl_tmp-mic_array_decimate_to_pcm_4ch_fir_impl
+	.size	mic_array_decimate_to_pcm_4ch_fir_impl, .Lmic_array_decimate_to_pcm_4ch_fir_impl_tmp - mic_array_decimate_to_pcm_4ch_fir_impl
 
 .cfi_endproc
 
