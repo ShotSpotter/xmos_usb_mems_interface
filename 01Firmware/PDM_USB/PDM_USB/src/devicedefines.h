@@ -530,9 +530,9 @@
  *
  * Default: 0 (Disabled)
  */
-// TODO:Changed to self powered, was 0
+// Board SST_XMOS_001 is bus-powered
 #ifndef SELF_POWERED
-#define SELF_POWERED                (1)
+#define SELF_POWERED                (0)
 #endif
 
 /* Tidy-up historical ifndef usage */
