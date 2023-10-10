@@ -560,12 +560,12 @@ confirm_init_complete:
 input_0_0:
 	INPUT_TO_OFFSET_12_15(15)
 	divide_by_n_0_0:
-	DIVIDE_BY_N_0()
+//	DIVIDE_BY_N_0()
 
 input_1_0:
 	INPUT_TO_OFFSET_12_15(14)
 	divide_by_n_0_1:
-	N_DIVIDE_BY_N_1()
+//	N_DIVIDE_BY_N_1()
 
 input_2_0:
 	INPUT_TO_OFFSET_12_15(13)
@@ -579,12 +579,12 @@ input_3_0:
 input_4_0:
 	INPUT_TO_OFFSET(11)
 	divide_by_n_1_0:
-	DIVIDE_BY_N_0();
+//	DIVIDE_BY_N_0();
 
 input_5_0:
 	INPUT_TO_OFFSET(10)
 	divide_by_n_1_1:
-	N_DIVIDE_BY_N_1()
+//	N_DIVIDE_BY_N_1()
 
 input_6_0:
 	INPUT_TO_OFFSET(9)
@@ -598,12 +598,12 @@ input_7_0:
 input_0_1:
 	INPUT_TO_OFFSET(7)
 	divide_by_n_2_0:
-	DIVIDE_BY_N_0();
+//	DIVIDE_BY_N_0();
 
 input_1_1:
 	INPUT_TO_OFFSET(6)
 	divide_by_n_2_1:
-	N_DIVIDE_BY_N_1()
+//	N_DIVIDE_BY_N_1()
 
 input_2_1:
 	INPUT_TO_OFFSET(5)
@@ -617,12 +617,12 @@ input_3_1:
 input_4_1:
 	INPUT_TO_OFFSET(3)
 	divide_by_n_3_0:
-	DIVIDE_BY_N_0();
+//	DIVIDE_BY_N_0();
 
 input_5_1:
 	INPUT_TO_OFFSET(2)
 	divide_by_n_3_1:
-	N_DIVIDE_BY_N_1()
+//	N_DIVIDE_BY_N_1()
 
 input_6_1:
 	INPUT_TO_OFFSET(1)
