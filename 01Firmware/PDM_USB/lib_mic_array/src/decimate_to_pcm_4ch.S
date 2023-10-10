@@ -826,8 +826,18 @@ internal_channel_overwrite_begin:
                 //
                 ldw r0, r4[S_D_OUTPUT_STORAGE_0];
                 ldw r1, r4[S_D_OUTPUT_STORAGE_1];
-                ldw r2, r4[S_D_OUTPUT_STORAGE_2];
+            	ldw r2, r4[S_D_OUTPUT_STORAGE_2];
                 ldw r3, r4[S_D_OUTPUT_STORAGE_3];
+				// now that we've output the data at 48 kHz, 
+				// clear the storage space so more 96 kHz samples
+				// can be accumulated here
+				ldc r5, 0;
+				stw r5, r4[S_D_OUTPUT_STORAGE_0];
+				stw r5, r4[S_D_OUTPUT_STORAGE_1];
+				stw r5, r4[S_D_OUTPUT_STORAGE_2];
+				stw r5, r4[S_D_OUTPUT_STORAGE_3];
+
+
                 //
 
 		ldaw r4, sp[S_FRAME_OFFSET]
@@ -912,6 +922,14 @@ internal_channel_overwrite_begin:
                 	ldw r1, r5[S_D_OUTPUT_STORAGE_1];
                 	ldw r2, r5[S_D_OUTPUT_STORAGE_2];
                 	ldw r3, r5[S_D_OUTPUT_STORAGE_3];
+					// now that we've output the data at 48 kHz, 
+					// clear the storage space so more 96 kHz samples
+					// can be accumulated here
+					ldc r5, 0;
+					stw r5, r4[S_D_OUTPUT_STORAGE_0];
+					stw r5, r4[S_D_OUTPUT_STORAGE_1];
+					stw r5, r4[S_D_OUTPUT_STORAGE_2];
+					stw r5, r4[S_D_OUTPUT_STORAGE_3];
                 	//
 
 			APPLY_WINDOW_FN(1)
@@ -1060,7 +1078,12 @@ mic_array_decimate_to_pcm_4ch_0:
         // Store channel 0 output in temporary storage
         //
 	ldaw r8, sp[S_OUTPUT_STORAGE]
-        stw r0, r8[S_D_OUTPUT_STORAGE_0]
+		// we are accumulating 96 kHz samples into S_D_OUTPUT_STORAGE
+		// r0 contains the current sample. Load previous value(s) in S_D_OUTPUT_STORAGE
+		// add r0, then restore in S_D_OUTPUT_STORAGE
+		ldw r1, r8[S_D_OUTPUT_STORAGE_0]
+		add r0, r1, r0
+		stw r0, r8[S_D_OUTPUT_STORAGE_0]
         //
 mic_array_decimate_to_pcm_4ch_1:
 	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
@@ -1068,8 +1091,10 @@ mic_array_decimate_to_pcm_4ch_1:
         //
         // Store channel 1 output in temporary storage
         //
-	ldaw r8, sp[S_OUTPUT_STORAGE]
-        stw r0, r8[S_D_OUTPUT_STORAGE_1]
+		ldaw r8, sp[S_OUTPUT_STORAGE]
+        ldw r1, r8[S_D_OUTPUT_STORAGE_1]
+		add r0, r1, r0
+		stw r0, r8[S_D_OUTPUT_STORAGE_1]
         //
 mic_array_decimate_to_pcm_4ch_2:
 	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
@@ -1077,8 +1102,10 @@ mic_array_decimate_to_pcm_4ch_2:
         //
         // Store channel 2 output in temporary storage
         //
-	ldaw r8, sp[S_OUTPUT_STORAGE]
-        stw r0, r8[S_D_OUTPUT_STORAGE_2]
+		ldaw r8, sp[S_OUTPUT_STORAGE]
+        ldw r1, r8[S_D_OUTPUT_STORAGE_2]
+		add r0, r1, r0
+		stw r0, r8[S_D_OUTPUT_STORAGE_2]
         //
 mic_array_decimate_to_pcm_4ch_3:
 	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
@@ -1086,8 +1113,10 @@ mic_array_decimate_to_pcm_4ch_3:
         //
         // Store channel 3 output in temporary storage
         //
-	ldaw r8, sp[S_OUTPUT_STORAGE]
-        stw r0, r8[S_D_OUTPUT_STORAGE_3]
+		ldaw r8, sp[S_OUTPUT_STORAGE]
+        ldw r1, r8[S_D_OUTPUT_STORAGE_3]
+		add r0, r1, r0
+		stw r0, r8[S_D_OUTPUT_STORAGE_3]
         //
 divide_by_four_complete:
 	retsp 1
