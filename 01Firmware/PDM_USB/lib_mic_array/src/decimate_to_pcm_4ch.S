@@ -116,9 +116,18 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #define S_OUTPUT_STORAGE (S_THIRD_STAGE+S_THIRD_STAGE_SIZE)
-#define S_D_OUTPUT_STORAGE_01 0
-#define S_D_OUTPUT_STORAGE_23 1
-#define S_OUTPUT_STORAGE_SIZE 4
+#define S_D_OUTPUT_STORAGE_01 			0
+#define S_D_OUTPUT_STORAGE_23 			1
+//
+// Add storage fields for output of second stage fir filter
+// - stored in function divide_by_four
+// - these will be copied to S_D_OUTPUT_STORAGE_01 and 23 in third stage processing at output_phase
+//
+#define S_D_OUTPUT_STORAGE_0 			4
+#define S_D_OUTPUT_STORAGE_1 			5
+#define S_D_OUTPUT_STORAGE_2 			6
+#define S_D_OUTPUT_STORAGE_3 			7
+#define S_OUTPUT_STORAGE_SIZE 			8
 
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -811,6 +820,15 @@ internal_channel_overwrite_begin:
 		ldaw r4, sp[S_OUTPUT_STORAGE];
 		ldd r0, r1, r4[S_D_OUTPUT_STORAGE_01];
 		ldd r2, r3, r4[S_D_OUTPUT_STORAGE_23];
+                //
+                // Replace third stage fir output r0, r1, r2, r3 with
+                // output from second stage fir filter
+                //
+                ldw r0, r4[S_D_OUTPUT_STORAGE_0];
+                ldw r1, r4[S_D_OUTPUT_STORAGE_1];
+                ldw r2, r4[S_D_OUTPUT_STORAGE_2];
+                ldw r3, r4[S_D_OUTPUT_STORAGE_3];
+                //
 
 		ldaw r4, sp[S_FRAME_OFFSET]
 
@@ -886,6 +904,15 @@ internal_channel_overwrite_begin:
 			ldaw r5, sp[S_OUTPUT_STORAGE];
 			ldd r0, r1, r5[S_D_OUTPUT_STORAGE_01];
 			ldd r2, r3, r5[S_D_OUTPUT_STORAGE_23];
+                	//
+                	// Replace third stage fir output r0, r1, r2, r3 with
+                	// output from second stage fir filter
+                	//
+                	ldw r0, r5[S_D_OUTPUT_STORAGE_0];
+                	ldw r1, r5[S_D_OUTPUT_STORAGE_1];
+                	ldw r2, r5[S_D_OUTPUT_STORAGE_2];
+                	ldw r3, r5[S_D_OUTPUT_STORAGE_3];
+                	//
 
 			APPLY_WINDOW_FN(1)
 			ldaw r4, sp[S_FRAME_OFFSET]
@@ -1029,16 +1056,39 @@ divide_by_four:
 mic_array_decimate_to_pcm_4ch_0:
 	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; }// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
 	{stw r0, r10[0]; add r10, r10, r6}
+        //
+        // Store channel 0 output in temporary storage
+        //
+	ldaw r8, sp[S_OUTPUT_STORAGE]
+        stw r0, r8[S_D_OUTPUT_STORAGE_0]
+        //
 mic_array_decimate_to_pcm_4ch_1:
 	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
 	{stw r0, r10[0]; add r10, r10, r6}
+        //
+        // Store channel 1 output in temporary storage
+        //
+	ldaw r8, sp[S_OUTPUT_STORAGE]
+        stw r0, r8[S_D_OUTPUT_STORAGE_1]
+        //
 mic_array_decimate_to_pcm_4ch_2:
 	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
 	{stw r0, r10[0]; add r10, r10, r6}
+        //
+        // Store channel 2 output in temporary storage
+        //
+	ldaw r8, sp[S_OUTPUT_STORAGE]
+        stw r0, r8[S_D_OUTPUT_STORAGE_2]
+        //
 mic_array_decimate_to_pcm_4ch_3:
 	{bl mic_array_decimate_to_pcm_4ch_fir_impl ; add r7, r7, r6}// data, coefs need to be set; h, l, c0, c1, d0, d1; return h(r0), l(r1);
 	stw r0, r10[0]
-
+        //
+        // Store channel 3 output in temporary storage
+        //
+	ldaw r8, sp[S_OUTPUT_STORAGE]
+        stw r0, r8[S_D_OUTPUT_STORAGE_3]
+        //
 divide_by_four_complete:
 	retsp 1
 	.cc_bottom divide_by_four.function
