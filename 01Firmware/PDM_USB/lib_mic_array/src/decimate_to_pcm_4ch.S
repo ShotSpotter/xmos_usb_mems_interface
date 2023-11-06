@@ -10,7 +10,8 @@
 
 #define SECOND_STAGE_COEF_COUNT         32
 #define SECOND_STAGE_DOUBLE_TAP_COUNT   (SECOND_STAGE_COEF_COUNT / 2)
-#define SECOND_STAGE_BUFFER_SIZE        (SECOND_STAGE_COEF_COUNT * 2)
+#define SECOND_STAGE_BUFFER_ENTRIES     64
+#define SECOND_STAGE_BUFFER_SIZE        (SECOND_STAGE_BUFFER_ENTRIES * 2)
 
 //
 // Stack layout
@@ -33,11 +34,11 @@
 #define S_C_OUTPUT                      2
 #define S_CHAN_COUNT                    3
 
-#define S_FAR_END_CHANNEL_0             10
-#define S_FAR_END_CHANNEL_1             11
-#define S_FAR_END_CHANNEL_2             12
-#define S_FAR_END_CHANNEL_3             13
-#define S_STORAGE_SIZE                  16
+#define S_FAR_END_CHANNEL_0             4
+#define S_FAR_END_CHANNEL_1             5	
+#define S_FAR_END_CHANNEL_2             6
+#define S_FAR_END_CHANNEL_3             7
+#define S_STORAGE_SIZE                  8
 
 //
 // S_SECOND_STAGE_DATA - Contains history of received from first fir filter so that second stage filter can be calculated
@@ -51,8 +52,8 @@
 #define S_SECOND_STAGE			(S_SECOND_STAGE_DATA + S_SECOND_STAGE_DATA_SIZE)
 #define S_SECOND_STAGE_PHASE		0	// Values are word (32 bit) offsets into S_SECOND_STAGE where data is held
 #define S_SECOND_STAGE_PHASE_COUNT	1
-#define S_SECOND_STAGE_COEF_INDEX       2
-#define S_SECOND_STAGE_SIZE		16
+#define S_SECOND_STAGE_BUFFER_INDEX     2
+#define S_SECOND_STAGE_SIZE		8
 
 //
 // S_OUTPUT_STORAGE - Location to store output values
@@ -100,7 +101,7 @@
     // function to obtain input from fir1 filter and store data in double sized buffer
     // so that processing of the data is linear in the second stage fir calculation
     //
-    // r9 - coefficient (SECOND_STAGE_COEF_COUNT - 1 to 0)
+    // r9 - coefficient (SECOND_STAGE_BUFFER_ENTRIES - 1 to 0)
     // r8 - sp[S_C_INPUT]
     // r11 - data pointer
     //
@@ -108,24 +109,24 @@ get_input_fir1_output_fir2:
     .cfi_startproc
     .issue_mode dual
 
-    in r0, res[r8]				// Get data from fir1 filter
+    in r0, res[r8]				// Get data from fir1 filter - Channel 0
     add r1, r9, 0                               // Copy r9 (Coefficient) to r1 = Coefficient
-    ldc r2, SECOND_STAGE_COEF_COUNT
+    ldc r2, SECOND_STAGE_BUFFER_ENTRIES
     add r2, r2, r1                              // r2 = CoefficientCount + Coefficient
     stw r0, r11[r1]				// Store in two places so that fir2 filter can have linear access
     stw r0, r11[r2]
-    in r0, res[r8]
+    in r0, res[r8]				// Channel 1
     ldc r3, SECOND_STAGE_BUFFER_SIZE
     add r1, r1, r3                             // r1 = Coefficient + BufferSize
     add r2, r2, r3                             // r2 = CoefficientCount + Coefficient + BufferSize
     stw r0, r11[r1]
     stw r0, r11[r2]
-    in r0, res[r8]
+    in r0, res[r8]			       // Channel 2
     add r1, r1, r3                             // r1 = Coefficient + BufferSize * 2
     add r2, r2, r3                             // r2 = CoefficientCount + Coefficient + BufferSize * 2
     stw r0, r11[r1]
     stw r0, r11[r2]
-    in r0, res[r8]
+    in r0, res[r8]			       // Channel 3
     add r1, r1, r3                             // r1 = Coefficient + BufferSize * 3
     add r2, r2, r3                             // r2 = CoefficientCount + Coefficient + BufferSize * 3
     stw r0, r11[r1]
@@ -206,7 +207,7 @@ configure:
     // Get configuration information
     //
     ldw r0, sp[S_C_OUTPUT]
-    in r2, res[r0]        //deciamtor_config
+    in r2, res[r0]        //decimator_config
     ldw r3, r2[0];        //r3 is the pointer to the decimator_config_common
 
     ldaw r0, sp[S_FRAME_OFFSET]
@@ -277,21 +278,21 @@ confirm_init_complete:
     // Setup counter for the processing loop
     //
     ldaw r10, sp[S_SECOND_STAGE]
-    ldc r0, SECOND_STAGE_COEF_COUNT
-    stw r0, r10[S_SECOND_STAGE_COEF_INDEX]
+    ldc r0, SECOND_STAGE_BUFFER_ENTRIES
+    stw r0, r10[S_SECOND_STAGE_BUFFER_INDEX]
 
 data_input_loop:
     //
     // Get values from stage 1 filter and put into stage 2 buffer for each channel
     //
-    // r9 - coefficient (SECOND_STAGE_COEF_COUNT - 1 to 0)
+    // r9 - coefficient (SECOND_STAGE_BUFFER_ENTRIES - 1 to 0)
     // r8 - sp[S_C_INPUT]
     // r11 - data pointer
     //
     ldaw r10, sp[S_SECOND_STAGE]
-    ldw r9, r10[S_SECOND_STAGE_COEF_INDEX]      // Get CoefIndex and decrement
+    ldw r9, r10[S_SECOND_STAGE_BUFFER_INDEX]      // Get CoefIndex and decrement
     sub r9, r9, 1
-    stw r9, r10[S_SECOND_STAGE_COEF_INDEX]
+    stw r9, r10[S_SECOND_STAGE_BUFFER_INDEX]
     //
     ldw r8, sp[S_C_INPUT]
     ldaw r11, sp[S_SECOND_STAGE_DATA]
@@ -321,11 +322,11 @@ after_divide_by_four:
 
 after_post_process:
     ldaw r10, sp[S_SECOND_STAGE]
-    ldw r9, r10[S_SECOND_STAGE_COEF_INDEX]      // Get CoefIndex and decrement
+    ldw r9, r10[S_SECOND_STAGE_BUFFER_INDEX]      // Get CoefIndex and decrement
     bt r9, data_input_loop
 
-    ldc r0, SECOND_STAGE_COEF_COUNT
-    stw r0, r10[S_SECOND_STAGE_COEF_INDEX]
+    ldc r0, SECOND_STAGE_BUFFER_ENTRIES
+    stw r0, r10[S_SECOND_STAGE_BUFFER_INDEX]
     bu data_input_loop
 
     .cc_bottom mic_array_decimate_to_pcm_4ch.function
@@ -588,8 +589,6 @@ mic_array_decimate_to_pcm_4ch_fir_taps:
 #endif
 #endif
 #endif
-
     retsp 0
     .cc_bottom mic_array_decimate_to_pcm_4ch_fir_taps.function
     .cfi_endproc
-
