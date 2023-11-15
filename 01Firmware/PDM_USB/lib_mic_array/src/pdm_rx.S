@@ -1,25 +1,12 @@
 // Copyright (c) 2015-2016, XMOS Ltd, All rights reserved
 	.section	.dp.data,"awd",@progbits
 	.text
+        .extern		printf
 
 .xtacommand "analyse endpoints pdm_rx_4ch_loop_ep pdm_rx_4ch_loop_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 .xtacommand "analyse endpoints pdm_rx_8ch_loop_ep pdm_rx_8ch_loop_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-
-#define temp_one 			 r0
-#define c_one                r1
-#define c_two                r2
-#define a                 	 r3
-#define b                 	 r4
-#define fir0                 r5
-#define fir1                 r6
-#define fir2                 r7
-#define temp_two             r8
-#define c			     	 r9
-#define p                 	 r10
-#define t                 	 r11
-#define temp_three           r11
 
 //This mapping accounts for the muddling of the unzips
 //(do not change).
@@ -31,6 +18,9 @@
 #define PIN5 5
 #define PIN6 3
 #define PIN7 7
+
+//#define PRINT_BUFFER
+//#define OUTPUT_SINE_WAVE
 
 #include "mic_array_conf.h"
 
@@ -60,33 +50,82 @@
 	#define MIC_ARRAY_CH7 PIN7
 #endif
 
-#define STACKWORDS 16
+#define S_IN_DATA			(0)
+#define S_IN_DATA_DW_0			(0)
+#define S_IN_DATA_DW_1			(1)
+#define S_IN_DATA_DW_2			(2)
+#define S_IN_DATA_DW_3			(3)
+#define S_IN_DATA_DW_4			(4)
+#define S_IN_DATA_DW_5			(5)
+#define S_IN_DATA_SIZE  		(16)
 
-#define FIR_BLOCK(P) \
-	{ld8u b, p[c]; add a, a, b};\
-	{ldw b, P[b];add c, c, 8};
+#define S_CONTROL_VARIABLES 		(S_IN_DATA_SIZE)
+#define S_IN_PORT			(0)
+#define S_BUFFER_INDEX			(1)
+#define S_COUNTER_1     		(2)
+#define S_COUNTER_2			(3)
+#define S_R0				(4)
+#define S_R1				(5)
+#define S_R2				(6)
+#define S_R3				(7)
+#define S_SINE_INDEX			(8)
+#define S_CONTROL_VARIABLES_SIZE 	(16)
+
+#define S_BUFFER			(S_CONTROL_VARIABLES + S_CONTROL_VARIABLES_SIZE)
+#define S_BUFFER_SIZE			(1 << 12)
+#define S_BUFFER_MASK			(S_BUFFER_SIZE - 1)
+#define S_COUNTER_MASK_1 		((1 << 3) - 1)
+#define S_COUNTER_MASK_2 		((1 << 7) - 1)
+#define S_SINE_INDEX_MASK		((1 << 7) - 1)
+
+#define STACKWORDS			(S_BUFFER + S_BUFFER_SIZE)
+
+#define FIR_BLOCK(COEF)\
+        {add r3, r3, r4; ld8u r4, r10[r9]};\
+        {ldw r4, COEF[r4];add r9, r9, 8};\
 
 #define FIR() \
-	{ld8u a, p[c]; ldc b, 0};\
-	{ldw a, fir0[a]; add c, c, 8};\
-	FIR_BLOCK(fir1)\
-	FIR_BLOCK(fir2)\
-	FIR_BLOCK(fir2)\
-	FIR_BLOCK(fir1)\
-	FIR_BLOCK(fir0)\
-	add a, a, b
+        {ldc r3, 0; ldc r4, 0};\
+        FIR_BLOCK(r5);\
+	FIR_BLOCK(r6);\
+	FIR_BLOCK(r7);\
+	FIR_BLOCK(r7);\
+	FIR_BLOCK(r6);\
+	FIR_BLOCK(r5);\
+        add r3, r3, r4
 
-#define OUTPUT(I, C)\
-	{out res[C], a; ldc c, I}
+#define INCREMENT_COUNTER(COUNTER_OFFSET, COUNTER_MASK) \
+	ldaw r9, sp[S_CONTROL_VARIABLES]; \
+        ldw r4, r9[COUNTER_OFFSET]; \
+        add r4, r4, 1; \
+        ldc r11, COUNTER_MASK; \
+        and r4, r4, r11; \
+        stw r4, r9[COUNTER_OFFSET]
 
-.globl	pdm_rx_asm_debug
-.align	8
-.type	pdm_rx_asm_debug,@function
-.cc_top pdm_rx_asm_debug.function
+	.section .cp.rodata, "ac", @progbits
+	.globl str1
+	.cc_top str1.data, str1
+	.align 4
+str1:
+	.asciiz "%d\n"
+        .cc_bottom str1.data
+
+	.globl str2
+	.cc_top str2.data, str2
+	.align 4
+str2:
+	.asciiz "---------------\n"
+        .cc_bottom str2.data
+
+	.globl	pdm_rx_asm_debug
+	.align	8
+	.type	pdm_rx_asm_debug,@function
+	.cc_top pdm_rx_asm_debug.function
 pdm_rx_asm_debug:
-.cfi_startproc
-.issue_mode dual
-  bu pdm_rx_asm
+	.cfi_startproc
+	.issue_mode dual
+
+	bu pdm_rx_asm
 
 	.cc_bottom pdm_rx_asm_debug.function
 	.set	pdm_rx_asm_debug.nstackwords, 0 $M pdm_rx_asm.nstackwords
@@ -101,134 +140,224 @@ pdm_rx_asm_debug:
 	.size	pdm_rx_asm_debug, .Lpdm_rx_asm_debug_tmp-pdm_rx_asm_debug
 	.cfi_endproc
 
-.cc_top pdm_rx_asm.function
-.globl	pdm_rx_asm
-.align	4
-.type	pdm_rx_asm,@function
+	.cc_top pdm_rx_asm.function
+	.globl	pdm_rx_asm
+	.align	4
+	.type	pdm_rx_asm,@function
 pdm_rx_asm://(
         //in buffered port:32 p_pdm_mics,
         //streaming chanend c,
         //streaming chanend ?d,
 
-.issue_mode dual
+	.issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
 
-	stw r0, sp[15]
+        ldaw r11, sp[S_CONTROL_VARIABLES]
+	stw r0, r11[S_IN_PORT]
 
 #ifdef TEST_MODE
-	ldc t, 0
+	ldc r11, 0
 #else
-	ldc t, 0x5555
-	shl t, t, 16; mov c, t
-	add t, t, c
+	ldc r11, 0x5555
+	shl r11, r11, 16; mov r9, r11
+	add r11, r11, r9
 #endif
-	std t, t, sp[0]
-	std t, t, sp[1]
-	std t, t, sp[2]
-	std t, t, sp[3]
-	std t, t, sp[4]
-	std t, t, sp[5]
+        ldaw r10, sp[S_IN_DATA]
+	std r11, r11, r10[S_IN_DATA_DW_0]
+	std r11, r11, r10[S_IN_DATA_DW_1]
+	std r11, r11, r10[S_IN_DATA_DW_2]
+	std r11, r11, r10[S_IN_DATA_DW_3]
+	std r11, r11, r10[S_IN_DATA_DW_4]
+	std r11, r11, r10[S_IN_DATA_DW_5]
 
-	ldaw t, cp[g_first_stage_fir_0]
-	mov fir0, t
-	ldaw t, cp[g_first_stage_fir_1]
-	mov fir1, t
-	ldaw t, cp[g_first_stage_fir_2]
-	mov fir2, t
+	ldaw r11, cp[g_first_stage_fir_0]
+        mov r5, r11
+	ldaw r11, cp[g_first_stage_fir_1]
+        mov r6, r11
+	ldaw r11, cp[g_first_stage_fir_2]
+        mov r7, r11
 
-	ldaw p, sp[0]
+#ifdef PRINT_BUFFER
+        ldc r3, 0
+	ldaw r10, sp[S_CONTROL_VARIABLES]
+        stw r3, r10[S_BUFFER_INDEX];
+        stw r3, r10[S_COUNTER_1];
+        stw r3, r10[S_COUNTER_2];
+        stw r3, r10[S_SINE_INDEX];
 
-	ldc c,  MIC_ARRAY_CH0
-	bt c_two, pdm_rx_8ch_loop
+	ldaw r11, sp[S_BUFFER]
+	ldc r4, S_BUFFER_SIZE
+zero_buffer:
+        sub r4, r4, 1
+        stw r3, r11[r4]
+        bt r4, zero_buffer
+#endif
 
-	ldc c,  MIC_ARRAY_CH0
+	ldaw r10, sp[S_IN_DATA]
+
+	ldc r9, MIC_ARRAY_CH0
+	bt r2, pdm_rx_8ch_loop
+
+	ldc r9, MIC_ARRAY_CH0
+
 	.align 8
 pdm_rx_4ch_loop:
 
-	ldw a, sp[15]
-	in b, res[a]
-	in a, res[a]
-	unzip a, b, 2
-	unzip a, b, 1
-	unzip a, b, 0
-	std a, b, p[0]
+	ldaw r11, sp[S_CONTROL_VARIABLES]
+	ldw r3, r11[S_IN_PORT]
+	in r4, res[r3]
+	in r3, res[r3]
+	unzip r3, r4, 2
+	unzip r3, r4, 1
+	unzip r3, r4, 0
+	std r3, r4, r10[0]
 
 	FIR();
-	OUTPUT( MIC_ARRAY_CH1, c_one)	//output c_one
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH1}
 	FIR();
-	OUTPUT( MIC_ARRAY_CH2, c_one)	//output c_one
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH2}
 	FIR();
-	{mov temp_one, a; ldc c, MIC_ARRAY_CH3}
+	{mov r0, r3; ldc r9, MIC_ARRAY_CH3}
 	FIR();
-	{out res[c_one], temp_one}
-	OUTPUT( MIC_ARRAY_CH0, c_one)	//output unused0 then this to c_one
+	{out res[r1], r0}
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH0}
 
-	ldd a, b, p[4]
-	std a, b, p[5]
+	ldd r3, r4, r10[4]
+	std r3, r4, r10[5]
 
-	ldd a, b, p[3]
-	std a, b, p[4]
+	ldd r3, r4, r10[3]
+	std r3, r4, r10[4]
 
-	ldd a, b, p[2]
-	{bitrev a, a; bitrev b, b}
-	{byterev a, a; byterev b, b}
-	std a, b, p[3]
+	ldd r3, r4, r10[2]
+	{bitrev r3, r3; bitrev r4, r4}
+	{byterev r3, r3; byterev r4, r4}
+	std r3, r4, r10[3]
 
-	ldd a, b, p[1]
-	std a, b, p[2]
+	ldd r3, r4, r10[1]
+	std r3, r4, r10[2]
 
-	ldd a, b, p[0]
-	std a, b, p[1]
+	ldd r3, r4, r10[0]
+	std r3, r4, r10[1]
 	bl pdm_rx_4ch_loop
 //2604ns per loop
 	.align 8
 pdm_rx_8ch_loop:
 //about 6 inst spare without optimisation
 
-	ldw a, sp[15]
-	in b, res[a]
-	in a, res[a]
-	unzip a, b, 2
-	unzip a, b, 1
-	unzip a, b, 0
-	std a, b, p[0]
+	ldaw r11, sp[S_CONTROL_VARIABLES]
+	ldw r3, r11[S_IN_PORT]
+	in r4, res[r3]
+	in r3, res[r3]
+	unzip r3, r4, 2
+	unzip r3, r4, 1
+	unzip r3, r4, 0
+	std r3, r4, r10[0]
 
 	FIR();
-	OUTPUT( MIC_ARRAY_CH4, c_one)	//output c_one
-	FIR();
-	OUTPUT( MIC_ARRAY_CH1, c_two)	//output c_two
-	FIR();
-	OUTPUT( MIC_ARRAY_CH5, c_one)	//output c_one
-	FIR();
-	OUTPUT( MIC_ARRAY_CH2, c_two)	//output c_two
-	FIR();
-	{mov temp_one, a; ldc c,  MIC_ARRAY_CH6}
-	FIR();
-	{mov temp_two, a; ldc c,  MIC_ARRAY_CH3}
-	FIR();
-	{mov temp_three, a; ldc c,  MIC_ARRAY_CH7}
-	FIR();
-	{out res[c_one], temp_one}
-	{out res[c_two], temp_two}
-	{out res[c_one], temp_three}
-	OUTPUT( MIC_ARRAY_CH0, c_two)
 
-	ldd a, b, p[4]
-	std a, b, p[5]
+#ifdef OUTPUT_SINE_WAVE
+        INCREMENT_COUNTER(S_SINE_INDEX, S_SINE_INDEX_MASK)
+	ldaw r11, cp[g_sine_wave3]
+        ldw r3, r11[r4]
+#endif
 
-	ldd a, b, p[3]
-	std a, b, p[4]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH4}
+	FIR();
+	{out res[r2], r3; ldc r9, MIC_ARRAY_CH1}
+	FIR();
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH5}
 
-	ldd a, b, p[2]
-	{bitrev a, a; bitrev b, b}
-	{byterev a, a; byterev b, b}
-	std a, b, p[3]
 
-	ldd a, b, p[1]
-	std a, b, p[2]
+#ifdef PRINT_BUFFER
+        //
+        // Update S_COUNTER_1
+        //
+        INCREMENT_COUNTER(S_COUNTER_1, S_COUNTER_MASK_1)
+        bt r4, print_buffer_end
+        //
+        // Update S_BUFFER_INDEX and store data point
+        //
+        INCREMENT_COUNTER(S_BUFFER_INDEX, S_BUFFER_MASK)
+        ldaw r11, sp[S_BUFFER]
+        stw r3, r11[r4]
+        bt r4, print_buffer_end
+        //
+        // Update S_COUNTER_2
+        //
+        INCREMENT_COUNTER(S_COUNTER_2, S_COUNTER_MASK_2)
+        bt r4, print_buffer_end
+        //
+        // Print output buffer - save registers
+        //
+	ldaw r9, sp[S_CONTROL_VARIABLES]
+        stw r0, r9[S_R0]
+        stw r1, r9[S_R1]
+        stw r2, r9[S_R2]
+        stw r3, r9[S_R3]
+        //
+        // Get data values
+        //
+        ldc r9, 0
+printf_loop:
+        ldaw r11, sp[S_BUFFER]
+        ldw r1, r11[r9]
+        //
+        // Print data in r1
+        //
+        ldaw r11, cp[str1]
+        mov r0, r11
+        bl printf
+        add r9, r9, 1
+        ldc r4, S_BUFFER_SIZE
+        eq r11, r9, r4
+        bf r11, printf_loop
+        //
+        // Print trailer
+        //
+        ldaw r11, cp[str2]
+        mov r0, r11
+        bl printf
+        //
+        // Restore registers
+        //
+	ldaw r9, sp[S_CONTROL_VARIABLES]
+        ldw r3, r9[S_R3]
+        ldw r2, r9[S_R2]
+        ldw r1, r9[S_R1]
+        ldw r0, r9[S_R0]
 
-	ldd a, b, p[0]
-	std a, b, p[1]
+print_buffer_end:
+	ldc r9, MIC_ARRAY_CH5
+#endif
+
+	FIR();
+
+	{out res[r2], r3; ldc r9, MIC_ARRAY_CH2}
+	FIR();
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH6}
+	FIR();
+	{out res[r2], r3; ldc r9, MIC_ARRAY_CH3}
+	FIR();
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH7}
+        FIR();
+	{out res[r2], r3; ldc r9, MIC_ARRAY_CH0}
+
+	ldd r3, r4, r10[4]
+	std r3, r4, r10[5]
+
+	ldd r3, r4, r10[3]
+	std r3, r4, r10[4]
+
+	ldd r3, r4, r10[2]
+	{bitrev r3, r3; bitrev r4, r4}
+	{byterev r3, r3; byterev r4, r4}
+	std r3, r4, r10[3]
+
+	ldd r3, r4, r10[1]
+	std r3, r4, r10[2]
+
+	ldd r3, r4, r10[0]
+	std r3, r4, r10[1]
 	bl pdm_rx_8ch_loop
 
 .pdm_rx_asm_tmp:
@@ -313,4 +442,3 @@ pdm_rx_8ch_loop:
 
 
 .Lentries_end1:
-
