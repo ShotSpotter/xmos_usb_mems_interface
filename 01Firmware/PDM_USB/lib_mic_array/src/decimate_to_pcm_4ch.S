@@ -8,17 +8,14 @@
     #error MIC_ARRAY_MAX_FRAME_SIZE_LOG2 is not defined in mic_array_conf.h
 #endif
 
-#define SECOND_STAGE_COEF_COUNT         16
-#define SECOND_STAGE_DOUBLE_TAP_COUNT   (SECOND_STAGE_COEF_COUNT / 2)
-#define SECOND_STAGE_BUFFER_ENTRIES     64
-#define SECOND_STAGE_BUFFER_SIZE        (SECOND_STAGE_BUFFER_ENTRIES * 2)
-
-//
-// Debug prints
-//
 //#define DEBUG_PRINT_1
 //#define DEBUG_PRINT_2
 //#define DEBUG_PRINT_3
+
+#define SECOND_STAGE_COEF_COUNT         32
+#define SECOND_STAGE_DOUBLE_TAP_COUNT   (SECOND_STAGE_COEF_COUNT / 2)
+#define SECOND_STAGE_BUFFER_ENTRIES     64
+#define SECOND_STAGE_BUFFER_SIZE        (SECOND_STAGE_BUFFER_ENTRIES * 2)
 
 //
 // Stack layout
@@ -81,19 +78,14 @@
 // Frame - used to transfer output to calling process
 //
 #define S_FRAME_OFFSET                  (S_OUTPUT_STORAGE + S_OUTPUT_STORAGE_SIZE)
-#define S_D_FRAME_POINTER_AND_INDEX_0   3
-#define S_D_FRAME_POINTER_AND_INDEX_1   4
-#define S_D_FRAME_NO_OVERLAPPING        1
-#define S_D_METADATA_POINTERS           2
 #define S_FRAME_SIZE_LOG2               1    //this is the current frame size log2
 #define S_FRAME_NUMBER                  2    //should this be presistant between configs?
 #define S_OVERLAPPING_FRAMES            3    //0 for on overlap, 1 for overlapping
 #define S_METADATA_POINTER_0            4
 #define S_METADATA_POINTER_1            5
+#define S_D_FRAME_POINTER_AND_INDEX_0   3
 #define S_FRAME_POINTER_0               6    //pointer to the current frame
 #define S_FRAME_0_INDEX                 7    //index to write to the current frame
-#define S_FRAME_POINTER_1               8    //pointer to the next frame
-#define S_FRAME_1_INDEX                 9    //index to write to the next frame
 #define FRAME_STACK_SIZE                12
 
 #define S_CONTROL_VARIABLES 		(S_FRAME_OFFSET + FRAME_STACK_SIZE)
@@ -183,7 +175,7 @@ get_input_fir1_output_fir2:
     .cc_bottom get_input_fir1_output_fir2.function
     .cfi_endproc
 
-#define SAVE_SAMPLES_NORMAL(POINTER, N)\
+#define SAVE_SAMPLES_NORMAL(POINTER)\
     {ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
     {add r7, r6, r5; ldw r8, r11[POINTER]};\
     {add r5, r5, r5};\
@@ -293,42 +285,15 @@ init_frame_index:
     ldc r1, 0
     stw r1, r11[S_FRAME_0_INDEX]
 
-    ldw r1, r11[S_FRAME_SIZE_LOG2]
-    {sub r1, r1, 1; ldc r5, 1}
-    shl r1, r5, r1
-    stw r1, r11[S_FRAME_1_INDEX]
-
 get_frame_pointer:
     ldw r2, r10[S_C_OUTPUT]
-rx_buffer_count:
     in r5, res[r2]
     sub r5, r5, 1
-    bt r5, overlapping
 
-non_overlapping:
     {in r1, res[r2];stw r5, r11[S_OVERLAPPING_FRAMES]}
     {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
 
-saving_non_overlapping_metadata_pointer:
     {stw r1, r11[S_METADATA_POINTER_0];ldc r2, 0 }
-    std r2, r2, r1[0]    //init the sig bits
-    std r2, r2, r1[1]    //init the sig bits
-    bu setup_phase_counters
-
-overlapping:
-    {in r1, res[r2];}
-    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_1]}
-
-saving_overlapping_metadata_pointer_1:
-    {stw r1, r11[S_METADATA_POINTER_0]; ldc r3, 0}
-    std r3, r3, r1[0]    //init the sig bits
-    std r3, r3, r1[1]    //init the sig bits
-
-    {in r1, res[r2];stw r5, r11[S_OVERLAPPING_FRAMES]}
-    {in r1, res[r2];stw r1, r11[S_FRAME_POINTER_0]}
-
-saving_overlapping_metadata_pointer_0:
-    {stw r1, r11[S_METADATA_POINTER_1];ldc r2, 0 }
     std r2, r2, r1[0]    //init the sig bits
     std r2, r2, r1[1]    //init the sig bits
 
@@ -376,19 +341,20 @@ updated_buffer_index:
     ldc r7, S_CONTROL_VARIABLES
     ldaw r7, r10[r7]
     bl get_input_fir1_output_fir2               // Call input function
-#ifdef DEBUG_PRINT_1
     //
     // Print data value -- debug -- data looks good here
     //
+#ifdef DEBUG_PRINT_1
+    bu dont_print_buffer
     ldc r7, S_CONTROL_VARIABLES
     ldaw r7, r10[r7]
     ldw r1, r7[S_4CHAN_INDEX]
-    bt r1, dont_print_buffer1
+    bt r1, dont_print_buffer
     ldw r0, r7[S_DATA_VALUE]
     ldc r11, S_BUFFER
     ldaw r11, r10[r11]
     bl print_data_buffer
-dont_print_buffer1:
+dont_print_buffer:
 #endif
     //
     // After every 4 iterations call post_process and divide_by_four
@@ -423,6 +389,7 @@ dont_print_buffer1:
     bl print_data_buffer
 dont_print_buffer2:
 #endif
+    //
     bu after_post_process
     //
     // Output results
@@ -458,14 +425,32 @@ post_process:
     .cfi_startproc
     .issue_mode dual
 
+/*
+    //increment SECOND_STAGE_PHASE mod SECOND_STAGE_PHASE_COUNT
+    ldc r11, S_SECOND_STAGE
+    ldaw r11, r10[r11]
+    ldw r5, r11[S_SECOND_STAGE_PHASE];
+    {add r9, r5, 1; ldw r8, r11[S_SECOND_STAGE_PHASE_COUNT]}
+    {stw r9, r11[S_SECOND_STAGE_PHASE];eq r8, r8, r9}
+
+    bt r8, output_phase        //do this on phase S_SECOND_STAGE_PHASE_COUNT-1 (last phase)
+    bu do_the_rest
+
+output_phase:
+    ldc r5, 0
+    ldc r11, S_SECOND_STAGE
+    ldaw r11, r10[r11]
+    stw r5, r11[S_SECOND_STAGE_PHASE]
+*/
+
 #define EXCHANGE_BUFFERS 0
 #define CONFIGURE_DECIMATOR 1
 
 #ifdef DEBUG_PRINT_3
-    ldc r11, S_OUTPUT_STORAGE;
-    ldaw r11, r10[r11];
+    ldc r11, S_OUTPUT_STORAGE
+    ldaw r11, r10[r11]
     //
-    ldw r0, r11[S_D_OUTPUT_STORAGE_0];
+    ldw r0, r11[S_D_OUTPUT_STORAGE_0]
     //
     // Print data value -- debug
     //
@@ -480,6 +465,9 @@ post_process:
 dont_print_buffer3:
 #endif
 
+    //
+    // S_FRAME_0_INDEX
+    //
     ldc r11, S_OUTPUT_STORAGE;
     ldaw r11, r10[r11];
     //
@@ -487,39 +475,42 @@ dont_print_buffer3:
     ldw r1, r11[S_D_OUTPUT_STORAGE_1];
     ldw r2, r11[S_D_OUTPUT_STORAGE_2];
     ldw r3, r11[S_D_OUTPUT_STORAGE_3];
-
+    //
+    // Save samples
+    //
     ldc r11, S_FRAME_OFFSET
     ldaw r11, r10[r11]
     ldw r6, r11[S_FRAME_0_INDEX]
-    SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_0, 0);
+    SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_0);
 
     ldw r5, r11[S_FRAME_0_INDEX]
     add r5, r5, 1
     stw r5, r11[S_FRAME_0_INDEX]
 
     ldw r6, r11[S_FRAME_SIZE_LOG2]
-    {shr r5, r5, r6; ldc r6, 0}
-    bf r5, do_the_rest;
+    shr r5, r5, r6
+    bf r5, do_the_rest
 
-reset_the_frame_index:
     ldc r11, S_FRAME_OFFSET
     ldaw r11, r10[r11]
+    ldc r6, 0
     stw r6, r11[S_FRAME_0_INDEX]
 
 write_the_current_frames_metadata:
+    ldc r11, S_FRAME_OFFSET
+    ldaw r11, r10[r11]
     ldw r5, r11[S_METADATA_POINTER_0]
     ldw r3, r11[S_FRAME_NUMBER]
-    {stw r3, r5[4]; add r3, r3, 1}    //if metadata layout changes then this needs to change too
-    stw r3, r11[S_FRAME_NUMBER]      //and save the new frame number back
+    {stw r3, r5[4]; add r3, r3, 1}   	//if metadata layout changes then this needs to change too
+    stw r3, r11[S_FRAME_NUMBER]      	//and save the new frame number back
 
 exchange_buffers:
     ldw r6, r10[S_C_OUTPUT]
-    outct res[r6], 8 //WARNING: do not change this
+    outct res[r6], 8 
     inct r3, res[r6]
-
     eq r5, r3, EXCHANGE_BUFFERS        //if the incomming token is EXCHANGE_BUFFERS then do that
     bt r5, do_the_exchange
-    bu after_post_process
+    bu do_the_rest
 
 do_the_exchange:
     {in r3, res[r6]; ldc r0, 0}
@@ -617,10 +608,53 @@ printf_loop:
     ldw r2, r7[S_R2]
     ldw r1, r7[S_R1]
     ldw r0, r7[S_R0]
-print_buffer_end:
     set sp, r10
+print_buffer_end:
     retsp 0
     .cc_bottom print_data_buffer.function
+    .cfi_endproc
+
+    .globl    print_value
+    .align    8
+    .type     print_value,@function
+    .cc_top   print_value.function
+
+    //
+    // r0 - data point
+    // r10 - stack pointer
+    //
+print_value:
+    .cfi_startproc
+    //
+    ldc r7, S_CONTROL_VARIABLES
+    ldaw r7, r10[r7]
+    stw r0, r7[S_R0]
+    stw r1, r7[S_R1]
+    stw r2, r7[S_R2]
+    stw r3, r7[S_R3]
+    stw r4, r7[S_R4]
+    stw r5, r7[S_R5]
+    stw r6, r7[S_R6]
+    mov r5, r11
+    //
+    mov r1, r0
+    ldaw r11, cp[str3]
+    mov r0, r11
+    bl printf
+    //
+    // Restore registers
+    //
+    mov r11, r5
+    ldw r6, r7[S_R6]
+    ldw r5, r7[S_R5]
+    ldw r4, r7[S_R4]
+    ldw r3, r7[S_R3]
+    ldw r2, r7[S_R2]
+    ldw r1, r7[S_R1]
+    ldw r0, r7[S_R0]
+    set sp, r10
+    retsp 0
+    .cc_bottom print_value.function
     .cfi_endproc
 
     .globl    divide_by_four
@@ -633,6 +667,9 @@ divide_by_four:
 
     dualentsp 1
 
+    //
+    // Pointer to second stage fir filter coefficients
+    //
 #if SECOND_STAGE_COEF_COUNT == 16
     ldaw r11, cp[g_second_stage_fir16]
 #elif SECOND_STAGE_COEF_COUNT == 32

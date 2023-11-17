@@ -144,10 +144,10 @@ pdm_rx_asm_debug:
 	.globl	pdm_rx_asm
 	.align	4
 	.type	pdm_rx_asm,@function
-pdm_rx_asm://(
-        //in buffered port:32 p_pdm_mics,
-        //streaming chanend c,
-        //streaming chanend ?d,
+pdm_rx_asm:
+        //r0 - in buffered port:32 p_pdm_mics,
+        //r1 - streaming chanend c,
+        //r2 - streaming chanend ?d,
 
 	.issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
