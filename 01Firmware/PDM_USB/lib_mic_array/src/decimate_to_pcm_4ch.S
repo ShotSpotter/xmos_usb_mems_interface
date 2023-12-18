@@ -8,9 +8,9 @@
     #error MIC_ARRAY_MAX_FRAME_SIZE_LOG2 is not defined in mic_array_conf.h
 #endif
 
-#define SECOND_STAGE_COEF_COUNT         16
+#define SECOND_STAGE_COEF_COUNT         32
 #define SECOND_STAGE_BUFFER_SIZE        (SECOND_STAGE_COEF_COUNT * 2)
-#define SECOND_STAGE_HALF_FILTER_OFFSET (SECOND_STAGE_COEF_COUNT * 2)
+#define SECOND_STAGE_HALF_FILTER_OFFSET (SECOND_STAGE_COEF_COUNT * 4)
 
 //
 // Stack layout
@@ -31,19 +31,16 @@
 #define S_UNUSED                        0
 #define S_C_INPUT                       1
 #define S_C_OUTPUT                      2
-#define S_CHAN_COUNT                    3
 
 #define S_FAR_END_CHANNEL_0             10
 #define S_FAR_END_CHANNEL_1             11
-#define S_FAR_END_CHANNEL_2             12
-#define S_FAR_END_CHANNEL_3             13
 #define S_STORAGE_SIZE                  16
 
 //
 // S_SECOND_STAGE_DATA - Contains history of received from first fir filter so that second stage filter can be calculated
 //
 #define S_SECOND_STAGE_DATA             (S_STORAGE + S_STORAGE_SIZE)
-#define S_SECOND_STAGE_DATA_SIZE        (SECOND_STAGE_COEF_COUNT * 2 * 4)        //16 words by 2 blocks by 4 channels
+#define S_SECOND_STAGE_DATA_SIZE        (SECOND_STAGE_COEF_COUNT * 2 * 2)        // word count 16 poles * 2 blocks * 2 channels
 
 //
 // S_SECOND_STAGE - Control variables for second stage fir filter
@@ -64,8 +61,6 @@
 //
 #define S_D_OUTPUT_STORAGE_0            0
 #define S_D_OUTPUT_STORAGE_1            1
-#define S_D_OUTPUT_STORAGE_2            2
-#define S_D_OUTPUT_STORAGE_3            3
 #define S_OUTPUT_STORAGE_SIZE           4
 
 //
@@ -89,45 +84,28 @@
 
 #define STACKWORDS                      (S_FRAME_OFFSET + FRAME_STACK_SIZE)
 
-#define INPUT_TO_OFFSET_12_15(OFFSET)\
-    ldw r1, sp[S_C_INPUT];\
-    in r0, res[r1];\
-    {stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + OFFSET]; in r0, res[r1]};\
-    {stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + OFFSET]; in r0, res[r1]};\
-    stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + OFFSET];\
-    in r0, res[r1];\
-    {stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + OFFSET]}
-
 //This inputs from the channel to the pdm interface and saves it twice in the
-//second stage FIR at offset OFFSET and OFFSET + 16
+//second stage FIR at offset OFFSET and OFFSET + SECOND_STAGE_COEF_COUNT
 #define INPUT_TO_OFFSET(OFFSET)\
     ldw r1, sp[S_C_INPUT];\
     in r0, res[r1];\
     {stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
     {stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]; in r0, res[r1]};\
     {stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
-    {stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]; in r0, res[r1]};\
-    {stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
-    {stw r0, dp[2*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]};\
-    in r0, res[r1];\
-    {stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
-    {stw r0, dp[3*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]}
+    {stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]};
 
-#define SAVE_SAMPLES_NORMAL(POINTER, N)\
+#define SAVE_SAMPLES_NORMAL(POINTER)\
     {ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
     {add r7, r6, r5; ldw r8, r4[POINTER]};\
     {add r5, r5, r5};\
     stw r1, r8[r7];\
-    stw r0, r8[r6];\
-    {add r7, r7, r5; add r6, r6, r5};\
-    stw r3, r8[r7];\
-    stw r2, r8[r6]
+    stw r0, r8[r6];
 
-    .globl    mic_array_decimate_to_pcm_4ch
+    .globl    mic_array_decimate_to_pcm_2ch
     .align    8
-    .type    mic_array_decimate_to_pcm_4ch,@function
-    .cc_top mic_array_decimate_to_pcm_4ch.function
-mic_array_decimate_to_pcm_4ch:
+    .type    mic_array_decimate_to_pcm_2ch,@function
+    .cc_top mic_array_decimate_to_pcm_2ch.function
+mic_array_decimate_to_pcm_2ch:
     .cfi_startproc
     .issue_mode dual
 
@@ -141,8 +119,6 @@ mic_array_decimate_to_pcm_4ch:
 
     stw r2, sp[S_FAR_END_CHANNEL_0]
     stw r2, sp[S_FAR_END_CHANNEL_1]
-    stw r2, sp[S_FAR_END_CHANNEL_2]
-    stw r2, sp[S_FAR_END_CHANNEL_3]
 
 internal_channel_setup_complete:
     //Set the dp to point to the data area for the second stage FIR
@@ -153,35 +129,30 @@ internal_channel_setup_complete:
 
 configure:
     DUALENTSP_lu6 0
-
     //
     // Zero second stage data
     //
     ldaw r0, sp[S_SECOND_STAGE_DATA]
     ldc r1, S_SECOND_STAGE_DATA_SIZE
     bl zero_data_structure
-
     //
     // Zero second stage
     //
     ldaw r0, sp[S_SECOND_STAGE]
     ldc r1, S_SECOND_STAGE_DATA
     bl zero_data_structure
-
     //
     // Zero output storage
     //
     ldaw r0, sp[S_OUTPUT_STORAGE]
     ldc r1, S_OUTPUT_STORAGE_SIZE
     bl zero_data_structure
-
     //
     // Set configuration values
     //
     ldc r3, 0
     ldaw r4, sp[S_FRAME_OFFSET]
     stw r3, r4[S_FRAME_NUMBER]      //and save the new frame number back
-
     //
     // Get configuration information
     //
@@ -196,9 +167,6 @@ configure:
     ldw r11, r3[4]             // decimation factor
     ldaw r10, sp[S_SECOND_STAGE]
     stw r11, r10[S_SECOND_STAGE_PHASE_COUNT]
-
-    ldw r11, r2[6];            //channel count
-    stw r11, sp[S_CHAN_COUNT]
 
 init_frame_index:
     ldaw r11, sp[S_FRAME_OFFSET]
@@ -255,72 +223,84 @@ confirm_init_complete:
     outct res[r4], 8 //WARNING: do not change this
 
 input_0_0:
-    INPUT_TO_OFFSET_12_15(15)
-
-    INPUT_TO_OFFSET_12_15(14)
-
-    INPUT_TO_OFFSET_12_15(13)
+    INPUT_TO_OFFSET(31)
+    INPUT_TO_OFFSET(30)
+    INPUT_TO_OFFSET(29)
     bl post_process
+    INPUT_TO_OFFSET(28)
+    ldaw r7, dp[28]
+    bl divide_by_four
 
-    INPUT_TO_OFFSET_12_15(12)
+    INPUT_TO_OFFSET(27)
+    INPUT_TO_OFFSET(26)
+    INPUT_TO_OFFSET(25)
+    bl post_process
+    INPUT_TO_OFFSET(24)
+    ldaw r7, dp[24]
+    bl divide_by_four
+
+    INPUT_TO_OFFSET(23)
+    INPUT_TO_OFFSET(22)
+    INPUT_TO_OFFSET(21)
+    bl post_process
+    INPUT_TO_OFFSET(20)
+    ldaw r7, dp[20]
+    bl divide_by_four
+
+    INPUT_TO_OFFSET(19)
+    INPUT_TO_OFFSET(18)
+    INPUT_TO_OFFSET(17)
+    bl post_process
+    INPUT_TO_OFFSET(16)
+    ldaw r7, dp[16]
+    bl divide_by_four
+
+    INPUT_TO_OFFSET(15)
+    INPUT_TO_OFFSET(14)
+    INPUT_TO_OFFSET(13)
+    bl post_process
+    INPUT_TO_OFFSET(12)
     ldaw r7, dp[12]
     bl divide_by_four
 
     INPUT_TO_OFFSET(11)
-
     INPUT_TO_OFFSET(10)
-
     INPUT_TO_OFFSET(9)
     bl post_process
-
-input_7_0:
     INPUT_TO_OFFSET(8)
     ldaw r7, dp[8]
     bl divide_by_four
 
-input_0_1:
     INPUT_TO_OFFSET(7)
-
-input_1_1:
     INPUT_TO_OFFSET(6)
-
-input_2_1:
     INPUT_TO_OFFSET(5)
     bl post_process
-
-input_3_1:
     INPUT_TO_OFFSET(4)
     ldaw r7, dp[4]
     bl divide_by_four
 
-input_4_1:
     INPUT_TO_OFFSET(3)
-
-input_5_1:
     INPUT_TO_OFFSET(2)
-
-input_6_1:
     INPUT_TO_OFFSET(1)
     bl post_process
-
-input_7_1:
     INPUT_TO_OFFSET(0)
     ldaw r7, dp[0]
     bl divide_by_four
+
     bu input_0_0
 
-    .cc_bottom mic_array_decimate_to_pcm_4ch.function
-    .set    mic_array_decimate_to_pcm_4ch.nstackwords, STACKWORDS
-    .globl  mic_array_decimate_to_pcm_4ch.nstackwords
-    .set    mic_array_decimate_to_pcm_4ch.maxcores,1
-    .globl  mic_array_decimate_to_pcm_4ch.maxcores
-    .set    mic_array_decimate_to_pcm_4ch.maxtimers,0
-    .globl  mic_array_decimate_to_pcm_4ch.maxtimers
-    .set    mic_array_decimate_to_pcm_4ch.maxchanends,0
-    .globl  mic_array_decimate_to_pcm_4ch.maxchanends
+    .cc_bottom mic_array_decimate_to_pcm_2ch.function
+    .set    mic_array_decimate_to_pcm_2ch.nstackwords, STACKWORDS
+    .globl  mic_array_decimate_to_pcm_2ch.nstackwords
+    .set    mic_array_decimate_to_pcm_2ch.maxcores,1
+    .globl  mic_array_decimate_to_pcm_2ch.maxcores
+    .set    mic_array_decimate_to_pcm_2ch.maxtimers,0
+    .globl  mic_array_decimate_to_pcm_2ch.maxtimers
+    .set    mic_array_decimate_to_pcm_2ch.maxchanends,0
+    .globl  mic_array_decimate_to_pcm_2ch.maxchanends
 
-.Lmic_array_decimate_to_pcm_4ch_tmp:
-    .size    mic_array_decimate_to_pcm_4ch, .Lmic_array_decimate_to_pcm_4ch_tmp-mic_array_decimate_to_pcm_4ch
+.Lmic_array_decimate_to_pcm_2ch_tmp:
+    .size    mic_array_decimate_to_pcm_2ch, .Lmic_array_decimate_to_pcm_2ch_tmp-mic_array_decimate_to_pcm_2ch
     .cfi_endproc
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -351,12 +331,10 @@ output_phase:
     //
     ldw r0, r4[S_D_OUTPUT_STORAGE_0];
     ldw r1, r4[S_D_OUTPUT_STORAGE_1];
-    ldw r2, r4[S_D_OUTPUT_STORAGE_2];
-    ldw r3, r4[S_D_OUTPUT_STORAGE_3];
 
     ldaw r4, sp[S_FRAME_OFFSET]
     ldw r6, r4[S_FRAME_0_INDEX]
-    SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_0, 0);
+    SAVE_SAMPLES_NORMAL(S_FRAME_POINTER_0);
 
     ldw r5, r4[S_FRAME_0_INDEX]
     add r5, r5, 1
@@ -396,7 +374,7 @@ get_the_new_metadata_pointer:
     {in r3, res[r6]}
     {stw r3, r4[S_METADATA_POINTER_0]}
     std r0, r0, r3[0]    //set the frame sig bits to 0
-    std r0, r0, r3[1]      //set the frame sig bits to 0
+    std r0, r0, r3[1]    //set the frame sig bits to 0
 
     ldw r4, sp[S_C_OUTPUT]
     outct res[r4], 8 //WARNING: do not change this
@@ -439,7 +417,7 @@ divide_by_four:
     //
     // Pointer to second stage fir filter coefficients
     //
-    ldaw r11, cp[g_second_stage_fir16]
+    ldaw r11, cp[g_second_stage_fir32]
     //
     // Value to increment data pointer for next channel (bytes)
     //
@@ -449,7 +427,7 @@ divide_by_four:
     add r8, r7, r8
 
     // r11 = coefs, r7 = data, r6 = buffer length for each channel
-    bl mic_array_decimate_to_pcm_4ch_fir_impl
+    bl mic_array_decimate_to_pcm_2ch_fir_impl
     add r7, r7, r6
     add r8, r8, r6
     //
@@ -458,7 +436,7 @@ divide_by_four:
     stw r0, r10[S_D_OUTPUT_STORAGE_0]
     //
 
-    bl mic_array_decimate_to_pcm_4ch_fir_impl
+    bl mic_array_decimate_to_pcm_2ch_fir_impl
     add r7, r7, r6
     add r8, r8, r6
     //
@@ -466,25 +444,6 @@ divide_by_four:
     //
     stw r0, r10[S_D_OUTPUT_STORAGE_1]
     //
-
-    bl mic_array_decimate_to_pcm_4ch_fir_impl
-    add r7, r7, r6
-    add r8, r8, r6
-    //
-    // Store channel 2 output
-    //
-    stw r0, r10[S_D_OUTPUT_STORAGE_2]
-    //
-
-    bl mic_array_decimate_to_pcm_4ch_fir_impl
-    add r7, r7, r6
-    add r8, r8, r6
-    //
-    // Store channel 3 output
-    //
-    stw r0, r10[S_D_OUTPUT_STORAGE_3]
-    //
-
     retsp 1
     .cc_bottom divide_by_four.function
     .set    divide_by_four.nstackwords, 1
@@ -526,42 +485,44 @@ zero_loop:
 
 #define FIR_POINT(FILTER_INDEX, DATA_INDEX_1, DATA_INDEX_2) \
     ldd r3, r2, r11[FILTER_INDEX]; \
-    ldw r4, r7[DATA_INDEX_1]; \
-    ldw r5, r7[DATA_INDEX_1 + 1]; \
+    ldd r5, r4, r7[DATA_INDEX_1]; \
     maccs r0, r1, r4, r2; \
     maccs r0, r1, r5, r3; \
-    ldw r4, r8[DATA_INDEX_2]; \
-    ldw r5, r8[DATA_INDEX_2 + 1]; \
+    ldd r5, r4, r8[DATA_INDEX_2]; \
     maccs r0, r1, r4, r3; \
     maccs r0, r1, r5, r2;
 
 
-.globl    mic_array_decimate_to_pcm_4ch_fir_impl
+.globl    mic_array_decimate_to_pcm_2ch_fir_impl
 .align    8
-.type    mic_array_decimate_to_pcm_4ch_fir_impl,@function
-.cc_top mic_array_decimate_to_pcm_4ch_fir_impl.function
-mic_array_decimate_to_pcm_4ch_fir_impl:
+.type    mic_array_decimate_to_pcm_2ch_fir_impl,@function
+.cc_top mic_array_decimate_to_pcm_2ch_fir_impl.function
+mic_array_decimate_to_pcm_2ch_fir_impl:
     .cfi_startproc
     .issue_mode dual
 
     //r0, r1, r2, r3, r4, r5, r6 = 31, r7, r10, r11,
     {ldc r0, 0; ldc r1, 0} //Initialise the accumulators
 
-    FIR_POINT(0, 0, 6)
-    FIR_POINT(1, 2, 4)
-    FIR_POINT(2, 4, 2)
-    FIR_POINT(3, 6, 0)
+    FIR_POINT(0, 0, 7)
+    FIR_POINT(1, 1, 6)
+    FIR_POINT(2, 2, 5)
+    FIR_POINT(3, 3, 4)
+    FIR_POINT(4, 4, 3)
+    FIR_POINT(5, 5, 2)
+    FIR_POINT(6, 6, 1)
+    FIR_POINT(7, 7, 0)
 
     retsp 0
-    .cc_bottom mic_array_decimate_to_pcm_4ch_fir_impl.function
-    .set    mic_array_decimate_to_pcm_4ch_fir_impl.nstackwords, 0
-    .globl    mic_array_decimate_to_pcm_4ch_fir_impl.nstackwords
-    .set    mic_array_decimate_to_pcm_4ch_fir_impl.maxcores,1
-    .globl    mic_array_decimate_to_pcm_4ch_fir_impl.maxcores
-    .set    mic_array_decimate_to_pcm_4ch_fir_impl.maxtimers,0
-    .globl    mic_array_decimate_to_pcm_4ch_fir_impl.maxtimers
-    .set    mic_array_decimate_to_pcm_4ch_fir_impl.maxchanends,0
-    .globl    mic_array_decimate_to_pcm_4ch_fir_impl.maxchanends
-.Lmic_array_decimate_to_pcm_4ch_fir_impl_tmp:
-    .size    mic_array_decimate_to_pcm_4ch_fir_impl, .Lmic_array_decimate_to_pcm_4ch_fir_impl_tmp-mic_array_decimate_to_pcm_4ch_fir_impl
+    .cc_bottom mic_array_decimate_to_pcm_2ch_fir_impl.function
+    .set    mic_array_decimate_to_pcm_2ch_fir_impl.nstackwords, 0
+    .globl    mic_array_decimate_to_pcm_2ch_fir_impl.nstackwords
+    .set    mic_array_decimate_to_pcm_2ch_fir_impl.maxcores,1
+    .globl    mic_array_decimate_to_pcm_2ch_fir_impl.maxcores
+    .set    mic_array_decimate_to_pcm_2ch_fir_impl.maxtimers,0
+    .globl    mic_array_decimate_to_pcm_2ch_fir_impl.maxtimers
+    .set    mic_array_decimate_to_pcm_2ch_fir_impl.maxchanends,0
+    .globl    mic_array_decimate_to_pcm_2ch_fir_impl.maxchanends
+.Lmic_array_decimate_to_pcm_2ch_fir_impl_tmp:
+    .size    mic_array_decimate_to_pcm_2ch_fir_impl, .Lmic_array_decimate_to_pcm_2ch_fir_impl_tmp-mic_array_decimate_to_pcm_2ch_fir_impl
     .cfi_endproc

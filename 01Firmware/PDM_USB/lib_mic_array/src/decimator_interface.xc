@@ -2,6 +2,7 @@
 #include "mic_array.h"
 #include <xs1.h>
 #include <string.h>
+#include <stdio.h>
 
 #define XASSERT_UNIT DEBUG_MIC_ARRAY
 
@@ -9,14 +10,11 @@
 #include "xassert.h"
 #endif
 
-void mic_array_init_far_end_channels(mic_array_internal_audio_channels ch[4],
-        streaming chanend ?a, streaming chanend ?b,
-        streaming chanend ?c, streaming chanend ?d) {
+void mic_array_init_far_end_channels(mic_array_internal_audio_channels ch[2],
+        streaming chanend ?a, streaming chanend ?b) {
     unsafe {
         ch[0] = isnull(a) ? 0 : (unsigned)a;
         ch[1] = isnull(b) ? 0 : (unsigned)b;
-        ch[2] = isnull(c) ? 0 : (unsigned)c;
-        ch[3] = isnull(d) ? 0 : (unsigned)d;
     }
 }
 
@@ -55,16 +53,14 @@ void mic_array_init_time_domain_frame(
 
    memset(audio, 0, sizeof(mic_array_frame_time_domain)*frames);
 
+   printf("decimator_count: %d, frames: %d\n", decimator_count, frames);
+
    for(unsigned i=0;i<decimator_count;i++)
         c_from_decimator[i] <: frames;
    for(unsigned f=0;f<frames;f++){
         unsafe {
             for(unsigned i=0;i<decimator_count;i++){
-#if MIC_ARRAY_WORD_LENGTH_SHORT
-                c_from_decimator[i] <: (int16_t * unsafe)(audio[f].data[i*4]);
-#else
-               c_from_decimator[i] <: (int32_t * unsafe)(audio[f].data[i*4]);
-#endif
+               c_from_decimator[i] <: (int32_t * unsafe)(audio[f].data[i * 2]);
             }
             for(unsigned i=0;i<decimator_count;i++)
                c_from_decimator[i] <: (mic_array_metadata_t * unsafe)&audio[f].metadata[i];
@@ -107,11 +103,7 @@ mic_array_frame_time_domain * alias mic_array_get_next_time_domain_frame(
 
     unsafe {
          for(unsigned i=0;i<decimator_count;i++){
-#if MIC_ARRAY_WORD_LENGTH_SHORT
-            c_from_decimator[i] <: (int16_t * unsafe)(audio[buffer].data[i*4]);
-#else
-            c_from_decimator[i] <: (int32_t * unsafe)(audio[buffer].data[i*4]);
-#endif
+            c_from_decimator[i] <: (int32_t * unsafe)(audio[buffer].data[i * 2]);
          }
          for(unsigned i=0;i<decimator_count;i++)
             c_from_decimator[i] <: (mic_array_metadata_t * unsafe)&audio[buffer].metadata[i];
@@ -169,7 +161,7 @@ void mic_array_init_frequency_domain_frame(streaming chanend c_from_decimator[],
      for(unsigned f=0;f<frames;f++){
          unsafe {
              for(unsigned i=0;i<decimator_count;i++)
-                c_from_decimator[i] <: (mic_array_complex_t * unsafe)(f_fft_preprocessed[f].data[i*2]);
+                c_from_decimator[i] <: (mic_array_complex_t * unsafe)(f_fft_preprocessed[f].data[i]);
              for(unsigned i=0;i<decimator_count;i++)
                 c_from_decimator[i] <: (mic_array_metadata_t * unsafe)&f_fft_preprocessed[f].metadata[i];
          }
@@ -195,7 +187,7 @@ mic_array_frame_fft_preprocessed * alias mic_array_get_next_frequency_domain_fra
          soutct(c_from_decimator[i], EXCHANGE_BUFFERS);
      unsafe {
          for(unsigned i=0;i<decimator_count;i++)
-            c_from_decimator[i] <: (mic_array_complex_t * unsafe)(f_fft_preprocessed[buffer].data[i*2]);
+            c_from_decimator[i] <: (mic_array_complex_t * unsafe)(f_fft_preprocessed[buffer].data[i]);
          for(unsigned i=0;i<decimator_count;i++)
             c_from_decimator[i] <: (mic_array_metadata_t * unsafe)&f_fft_preprocessed[buffer].metadata[i];
      }

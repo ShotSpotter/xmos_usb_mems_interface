@@ -61,6 +61,10 @@
 #define S_CONTROL_VARIABLES 		(S_IN_DATA_SIZE)
 #define S_IN_PORT			(0)
 #define S_SINE_INDEX			(1)
+#define S_OUT_PORT_0			(2)
+#define S_OUT_PORT_1			(3)
+#define S_OUT_PORT_2			(4)
+#define S_OUT_PORT_3			(5)
 #define S_CONTROL_VARIABLES_SIZE 	(12)
 
 #define S_BUFFER			(S_CONTROL_VARIABLES + S_CONTROL_VARIABLES_SIZE)
@@ -93,13 +97,21 @@
 pdm_rx_asm:
         //r0 - in buffered port:32 p_pdm_mics,
         //r1 - streaming chanend c,
-        //r2 - streaming chanend ?d,
+        //r2 - streaming chanend d,
+        //r3 - streaming chanend e,
+        //sp[1] - streaming chanend f,
 
 	.issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
 
+        mov r4, r11
+
         ldaw r11, sp[S_CONTROL_VARIABLES]
 	stw r0, r11[S_IN_PORT]
+        stw r1, r11[S_OUT_PORT_0]
+        stw r2, r11[S_OUT_PORT_1]
+        stw r3, r11[S_OUT_PORT_2]
+        stw r4, r11[S_OUT_PORT_3]
 
 	ldc r11, 0x5555
 	shl r11, r11, 16; mov r9, r11
@@ -121,8 +133,6 @@ pdm_rx_asm:
 
 	ldaw r10, sp[S_IN_DATA]
 
-	ldc r9, MIC_ARRAY_CH0
-
 	.align 8
 
 pdm_rx_8ch_loop:
@@ -135,35 +145,46 @@ pdm_rx_8ch_loop:
 	unzip r3, r4, 0
 	std r3, r4, r10[0]
 
-	FIR();
+	ldc r9, MIC_ARRAY_CH0
+	FIR();						// FIR filter result is in r3
 
 #ifdef OUTPUT_SINE_WAVE
-	ldw r4, r11[S_SINE_INDEX]
+	ldw r4, r11[S_SINE_INDEX]			// Increment sine index
         add r4, r4, 1
-        ldc r3, S_SINE_INDEX_MASK
+        ldc r3, S_SINE_INDEX_MASK			// Mask to restrict sine index to 0 to 127
         and r4, r4, r3
-        stw r4, r11[S_SINE_INDEX]
-	ldaw r11, cp[g_sine_wave3]
-        ldw r3, r11[r4]
+        stw r4, r11[S_SINE_INDEX]			// Store index 
+	ldaw r11, cp[g_sine_wave3]			// Get sine curve
+        ldw r3, r11[r4]					// Overwrite r3 with sine wave
+	ldaw r11, sp[S_CONTROL_VARIABLES]
 #endif
 
-	ldc r9, MIC_ARRAY_CH0
-
+        ldw r1, r11[S_OUT_PORT_0]			// Get first output port
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH4}
+	FIR();						// FIR filter based on r9, result is in r3
+        ldw r1, r11[S_OUT_PORT_1]			// Get second output port
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH1}
+
 	FIR();
-	{out res[r2], r3; ldc r9, MIC_ARRAY_CH1}
-	FIR();
+        ldw r1, r11[S_OUT_PORT_2]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH5}
 	FIR();
-	{out res[r2], r3; ldc r9, MIC_ARRAY_CH2}
+        ldw r1, r11[S_OUT_PORT_3]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH2}
+
 	FIR();
+        ldw r1, r11[S_OUT_PORT_0]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH6}
 	FIR();
-	{out res[r2], r3; ldc r9, MIC_ARRAY_CH3}
+        ldw r1, r11[S_OUT_PORT_1]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH3}
+
 	FIR();
+        ldw r1, r11[S_OUT_PORT_2]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH7}
         FIR();
-	{out res[r2], r3; ldc r9, MIC_ARRAY_CH0}
+        ldw r1, r11[S_OUT_PORT_3]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH0}
 
 	ldd r3, r4, r10[4]
 	std r3, r4, r10[5]
