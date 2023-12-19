@@ -109,8 +109,8 @@ void pdm_process(streaming chanend c_ds_output[MIC_ARRAY_DECIMATORS], chanend c_
     }
 }
 
-#if MAX_FREQ > 48000
-#error MAX_FREQ > 48000 NOT CURRENTLY SUPPORTED
+#if MAX_FREQ > 96000
+#error MAX_FREQ > 96000 NOT CURRENTLY SUPPORTED
 #endif
 
 void pcm_pdm_mic(chanend c_pcm_out)
