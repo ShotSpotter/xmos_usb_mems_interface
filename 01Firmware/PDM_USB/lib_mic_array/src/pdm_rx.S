@@ -19,8 +19,6 @@
 #define PIN6 3
 #define PIN7 7
 
-#define OUTPUT_SINE_WAVE
-
 #include "mic_array_conf.h"
 
 	//This mapping allows pins to be mapped to channels
@@ -157,6 +155,22 @@ pdm_rx_8ch_loop:
 	ldaw r11, cp[g_sine_wave3]			// Get sine curve
         ldw r3, r11[r4]					// Overwrite r3 with sine wave
 	ldaw r11, sp[S_CONTROL_VARIABLES]
+#endif
+
+#ifdef OUTPUT_RANDOM
+// Enable white noise output to support analysis of 2nd stage filter frequency response.
+// 1) we are not seeding this with the xmos hardware RNG so the output
+//    is deterministic! See lib_random for how to seed with hardware.
+// 2) OUTPUT_RANDOM and OUTPUT_SINE_WAVE are mutually exclusive
+
+	ldaw r11, cp[g_crc_constants]			// load data to checksum (-1, per lib_random) into r1
+	ldw r1, r11[1]
+	ldaw r11, cp[g_crc_constants]			// load crc polynominal to use (0xEDB88320, per lib_random) into r4
+	ldw r4, r11[0]
+	ldaw r11, sp[S_CONTROL_VARIABLES]		// set r11 to point on stack
+	ldw r3, r11[S_SINE_INDEX]				// load previous crc (reusing S_SINE_INDEX for storage)
+	crc32 r3, r1, r4						// compute crc
+	stw r3, r11[S_SINE_INDEX]				// Store updated crc value, leaving r3 unchanged to output
 #endif
 
         ldw r1, r11[S_OUT_PORT_0]			// Get first output port
