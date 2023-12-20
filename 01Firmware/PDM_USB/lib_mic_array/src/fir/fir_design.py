@@ -32,20 +32,20 @@ def parseArguments(third_stage_configs):
 
     parser.add_argument('--first-stage-num-taps', type=int, default=48,
       help='The number of FIR taps in the first stage of decimation.')
-    parser.add_argument('--first-stage-pass-bw', type=float, default = 30.0,
+    parser.add_argument('--first-stage-pass-bw', type=float, default = 96.0,
       help='The pass bandwidth (in kHz) of the first stage filter.'
           ' Starts at 0Hz and ends at this frequency', metavar='kHz')
-    parser.add_argument('--first-stage-stop-bw', type=float, default = 30.0,
+    parser.add_argument('--first-stage-stop-bw', type=float, default = 192.0,
       help='The stop bandwidth (in kHz) of the first stage filter.',
       metavar='kHz')
     parser.add_argument('--first-stage-stop-atten', type=float, default = -70.0,
       help='The stop band attenuation(in dB) of the first stage filter(Normally negative).', metavar='dB')
 
-    parser.add_argument('--second-stage-pass-bw', type=float, default=16,
-       help='The number of FIR taps per stage '
+    parser.add_argument('--second-stage-pass-bw', type=float, default=30,
+       help='The pass bandwidth (in kHz) of the second stage filter '
           ' Starts at 0Hz and ends at this frequency', metavar='kHz')
-    parser.add_argument('--second-stage-stop-bw', type=float, default=16,
-       help='The number of FIR taps per stage '
+    parser.add_argument('--second-stage-stop-bw', type=float, default=45,
+       help='The stop bandwidth (in kHz) of the second stage filter.'
           ' Starts at 0Hz and ends at this frequency', metavar='kHz')
     parser.add_argument('--second-stage-stop-atten', type=float, default = -85.0,
       help='The stop band attenuation(in dB) of the second stage filter(Normally negative).', metavar='dB')
@@ -124,6 +124,7 @@ def plot_response(H, file_name):
 
 def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=2048, stopband_attenuation = -65.0):
 
+  print(f"calling generate_stage num_taps={num_taps}, bands={bands}, a={a}, weights={weights}, stopband_attenuation={stopband_attenuation} ")
   w = np.ones(len(a))
 
   weight_min = 0.0
@@ -152,7 +153,7 @@ def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=
       else:
         weight_max = test_weight
 
-      #print(str(stop_band_atten) + ' ' + str(passband_max) + ' ' + str(passband_min) + ' ' + str(test_weight))
+      #print(f"stop_band_atten={stop_band_atten},  passband_max={passband_max}, passband_min={passband_min}, test_weight={test_weight}")
       if abs(weight_min - weight_max) < epsilon:
         running=False
     except ValueError:
@@ -263,13 +264,14 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
   #ensure the there is never any overflow
   coefs /= sum(abs(coefs))
 
-  header.write("extern const int g_second_stage_fir[8];\n")
-  body.write("const int g_second_stage_fir[8] = {\n")
+  header.write(f"extern const int g_second_stage_fir32[{len(coefs)//2}];\n")
+  body.write("const int g_second_stage_fir32[" + f"{len(coefs)//2}" + "] = {\n")
 
   total_abs_sum = np.int64(0)
   for i in range(0, len(coefs)//2):
     if coefs[i] > 0.5:
       print("Single coefficient too big in second stage FIR")
+    print(f"coefs[i]= {coefs[i]}")
     d_int = np.int32(coefs[i]*float(int32_max)*2.0);
     total_abs_sum += np.abs(np.int64(d_int)*2)
     body.write("\t0x{:08x},\n".format(ctypes.c_uint(d_int).value))
@@ -278,6 +280,34 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
   if total_abs_sum*int32_max > int64_max:
     print("WARNING: error in second stage too large")
 
+
+   # add our debugging data
+  body.write("\n")
+  header.write("\n")
+
+  #FIXME generate this programmatically
+  body.write("const int g_sine_wave3[128] = {\n")
+  body.write("0x00000000, 0x02ECB69A, 0x05D79F74, 0x08BEEDEA, 0x0BA0D792, 0x0E7B9554, 0x114D6485, 0x141487FD,\n")
+  body.write("0x16CF4928, 0x197BF915, 0x1C18F181, 0x1EA495D8, 0x211D5439, 0x2381A668, 0x25D012C4, 0x28072D2B,\n")
+  body.write("0x2A2597DD, 0x2C2A0455, 0x2E133415, 0x2FDFF96B, 0x318F382C, 0x331FE662, 0x34910CF0, 0x35E1C82D,\n")
+  body.write("0x3711486D, 0x381ED281, 0x3909C030, 0x39D18095, 0x3A759880, 0x3AF5A2BE, 0x3B515057, 0x3B8868C0,\n")
+  body.write("0x3B9ACA00, 0x3B8868C0, 0x3B515057, 0x3AF5A2BE, 0x3A759880, 0x39D18095, 0x3909C030, 0x381ED281,\n")
+  body.write("0x3711486D, 0x35E1C82D, 0x34910CF0, 0x331FE662, 0x318F382C, 0x2FDFF96B, 0x2E133415, 0x2C2A0455,\n")
+  body.write("0x2A2597DD, 0x28072D2B, 0x25D012C4, 0x2381A668, 0x211D5439, 0x1EA495D8, 0x1C18F181, 0x197BF915,\n")
+  body.write("0x16CF4928, 0x141487FD, 0x114D6485, 0x0E7B9554, 0x0BA0D792, 0x08BEEDEA, 0x05D79F74, 0x02ECB69A,\n")
+  body.write("0x00000000, 0xFD134966, 0xFA28608C, 0xF7411216, 0xF45F286E, 0xF1846AAC, 0xEEB29B7B, 0xEBEB7803,\n")
+  body.write("0xE930B6D8, 0xE68406EB, 0xE3E70E7F, 0xE15B6A28, 0xDEE2ABC7, 0xDC7E5998, 0xDA2FED3C, 0xD7F8D2D5,\n")
+  body.write("0xD5DA6823, 0xD3D5FBAB, 0xD1ECCBEB, 0xD0200695, 0xCE70C7D4, 0xCCE0199E, 0xCB6EF310, 0xCA1E37D3,\n")
+  body.write("0xC8EEB793, 0xC7E12D7F, 0xC6F63FD0, 0xC62E7F6B, 0xC58A6780, 0xC50A5D42, 0xC4AEAFA9, 0xC4779740,\n")
+  body.write("0xC4653600, 0xC4779740, 0xC4AEAFA9, 0xC50A5D42, 0xC58A6780, 0xC62E7F6B, 0xC6F63FD0, 0xC7E12D7F,\n")
+  body.write("0xC8EEB793, 0xCA1E37D3, 0xCB6EF310, 0xCCE0199E, 0xCE70C7D4, 0xD0200695, 0xD1ECCBEB, 0xD3D5FBAB,\n")
+  body.write("0xD5DA6823, 0xD7F8D2D5, 0xDA2FED3C, 0xDC7E5998, 0xDEE2ABC7, 0xE15B6A28, 0xE3E70E7F, 0xE68406EB,\n")
+  body.write("0xE930B6D8, 0xEBEB7803, 0xEEB29B7B, 0xF1846AAC, 0xF45F286E, 0xF7411216, 0xFA28608C, 0xFD134966};\n")
+  header.write("extern const int g_sine_wave3[128];\n")
+
+  body.write("// {CRC polynominal to use, bogus data to checksum}\n")
+  body.write("const int g_crc_constants[2] = {0xEDB88320, 0xFFFFFFFF};\n")
+  header.write("extern const int g_crc_constants[2];\n")
 
   body.write("const int fir2_debug[" + str(second_stage_num_taps) + "] = {\n")
   header.write("extern const int fir2_debug[" + str(second_stage_num_taps) + "];\n\n")
@@ -476,8 +506,8 @@ if __name__ == "__main__":
   print("Lowest Ripple: " + str(first_stage_low_ripple) )
 
 
-  header = open ("fir_coefs.h", 'w')
-  body   = open ("fir_coefs.xc", 'w')
+  header = open ("fir_coefs.h", 'w', newline='')
+  body   = open ("fir_coefs.xc", 'w', newline='')
 
   year = datetime.datetime.now().year
   header.write("// Copyright (c) " +str(year) +", XMOS Ltd, All rights reserved\n")
