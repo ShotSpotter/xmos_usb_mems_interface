@@ -4,7 +4,7 @@
 #include "mic_array.h"
 #include "../core/customdefines.h"
 
-unsigned gain = 1;
+unsigned gain = -1;
 
 unsafe void user_pdm_process(mic_array_frame_time_domain * unsafe audio, int output[]){
     /* Send individual mics (with gain applied) */
