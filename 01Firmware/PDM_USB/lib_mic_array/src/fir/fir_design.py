@@ -38,16 +38,16 @@ def parseArguments(third_stage_configs):
     parser.add_argument('--first-stage-stop-bw', type=float, default = 192.0,
       help='The stop bandwidth (in kHz) of the first stage filter.',
       metavar='kHz')
-    parser.add_argument('--first-stage-stop-atten', type=float, default = -70.0,
+    parser.add_argument('--first-stage-stop-atten', type=float, default = -80.0,
       help='The stop band attenuation(in dB) of the first stage filter(Normally negative).', metavar='dB')
 
-    parser.add_argument('--second-stage-pass-bw', type=float, default=24,
+    parser.add_argument('--second-stage-pass-bw', type=float, default=12,
        help='The pass bandwidth (in kHz) of the second stage filter '
           ' Starts at 0Hz and ends at this frequency', metavar='kHz')
-    parser.add_argument('--second-stage-stop-bw', type=float, default=47.9999,
+    parser.add_argument('--second-stage-stop-bw', type=float, default=23.999,
        help='The stop bandwidth (in kHz) of the second stage filter.'
           ' Starts at 0Hz and ends at this frequency', metavar='kHz')
-    parser.add_argument('--second-stage-stop-atten', type=float, default = -100.0,
+    parser.add_argument('--second-stage-stop-atten', type=float, default = -80.0,
       help='The stop band attenuation(in dB) of the second stage filter(Normally negative).', metavar='dB')
 
     parser.add_argument('--third-stage-num-taps', type=int, default=32,
@@ -249,7 +249,8 @@ def first_stage_output_coefficients(header, body, points, first_stage_num_taps, 
 
 def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps, stop_band_atten):
 
-  nulls = 1.0/4.0
+  # This must reflect the output decimation ratio: 48/384 => 1/8
+  nulls = 1.0/8.0
   a = [1, 0, 0]
   w = [1, 1, 1]
 
