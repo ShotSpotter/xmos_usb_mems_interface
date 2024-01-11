@@ -145,13 +145,34 @@ pdm_rx_8ch_loop:
 
 	ldc r9, MIC_ARRAY_CH0
 	FIR();						// FIR filter result is in r3
-
+        ldw r1, r11[S_OUT_PORT_0]			// Get first output port
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH4}
+	FIR();						// FIR filter based on r9, result is in r3
+        ldw r1, r11[S_OUT_PORT_1]			// Get second output port
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH1}
+	FIR();
+        ldw r1, r11[S_OUT_PORT_2]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH5}
+	FIR();
+        ldw r1, r11[S_OUT_PORT_3]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH2}
+	FIR();
+        ldw r1, r11[S_OUT_PORT_0]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH6}
+	FIR();
+        ldw r1, r11[S_OUT_PORT_1]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH3}
+	FIR();
+        ldw r1, r11[S_OUT_PORT_2]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH7}
+        FIR();							// CH7 FIR filter result is in r3
+// These two options replace unused channel 7 debug patterns
 #ifdef OUTPUT_SINE_WAVE
 	ldw r4, r11[S_SINE_INDEX]			// Increment sine index
         add r4, r4, 1
         ldc r3, S_SINE_INDEX_MASK			// Mask to restrict sine index to 0 to 127
         and r4, r4, r3
-        stw r4, r11[S_SINE_INDEX]			// Store index 
+        stw r4, r11[S_SINE_INDEX]			// Store index
 	ldaw r11, cp[g_sine_wave3]			// Get sine curve
         ldw r3, r11[r4]					// Overwrite r3 with sine wave
 	ldaw r11, sp[S_CONTROL_VARIABLES]
@@ -173,30 +194,8 @@ pdm_rx_8ch_loop:
 	stw r3, r11[S_SINE_INDEX]				// Store updated crc value, leaving r3 unchanged to output
 #endif
 
-        ldw r1, r11[S_OUT_PORT_0]			// Get first output port
-	{out res[r1], r3; ldc r9, MIC_ARRAY_CH4}
-	FIR();						// FIR filter based on r9, result is in r3
-        ldw r1, r11[S_OUT_PORT_1]			// Get second output port
-	{out res[r1], r3; ldc r9, MIC_ARRAY_CH1}
-
-	FIR();
-        ldw r1, r11[S_OUT_PORT_2]
-	{out res[r1], r3; ldc r9, MIC_ARRAY_CH5}
-	FIR();
-        ldw r1, r11[S_OUT_PORT_3]
-	{out res[r1], r3; ldc r9, MIC_ARRAY_CH2}
-
-	FIR();
-        ldw r1, r11[S_OUT_PORT_0]
-	{out res[r1], r3; ldc r9, MIC_ARRAY_CH6}
-	FIR();
-        ldw r1, r11[S_OUT_PORT_1]
-	{out res[r1], r3; ldc r9, MIC_ARRAY_CH3}
-
-	FIR();
-        ldw r1, r11[S_OUT_PORT_2]
-	{out res[r1], r3; ldc r9, MIC_ARRAY_CH7}
-        FIR();
+	// output is in r3; load on MIC_ARRAY_CH0 is a pointless
+	// refill for next iteration (overwrtten in line 146)
         ldw r1, r11[S_OUT_PORT_3]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH0}
 
