@@ -59,9 +59,15 @@
 // - stored in function divide_by_four
 // - retrieved in output_phase
 //
-#define S_D_OUTPUT_STORAGE_0            0
-#define S_D_OUTPUT_STORAGE_1            1
-#define S_OUTPUT_STORAGE_SIZE           4
+#define S_OUTPUT_STORAGE_0            	0
+#define S_OUTPUT_STORAGE_1            	1
+#define S_OUTPUT_0			2
+#define S_D_OUTPUT_0			1
+#define S_D_OUTPUT_1			2
+#define S_D_OUTPUT_2			3
+#define S_D_OUTPUT_3			4
+#define S_D_OUTPUT_4			5
+#define S_OUTPUT_STORAGE_SIZE           16 
 
 //
 // Frame - used to transfer output to calling process
@@ -285,8 +291,6 @@ input_0_0:
     bl post_process
     INPUT_TO_OFFSET(0)
     ldaw r7, dp[0]
-    bl divide_by_four
-
     bu input_0_0
 
     .cc_bottom mic_array_decimate_to_pcm_2ch.function
@@ -329,8 +333,8 @@ output_phase:
 
     ldaw r4, sp[S_OUTPUT_STORAGE];
     //
-    ldw r0, r4[S_D_OUTPUT_STORAGE_0];
-    ldw r1, r4[S_D_OUTPUT_STORAGE_1];
+    ldw r0, r4[S_OUTPUT_STORAGE_0];
+    ldw r1, r4[S_OUTPUT_STORAGE_1];
 
     ldaw r4, sp[S_FRAME_OFFSET]
     ldw r6, r4[S_FRAME_0_INDEX]
@@ -433,16 +437,15 @@ divide_by_four:
     //
     // Store channel 0 output
     //
-    stw r0, r10[S_D_OUTPUT_STORAGE_0]
+    stw r0, r10[S_OUTPUT_STORAGE_0]
     //
-
     bl mic_array_decimate_to_pcm_2ch_fir_impl
     add r7, r7, r6
     add r8, r8, r6
     //
     // Store channel 1 output
     //
-    stw r0, r10[S_D_OUTPUT_STORAGE_1]
+    stw r0, r10[S_OUTPUT_STORAGE_1]
     //
     retsp 1
     .cc_bottom divide_by_four.function
@@ -482,7 +485,6 @@ zero_loop:
     .cc_bottom zero_data_structure.function
     .cfi_endproc
 
-
 #define FIR_POINT(FILTER_INDEX, DATA_INDEX_1, DATA_INDEX_2) \
     ldd r3, r2, r11[FILTER_INDEX]; \
     ldd r5, r4, r7[DATA_INDEX_1]; \
@@ -491,7 +493,6 @@ zero_loop:
     ldd r5, r4, r8[DATA_INDEX_2]; \
     maccs r0, r1, r4, r3; \
     maccs r0, r1, r5, r2;
-
 
 .globl    mic_array_decimate_to_pcm_2ch_fir_impl
 .align    8

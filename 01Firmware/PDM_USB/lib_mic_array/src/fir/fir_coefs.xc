@@ -113,6 +113,7 @@ const int fir1_debug[48] = {
   62876294,   54970680,   47230942,   39844119,   32964387,   26709144,   21157371,   16349840, 
   12291802,    8958056,    6298618,    4244465,    2714604,    1622893,     883159,     492968, 
 };
+
 const int g_second_stage_fir32[16] = {
 	0x0105503f,
 	0x01343daa,
@@ -132,6 +133,10 @@ const int g_second_stage_fir32[16] = {
 	0x0f1d633b,
 };
 
+const int g_second_stage_butterworth_6[11] = {
+0x00000FDD, 0x00004F52, 0x00009EA4, 0x00009EA4, 0x00004F52, 0x00000FDD, 0xFFFFCB7D, 0xFFFF5A14,
+0xFFFFEE17, 0xFFFFF12B, 0xFFFFFF86,
+};
 
 const int g_sine_wave3[128] = {
 0x00000000, 0x02ECB69A, 0x05D79F74, 0x08BEEDEA, 0x0BA0D792, 0x0E7B9554, 0x114D6485, 0x141487FD,

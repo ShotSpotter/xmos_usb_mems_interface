@@ -48,6 +48,7 @@ void pdm_process(streaming chanend c_ds_output[MIC_ARRAY_DECIMATORS], chanend c_
         c_audio :> samplerate;
 
         unsigned decimationfactor = 96000/samplerate;
+        printf("decimationfactor: %d, samplerate: %d\n", decimationfactor, samplerate);
 
         unsafe
         {

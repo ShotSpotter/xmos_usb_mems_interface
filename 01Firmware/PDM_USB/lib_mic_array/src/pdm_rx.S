@@ -68,9 +68,10 @@
 #define S_BUFFER			(S_CONTROL_VARIABLES + S_CONTROL_VARIABLES_SIZE)
 #define S_BUFFER_SIZE			(1 << 12)
 #define S_BUFFER_MASK			(S_BUFFER_SIZE - 1)
-#define S_COUNTER_MASK_1 		((1 << 3) - 1)
-#define S_COUNTER_MASK_2 		((1 << 7) - 1)
 #define S_SINE_INDEX_MASK		((1 << 7) - 1)
+
+//#define OUTPUT_RANDOM
+//#define OUTPUT_SINE_WAVE
 
 #define STACKWORDS			(S_BUFFER + S_BUFFER_SIZE)
 
