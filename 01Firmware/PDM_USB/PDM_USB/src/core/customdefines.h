@@ -67,7 +67,7 @@ void genclock();
 
 /* Maximum frequency device runs at */
 #ifndef MAX_FREQ
-#define MAX_FREQ           (48000)
+#define MAX_FREQ           (96000)
 #endif
 
 /* Maximum frequency in full-speed mode */
@@ -86,7 +86,7 @@ void genclock();
 
 /* Avoid compiler warnings by defining vars that will be defaulted */
 
-#define DEFAULT_FREQ            (48000)
+#define DEFAULT_FREQ            (96000)
 #define SPDIF_TX_INDEX          (0)
 // DFU name will be "{VENDOR_STR} DFU"
 #define VENDOR_STR              "SST"
@@ -104,7 +104,7 @@ void genclock();
 // #define BCD_DEVICE              0x0001
 #define BCD_DEVICE_J            2
 #define BCD_DEVICE_M            3
-#define BCD_DEVICE_N            0
+#define BCD_DEVICE_N            3
 #define AUDIO_CLASS             2
 #define AUDIO_CLASS_FALLBACK    0
 
