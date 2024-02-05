@@ -12,6 +12,10 @@
 #define SECOND_STAGE_BUFFER_SIZE        (SECOND_STAGE_COEF_COUNT * 2)
 #define SECOND_STAGE_HALF_FILTER_OFFSET (SECOND_STAGE_COEF_COUNT * 2)
 
+#define THIRD_STAGE_COEF_COUNT         	32
+#define THIRD_STAGE_BUFFER_SIZE        	(THIRD_STAGE_COEF_COUNT * 2)
+#define THIRD_STAGE_HALF_FILTER_OFFSET 	(THIRD_STAGE_COEF_COUNT * 2)
+
 //
 // Stack layout
 //
@@ -34,13 +38,13 @@
 
 #define S_FAR_END_CHANNEL_0             10
 #define S_FAR_END_CHANNEL_1             11
-#define S_STORAGE_SIZE                  16
+#define S_STORAGE_SIZE                  12
 
 //
 // S_SECOND_STAGE_DATA - Contains history of received from first fir filter so that second stage filter can be calculated
 //
 #define S_SECOND_STAGE_DATA             (S_STORAGE + S_STORAGE_SIZE)
-#define S_SECOND_STAGE_DATA_SIZE        (SECOND_STAGE_COEF_COUNT * 2 * 2)        // word count 16 poles * 2 blocks * 2 channels
+#define S_SECOND_STAGE_DATA_SIZE        (SECOND_STAGE_COEF_COUNT * 2 * 2)        // word count 32 poles * 2 blocks * 2 channels
 
 //
 // S_SECOND_STAGE - Control variables for second stage fir filter
@@ -48,12 +52,25 @@
 #define S_SECOND_STAGE			(S_SECOND_STAGE_DATA + S_SECOND_STAGE_DATA_SIZE)
 #define S_SECOND_STAGE_PHASE		0
 #define S_SECOND_STAGE_PHASE_COUNT	1
-#define S_SECOND_STAGE_SIZE		16
+#define S_SECOND_STAGE_SIZE		8
+
+//
+// S_THIRD_STAGE_DATA - Contains history of received from first fir filter so that second stage filter can be calculated
+//
+#define S_THIRD_STAGE_DATA             (S_SECOND_STAGE + S_SECOND_STAGE_SIZE)
+#define S_THIRD_STAGE_DATA_SIZE        (THIRD_STAGE_COEF_COUNT * 2 * 2)        // word count 32 poles * 2 blocks * 2 channels
+
+//
+// S_THIRD_STAGE - Control variables for second stage fir filter
+//
+#define S_THIRD_STAGE			(S_THIRD_STAGE_DATA + S_THIRD_STAGE_DATA_SIZE)
+#define S_THIRD_STAGE_INDEX		0
+#define S_THIRD_STAGE_SIZE		8
 
 //
 // S_OUTPUT_STORAGE - Location to store output values
 //
-#define S_OUTPUT_STORAGE                (S_SECOND_STAGE + S_SECOND_STAGE_SIZE)
+#define S_OUTPUT_STORAGE                (S_THIRD_STAGE + S_THIRD_STAGE_SIZE)
 //
 // Add storage fields for output of second stage fir filter
 // - stored in function divide_by_four
@@ -107,6 +124,24 @@
     stw r1, r8[r7];\
     stw r0, r8[r6];
 
+#define FIR_POINT(FILTER_INDEX, DATA_INDEX_1, DATA_INDEX_2) \
+    ldd r3, r2, r11[FILTER_INDEX]; \
+    ldd r5, r4, r7[DATA_INDEX_1]; \
+    maccs r0, r1, r4, r2; \
+    maccs r0, r1, r5, r3; \
+    ldd r5, r4, r8[DATA_INDEX_2]; \
+    maccs r0, r1, r4, r3; \
+    maccs r0, r1, r5, r2;
+
+#define FIR_POINT_WORD() \
+    ldw r4, r11[r2]; \
+    ldw r5, r7[r2]; \
+    maccs r0, r1, r5, r4; \
+    ldw r5, r7[r3]; \
+    maccs r0, r1, r5, r4; \
+    add r2, r2, 1; \
+    sub r3, r3, 1;
+
     .globl    mic_array_decimate_to_pcm_2ch
     .align    8
     .type    mic_array_decimate_to_pcm_2ch,@function
@@ -145,7 +180,19 @@ configure:
     // Zero second stage
     //
     ldaw r0, sp[S_SECOND_STAGE]
-    ldc r1, S_SECOND_STAGE_DATA
+    ldc r1, S_SECOND_STAGE_SIZE
+    bl zero_data_structure
+    //
+    // Zero third stage data
+    //
+    ldaw r0, sp[S_THIRD_STAGE_DATA]
+    ldc r1, S_THIRD_STAGE_DATA_SIZE
+    bl zero_data_structure
+    //
+    // Zero third stage
+    //
+    ldaw r0, sp[S_THIRD_STAGE]
+    ldc r1, S_THIRD_STAGE_SIZE
     bl zero_data_structure
     //
     // Zero output storage
@@ -231,6 +278,7 @@ confirm_init_complete:
 input_0_0:
     INPUT_TO_OFFSET(31)
     INPUT_TO_OFFSET(30)
+    bl third_stage
     INPUT_TO_OFFSET(29)
     bl post_process
     INPUT_TO_OFFSET(28)
@@ -239,6 +287,7 @@ input_0_0:
 
     INPUT_TO_OFFSET(27)
     INPUT_TO_OFFSET(26)
+    bl third_stage
     INPUT_TO_OFFSET(25)
     bl post_process
     INPUT_TO_OFFSET(24)
@@ -247,6 +296,7 @@ input_0_0:
 
     INPUT_TO_OFFSET(23)
     INPUT_TO_OFFSET(22)
+    bl third_stage
     INPUT_TO_OFFSET(21)
     bl post_process
     INPUT_TO_OFFSET(20)
@@ -255,6 +305,7 @@ input_0_0:
 
     INPUT_TO_OFFSET(19)
     INPUT_TO_OFFSET(18)
+    bl third_stage
     INPUT_TO_OFFSET(17)
     bl post_process
     INPUT_TO_OFFSET(16)
@@ -263,6 +314,7 @@ input_0_0:
 
     INPUT_TO_OFFSET(15)
     INPUT_TO_OFFSET(14)
+    bl third_stage
     INPUT_TO_OFFSET(13)
     bl post_process
     INPUT_TO_OFFSET(12)
@@ -271,6 +323,7 @@ input_0_0:
 
     INPUT_TO_OFFSET(11)
     INPUT_TO_OFFSET(10)
+    bl third_stage
     INPUT_TO_OFFSET(9)
     bl post_process
     INPUT_TO_OFFSET(8)
@@ -279,6 +332,7 @@ input_0_0:
 
     INPUT_TO_OFFSET(7)
     INPUT_TO_OFFSET(6)
+    bl third_stage
     INPUT_TO_OFFSET(5)
     bl post_process
     INPUT_TO_OFFSET(4)
@@ -287,10 +341,12 @@ input_0_0:
 
     INPUT_TO_OFFSET(3)
     INPUT_TO_OFFSET(2)
+    bl third_stage
     INPUT_TO_OFFSET(1)
     bl post_process
     INPUT_TO_OFFSET(0)
     ldaw r7, dp[0]
+    bl divide_by_four
     bu input_0_0
 
     .cc_bottom mic_array_decimate_to_pcm_2ch.function
@@ -306,8 +362,6 @@ input_0_0:
 .Lmic_array_decimate_to_pcm_2ch_tmp:
     .size    mic_array_decimate_to_pcm_2ch, .Lmic_array_decimate_to_pcm_2ch_tmp-mic_array_decimate_to_pcm_2ch
     .cfi_endproc
-
-//////////////////////////////////////////////////////////////////////////////////////////
 
 .globl    post_process
 .align    8
@@ -412,12 +466,10 @@ divide_by_four:
     .issue_mode dual
 
     ldaw r10, sp[S_OUTPUT_STORAGE]
-    
     //
     // This instruction changes sp so cannot reference sp directly for the remainder of this function
     //
     dualentsp 1
-
     //
     // Pointer to second stage fir filter coefficients
     //
@@ -432,16 +484,14 @@ divide_by_four:
 
     // r11 = coefs, r7 = data, r6 = buffer length for each channel
     bl mic_array_decimate_to_pcm_2ch_fir_impl
-    add r7, r7, r6
-    add r8, r8, r6
     //
     // Store channel 0 output
     //
     stw r0, r10[S_OUTPUT_STORAGE_0]
     //
-    bl mic_array_decimate_to_pcm_2ch_fir_impl
     add r7, r7, r6
     add r8, r8, r6
+    bl mic_array_decimate_to_pcm_2ch_fir_impl
     //
     // Store channel 1 output
     //
@@ -449,7 +499,7 @@ divide_by_four:
     //
     retsp 1
     .cc_bottom divide_by_four.function
-    .set    divide_by_four.nstackwords, 1
+    .set    divide_by_four.nstackwords,1
     .globl    divide_by_four.nstackwords
     .set    divide_by_four.maxcores,1
     .globl    divide_by_four.maxcores
@@ -459,6 +509,107 @@ divide_by_four:
     .globl    divide_by_four.maxchanends
 .Ldivide_by_four_tmp:
     .size    divide_by_four, .Ldivide_by_four_tmp-divide_by_four
+    .cfi_endproc
+
+.globl    third_stage
+.align    8
+.type    third_stage,@function
+.cc_top third_stage.function
+third_stage:
+    .cfi_startproc
+    .issue_mode dual
+    //
+    // Load current values from output stage 2
+    //
+    ldaw r10, sp[S_OUTPUT_STORAGE]
+    ldw r0, r10[S_OUTPUT_STORAGE_0]
+    ldw r1, r10[S_OUTPUT_STORAGE_1]
+    //
+    // Store latest values in third stage buffer - reverse order
+    //
+    ldaw r11, sp[S_THIRD_STAGE]
+    //
+    // Compute and store new third stage index
+    //
+    ldw r2, r11[S_THIRD_STAGE_INDEX]
+    sub r2, r2, 1
+    ldc r3, (THIRD_STAGE_COEF_COUNT - 1)
+    and r2, r2, r3
+    stw r2, r11[S_THIRD_STAGE_INDEX]
+    //
+    // Store latest value for channel 0
+    //
+    ldaw r11, sp[S_THIRD_STAGE_DATA]
+    stw r0, r11[r2]			// Store latest channel 0 value
+    ldaw r7, r11[r2]			// Initial pointer to data in r7
+    ldc r3, THIRD_STAGE_COEF_COUNT
+    add r2, r2, r3			// Index second buffer
+    stw r0, r11[r2]			// Store latest channel 0 value
+    //
+    // Store latest value for channel 1
+    //
+    add r2, r2, r3			// Index to channel 1 first buffer
+    stw r1, r11[r2]			// Store latest channel 1 value
+    add r2, r2, r3			// Index to second buffer
+    stw r1, r11[r2]			// Store latest channel 1 value
+    //
+    // Now apply filter to data in third stage buffer at r7
+    //
+    // Pointer to fir filter coefficients
+    //
+    ldaw r11, cp[g_third_stage_fir_8000]
+    //
+    // Value to increment data pointer for next channel (bytes)
+    //
+    ldc r6, THIRD_STAGE_BUFFER_SIZE
+    shl r6, r6, 2
+
+    ldc r2, 0				// filter index and first half data index
+    ldc r3, THIRD_STAGE_COEF_COUNT	// second half data index
+    sub r3, r3, 1
+    ldc r8, THIRD_STAGE_COEF_COUNT
+    shr r8, r8, 1			// iteration count
+    {ldc r0, 0; ldc r1, 0}		// accumulated sum
+third_stage_loop1:
+    FIR_POINT_WORD()
+    sub r8, r8, 1
+    bt r8, third_stage_loop1
+    //
+    // Store channel 0 output (overwrite second stage output value)
+    //
+    stw r0, r10[S_OUTPUT_STORAGE_0]
+    //
+    add r7, r7, r6		// r7 = data pointer, r6 = bytes to next channel's data
+
+    ldc r2, 0				// filter index and first half data index
+    ldc r3, THIRD_STAGE_COEF_COUNT	// second half data index
+    sub r3, r3, 1
+    ldc r8, THIRD_STAGE_COEF_COUNT
+    shr r8, r8, 1			// iteration count
+    {ldc r0, 0; ldc r1, 0}		// accumulated sum
+third_stage_loop2:
+    FIR_POINT_WORD()
+    sub r8, r8, 1
+    bt r8, third_stage_loop2
+    //
+    // Store channel 1 output (overwrite second stage output value)
+    //
+    stw r0, r10[S_OUTPUT_STORAGE_1]
+
+    //
+    retsp 0
+
+    .cc_bottom third_stage.function
+    .set    third_stage.nstackwords,0
+    .globl    third_stage.nstackwords
+    .set    third_stage.maxcores,1
+    .globl    third_stage.maxcores
+    .set    third_stage.maxtimers,0
+    .globl    third_stage.maxtimers
+    .set    third_stage.maxchanends,0
+    .globl    third_stage.maxchanends
+.Lthird_stage_tmp:
+    .size    third_stage, .Lthird_stage_tmp-third_stage
     .cfi_endproc
 
     .globl    zero_data_structure
@@ -485,15 +636,6 @@ zero_loop:
     .cc_bottom zero_data_structure.function
     .cfi_endproc
 
-#define FIR_POINT(FILTER_INDEX, DATA_INDEX_1, DATA_INDEX_2) \
-    ldd r3, r2, r11[FILTER_INDEX]; \
-    ldd r5, r4, r7[DATA_INDEX_1]; \
-    maccs r0, r1, r4, r2; \
-    maccs r0, r1, r5, r3; \
-    ldd r5, r4, r8[DATA_INDEX_2]; \
-    maccs r0, r1, r4, r3; \
-    maccs r0, r1, r5, r2;
-
 .globl    mic_array_decimate_to_pcm_2ch_fir_impl
 .align    8
 .type    mic_array_decimate_to_pcm_2ch_fir_impl,@function
@@ -502,7 +644,7 @@ mic_array_decimate_to_pcm_2ch_fir_impl:
     .cfi_startproc
     .issue_mode dual
 
-    //r0, r1, r2, r3, r4, r5, r6 = 31, r7, r10, r11,
+    //r0, r1, r2, r3, r4, r5, r7
     {ldc r0, 0; ldc r1, 0} //Initialise the accumulators
 
     FIR_POINT(0, 0, 7)

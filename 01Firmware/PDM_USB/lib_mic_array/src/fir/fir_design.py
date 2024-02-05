@@ -288,22 +288,22 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
 
   #FIXME generate this programmatically
   body.write("const int g_sine_wave3[128] = {\n")
-  body.write("0x00000000, 0x02ECB69A, 0x05D79F74, 0x08BEEDEA, 0x0BA0D792, 0x0E7B9554, 0x114D6485, 0x141487FD,\n")
-  body.write("0x16CF4928, 0x197BF915, 0x1C18F181, 0x1EA495D8, 0x211D5439, 0x2381A668, 0x25D012C4, 0x28072D2B,\n")
-  body.write("0x2A2597DD, 0x2C2A0455, 0x2E133415, 0x2FDFF96B, 0x318F382C, 0x331FE662, 0x34910CF0, 0x35E1C82D,\n")
-  body.write("0x3711486D, 0x381ED281, 0x3909C030, 0x39D18095, 0x3A759880, 0x3AF5A2BE, 0x3B515057, 0x3B8868C0,\n")
-  body.write("0x3B9ACA00, 0x3B8868C0, 0x3B515057, 0x3AF5A2BE, 0x3A759880, 0x39D18095, 0x3909C030, 0x381ED281,\n")
-  body.write("0x3711486D, 0x35E1C82D, 0x34910CF0, 0x331FE662, 0x318F382C, 0x2FDFF96B, 0x2E133415, 0x2C2A0455,\n")
-  body.write("0x2A2597DD, 0x28072D2B, 0x25D012C4, 0x2381A668, 0x211D5439, 0x1EA495D8, 0x1C18F181, 0x197BF915,\n")
-  body.write("0x16CF4928, 0x141487FD, 0x114D6485, 0x0E7B9554, 0x0BA0D792, 0x08BEEDEA, 0x05D79F74, 0x02ECB69A,\n")
-  body.write("0x00000000, 0xFD134966, 0xFA28608C, 0xF7411216, 0xF45F286E, 0xF1846AAC, 0xEEB29B7B, 0xEBEB7803,\n")
-  body.write("0xE930B6D8, 0xE68406EB, 0xE3E70E7F, 0xE15B6A28, 0xDEE2ABC7, 0xDC7E5998, 0xDA2FED3C, 0xD7F8D2D5,\n")
-  body.write("0xD5DA6823, 0xD3D5FBAB, 0xD1ECCBEB, 0xD0200695, 0xCE70C7D4, 0xCCE0199E, 0xCB6EF310, 0xCA1E37D3,\n")
-  body.write("0xC8EEB793, 0xC7E12D7F, 0xC6F63FD0, 0xC62E7F6B, 0xC58A6780, 0xC50A5D42, 0xC4AEAFA9, 0xC4779740,\n")
-  body.write("0xC4653600, 0xC4779740, 0xC4AEAFA9, 0xC50A5D42, 0xC58A6780, 0xC62E7F6B, 0xC6F63FD0, 0xC7E12D7F,\n")
-  body.write("0xC8EEB793, 0xCA1E37D3, 0xCB6EF310, 0xCCE0199E, 0xCE70C7D4, 0xD0200695, 0xD1ECCBEB, 0xD3D5FBAB,\n")
-  body.write("0xD5DA6823, 0xD7F8D2D5, 0xDA2FED3C, 0xDC7E5998, 0xDEE2ABC7, 0xE15B6A28, 0xE3E70E7F, 0xE68406EB,\n")
-  body.write("0xE930B6D8, 0xEBEB7803, 0xEEB29B7B, 0xF1846AAC, 0xF45F286E, 0xF7411216, 0xFA28608C, 0xFD134966};\n")
+  body.write("\t0x00000000, 0x02ECB69A, 0x05D79F74, 0x08BEEDEA, 0x0BA0D792, 0x0E7B9554, 0x114D6485, 0x141487FD,\n")
+  body.write("\t0x16CF4928, 0x197BF915, 0x1C18F181, 0x1EA495D8, 0x211D5439, 0x2381A668, 0x25D012C4, 0x28072D2B,\n")
+  body.write("\t0x2A2597DD, 0x2C2A0455, 0x2E133415, 0x2FDFF96B, 0x318F382C, 0x331FE662, 0x34910CF0, 0x35E1C82D,\n")
+  body.write("\t0x3711486D, 0x381ED281, 0x3909C030, 0x39D18095, 0x3A759880, 0x3AF5A2BE, 0x3B515057, 0x3B8868C0,\n")
+  body.write("\t0x3B9ACA00, 0x3B8868C0, 0x3B515057, 0x3AF5A2BE, 0x3A759880, 0x39D18095, 0x3909C030, 0x381ED281,\n")
+  body.write("\t0x3711486D, 0x35E1C82D, 0x34910CF0, 0x331FE662, 0x318F382C, 0x2FDFF96B, 0x2E133415, 0x2C2A0455,\n")
+  body.write("\t0x2A2597DD, 0x28072D2B, 0x25D012C4, 0x2381A668, 0x211D5439, 0x1EA495D8, 0x1C18F181, 0x197BF915,\n")
+  body.write("\t0x16CF4928, 0x141487FD, 0x114D6485, 0x0E7B9554, 0x0BA0D792, 0x08BEEDEA, 0x05D79F74, 0x02ECB69A,\n")
+  body.write("\t0x00000000, 0xFD134966, 0xFA28608C, 0xF7411216, 0xF45F286E, 0xF1846AAC, 0xEEB29B7B, 0xEBEB7803,\n")
+  body.write("\t0xE930B6D8, 0xE68406EB, 0xE3E70E7F, 0xE15B6A28, 0xDEE2ABC7, 0xDC7E5998, 0xDA2FED3C, 0xD7F8D2D5,\n")
+  body.write("\t0xD5DA6823, 0xD3D5FBAB, 0xD1ECCBEB, 0xD0200695, 0xCE70C7D4, 0xCCE0199E, 0xCB6EF310, 0xCA1E37D3,\n")
+  body.write("\t0xC8EEB793, 0xC7E12D7F, 0xC6F63FD0, 0xC62E7F6B, 0xC58A6780, 0xC50A5D42, 0xC4AEAFA9, 0xC4779740,\n")
+  body.write("\t0xC4653600, 0xC4779740, 0xC4AEAFA9, 0xC50A5D42, 0xC58A6780, 0xC62E7F6B, 0xC6F63FD0, 0xC7E12D7F,\n")
+  body.write("\t0xC8EEB793, 0xCA1E37D3, 0xCB6EF310, 0xCCE0199E, 0xCE70C7D4, 0xD0200695, 0xD1ECCBEB, 0xD3D5FBAB,\n")
+  body.write("\t0xD5DA6823, 0xD7F8D2D5, 0xDA2FED3C, 0xDC7E5998, 0xDEE2ABC7, 0xE15B6A28, 0xE3E70E7F, 0xE68406EB,\n")
+  body.write("\t0xE930B6D8, 0xEBEB7803, 0xEEB29B7B, 0xF1846AAC, 0xF45F286E, 0xF7411216, 0xFA28608C, 0xFD134966};\n")
   header.write("extern const int g_sine_wave3[128];\n")
 
   body.write("// {CRC polynominal to use, bogus data to checksum}\n")
@@ -330,145 +330,43 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
 
 ###############################################################################
 
+def generate_third_stage_coefficients(body, name, Fs, fc, N):
+
+  coefs = int(N/2)
+  coefList = []
+  for n in range(0, coefs):
+    m = n - ((N - 1) / 2)
+    gamma = (2.0 * math.pi * fc) / Fs
+    h = math.sin(m * gamma) / (m * math.pi)
+    n_w = n - (N / 2)
+    h_w = 0.54 + 0.46 * math.cos((math.pi * (2.0 * n_w + 1)) / (N - 1.0))
+    coef = h * h_w;
+    coefList.append(coef)
+
+  maxCoef = max(coefList)
+  body.write('const int ' + name + '[{0}]'.format(coefs) + ' = {\n')
+  print('creating third stage coefficients: ' + name + ' with {0} poles, {1} coefficients, Fs: {2}kHz and fc: {3}kHz'.format(N, coefs, int(Fs/1000), int(fc/1000)))
+  for n in range(0, coefs):
+    coef = (coefList[n] * (2.0**30)) / maxCoef				# Scale coefficients to get reasonable output
+    lcoef = int(coef)
+    if (n % 8) == 0:
+        body.write('\t')
+    body.write("{0:#0{1}x}".format(lcoef & 0xffffffff, 10) + ', ')
+    if (n % 8) == 7:
+        body.write('\n')
+  body.write('\t};\n')
+
+
 def generate_third_stage(header, body, third_stage_configs, combined_response, points, input_sample_rate, stop_band_atten):
 
-  max_coefs_per_phase = 32
-
-  for config in third_stage_configs:
-    divider  = config[0]
-    passband = config[1]
-    stopband = config[2]
-    name     = config[3]
-    coefs_per_phase = config[4]
-
-    #if is_custom then use the PDM rate for making the graphs
-    is_custom = config[5]
-
-    pbw = passband/divider
-    sbw = stopband/divider
-
-    a = [1, 0]
-    w = [1, 1]
-
-    bands = [0, pbw, sbw, 0.5]
-
-    third_stage_response, coefs =  generate_stage(
-      coefs_per_phase*divider, bands, a, w, stopband_attenuation = stop_band_atten)
-
-    #ensure the there is never any overflow
-    coefs /= sum(abs(coefs))
-
-    body.write("const int g_third_stage_" +name+ "_fir["+str(divider*(2*max_coefs_per_phase - 1))+ "] = {\n");
-    header.write("extern const int g_third_stage_" +name+ "_fir["+str(divider*(2*max_coefs_per_phase - 1))+ "];\n");
-
-    total_abs_sum = 0
-    for phase in reversed(range(divider)):
-      body.write("//Phase " + str(phase)+"\n\t")
-      for i in range(coefs_per_phase):
-        index = coefs_per_phase*divider - divider - (i*divider - phase);
-        if coefs[i] > 0.5:
-          print("Single coefficient too big in third stage FIR")
-        d_int = np.int32(coefs[index]*float(int32_max)*2.0);
-        total_abs_sum += np.abs(np.int64(d_int))
-        body.write("0x{:08x}, ".format(ctypes.c_uint(d_int).value))
-        if (i%8)==7:
-          body.write("\n\t");
-      for i in range(coefs_per_phase, max_coefs_per_phase):
-        body.write("0x{:08x}, ".format(ctypes.c_uint(0).value))
-        if (i%8)==7:
-          body.write("\n\t");
-
-      for i in range(coefs_per_phase-1):
-        index = coefs_per_phase*divider - divider - (i*divider - phase);
-        d_int = int(coefs[index]*float(int32_max)*2.0);
-        body.write("0x{:08x}, ".format(ctypes.c_uint(d_int).value))
-        if (i%8)==7:
-          body.write("\n\t");
-      for i in range(coefs_per_phase-1, max_coefs_per_phase-1):
-        body.write("0x{:08x}, ".format(ctypes.c_uint(0).value))
-        if (i%8)==7:
-          body.write("\n\t");
-
-      body.write("\n");
-
-    body.write("};\n");
-
-    max_macc = total_abs_sum*int32_max
-    if total_abs_sum*int32_max > int64_max:
-      print("WARNING: error in third stage too large")
-
-    body.write("const int fir3_"+ name+"_debug[" + str(max_coefs_per_phase*divider)+ "] = {\n\t");
-    header.write("extern const int fir3_"+ name+"_debug[" + str(max_coefs_per_phase*divider) + "];\n");
-
-    for i in range(coefs_per_phase*divider):
-      body.write("{:10d}, ".format(int(float(int32_max)*coefs[i])))
-      if (i%8)==7:
-        body.write("\n\t");
-
-    for i in range(coefs_per_phase*divider, max_coefs_per_phase*divider):
-      body.write("{:10d}, ".format(int(0)))
-      if (i%8)==7:
-        body.write("\n\t");
-
-    body.write("};\n");
-
-    (_, H) = signal.freqz(coefs, worN=points)
-
-    plot_response(H, 'third_stage_' + str(name))
-
-    passband_max = float('-inf');
-    passband_min = float('inf');
-
-    magnitude_response = []
-    input_freq = []
-
-    for i in range(points):
-      mag = combined_response[i] * abs(H[i])
-      freq = 0.5*i/points
-      if freq < 0.5/divider:
-        magnitude_response.append(mag)
-        if is_custom:
-          input_freq.append(freq*input_sample_rate)
-        else:
-          input_freq.append(freq*divider)
-      if freq < passband/divider:
-        passband_max = max(passband_max, mag)
-        passband_min = min(passband_min, mag)
-
-    magnitude_response /= passband_max
-    magnitude_response = 20*numpy.log10(magnitude_response)
-    plt.clf()
-    plt.plot(input_freq, magnitude_response)
-    plt.ylabel('Magnitude Response')
-    if is_custom:
-      plt.xlabel('Frequency (kHz)')
-    else:
-      plt.xlabel('Normalised Output Freq')
-    plt.savefig("output_" + name +'.pdf', format='pdf', dpi=1000)
-
-    print("Filter name: " + name)
-    print("Final stage divider: " + str(divider))
-    print("Output sample rate: " + str(input_sample_rate/divider)+ "kHz")
-    print("Pass bandwidth: " + str(input_sample_rate*passband/divider) + "kHz of " + str(input_sample_rate/(divider*2)) + "kHz total bandwidth.")
-    print("Pass bandwidth(normalised): " + str(passband*2) + " of Nyquist.")
-    print("Stop band start: " + str(input_sample_rate*stopband/divider) + "kHz of " + str(input_sample_rate/(divider*2)) + "kHz total bandwidth.")
-    print("Stop band start(normalised): " + str(stopband*2) + " of Nyquist.")
-    print("Stop band attenuation: " + str(stop_band_atten)+ "dB.")
-
-   # print("(3.072MHz) Passband:" + str(48000*2*passband/divider) + "Hz Stopband:"+ str(48000*2*stopband/divider) + "Hz")
-   # print("(2.822MHz) Passband:" + str(44100*2*passband/divider) + "Hz Stopband:"+ str(44100*2*stopband/divider) + "Hz")
-
-    if 1.0/passband_max > 8.0:
-      print("Error: Compensation factor is too large")
-
-    #The compensation factor should be in Q(5.27) format
-    comp_factor = ((1<<27) - 1)/passband_max
-
-    header.write("#define FIR_COMPENSATOR_" + name.upper() + " (" + str(int(comp_factor)) +")\n")
-
-    header.write("\n")
-    print("Passband ripple = " + str(abs(20.0*numpy.log10(passband_min/passband_max))) +" dB\n")
-  return
+  Fs = 96000.0					# sampling frequency
+  fcList = [16000.0, 14000.0, 12000.0, 10000.0, 8000.0, 6000.0, 4000.0] # critical frequency
+  N = 32					# coefficients
+  for listIndex in range(0, len(fcList)):
+    fc = fcList[listIndex]
+    name = 'g_third_stage_fir_' + str(int(fc)) 
+    generate_third_stage_coefficients(body, name, Fs, fc, N)
+  
 
 ###############################################################################
 
