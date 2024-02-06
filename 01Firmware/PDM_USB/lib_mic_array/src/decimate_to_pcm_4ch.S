@@ -8,6 +8,10 @@
     #error MIC_ARRAY_MAX_FRAME_SIZE_LOG2 is not defined in mic_array_conf.h
 #endif
 
+#ifndef MIC_ARRAY_DC_OFFSET_LOG2
+        #define MIC_ARRAY_DC_OFFSET_LOG2 8
+#endif
+
 #define SECOND_STAGE_COEF_COUNT         32
 #define SECOND_STAGE_BUFFER_SIZE        (SECOND_STAGE_COEF_COUNT * 2)
 #define SECOND_STAGE_HALF_FILTER_OFFSET (SECOND_STAGE_COEF_COUNT * 2)
@@ -36,14 +40,28 @@
 #define S_C_INPUT                       1
 #define S_C_OUTPUT                      2
 
+#define S_D_DC_OFFSET_LOG2_CH01		2
+
+#define S_DC_OFFSET_LOG2_CH0    	4
+#define S_DC_OFFSET_LOG2_CH1    	5
+
 #define S_FAR_END_CHANNEL_0             10
 #define S_FAR_END_CHANNEL_1             11
 #define S_STORAGE_SIZE                  12
 
+#define S_DC_ELIMINATE                  (S_STORAGE + S_STORAGE_SIZE)
+#define S_PREV_X_0                      0
+#define S_PREV_X_1                      1
+
+#define S_D_PREV_X_01                   0
+#define S_D_PREV_Y_0                    2
+#define S_D_PREV_Y_1                    3
+#define DC_ELIMINATE_STACK_SIZE         12
+
 //
 // S_SECOND_STAGE_DATA - Contains history of received from first fir filter so that second stage filter can be calculated
 //
-#define S_SECOND_STAGE_DATA             (S_STORAGE + S_STORAGE_SIZE)
+#define S_SECOND_STAGE_DATA             (S_DC_ELIMINATE + DC_ELIMINATE_STACK_SIZE)
 #define S_SECOND_STAGE_DATA_SIZE        (SECOND_STAGE_COEF_COUNT * 2 * 2)        // word count 32 poles * 2 blocks * 2 channels
 
 //
@@ -105,7 +123,11 @@
 #define S_FRAME_1_INDEX                 9    //index to write to the next frame
 #define FRAME_STACK_SIZE                16
 
-#define STACKWORDS                      (S_FRAME_OFFSET + FRAME_STACK_SIZE)
+#define S_SETTINGS_OFFSET		(S_FRAME_OFFSET + FRAME_STACK_SIZE)
+#define S_DC_OFFSET_REMOVAL_ENABLED     2
+#define S_SETTINGS_SIZE                 8
+
+#define STACKWORDS                      (S_SETTINGS_OFFSET + S_SETTINGS_SIZE)
 
 //This inputs from the channel to the pdm interface and saves it twice in the
 //second stage FIR at offset OFFSET and OFFSET + SECOND_STAGE_COEF_COUNT
@@ -142,6 +164,26 @@
     add r2, r2, 1; \
     sub r3, r3, 1;
 
+#define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
+    ldd r6, r5, r4[PREV_Y];\
+    ldc r7, MIC_ARRAY_DC_OFFSET_LOG2;\
+    ashr r9, r6, r7;\
+    lextract r8, r6, r5, r7, 32;\
+    lsub r11, r5, r5, r8, r4;\
+    lsub r11, r6, r6, r9, r11;\
+    {ldw r7, r4[PREV_X]};\
+    ashr r9, REGISTER, 32;\
+    ashr r10, r7, 32;\
+    lsub r11, r8, REGISTER, r7, r4;\
+    lsub r11, r9, r9, r10, r11;\
+    {ldc r10, 16};\
+    lextract r9, r9, r8, r10, 32;\
+    {shl r8, r8, r10; stw REGISTER, r4[PREV_X]};\
+    lsub r11, r5, r5, r8, r4;\
+    lsub r11, r6, r6, r9, r11;\
+    std r6, r5, r4[PREV_Y];\
+    lextract REGISTER, r6, r5, r10, 32
+
     .globl    mic_array_decimate_to_pcm_2ch
     .align    8
     .type    mic_array_decimate_to_pcm_2ch,@function
@@ -167,6 +209,15 @@ internal_channel_setup_complete:
 
     outct res[r1], 8        // We say we are ready
     inct r2, res[r1]        // They say CONFIGURE_DECIMATOR
+
+    //
+    // Initialise the DC offset removal.
+    //
+    ldaw r0, sp[S_DC_ELIMINATE];
+    ldc r1, 0
+    std r1, r1, r0[S_D_PREV_X_01]
+    std r1, r1, r0[S_D_PREV_Y_0]
+    std r1, r1, r0[S_D_PREV_Y_1]
 
 configure:
     DUALENTSP_lu6 0
@@ -201,6 +252,12 @@ configure:
     ldc r1, S_OUTPUT_STORAGE_SIZE
     bl zero_data_structure
     //
+    // Zero dc eliminate area
+    //
+    ldaw r0, sp[S_DC_ELIMINATE]
+    ldc r1, DC_ELIMINATE_STACK_SIZE
+    bl zero_data_structure
+    //
     // Set configuration values
     //
     ldc r3, 0
@@ -210,14 +267,18 @@ configure:
     // Get configuration information
     //
     ldw r0, sp[S_C_OUTPUT]
-    in r2, res[r0]        //deciamtor_config
-    ldw r3, r2[0];        //r3 is the pointer to the decimator_config_common
+    in r2, res[r0]        		//deciamtor_config
+    ldw r3, r2[0];        		//r3 is the pointer to the decimator_config_common
 
     ldaw r0, sp[S_FRAME_OFFSET]
     ldw r11, r3[0]
     stw r11, r0[S_FRAME_SIZE_LOG2]
 
-    ldw r11, r3[4]             // decimation factor
+    ldaw r0, sp[S_SETTINGS_OFFSET]
+    ldw r11, r3[1]			//apply_dc_offset
+    stw r11, r0[S_DC_OFFSET_REMOVAL_ENABLED]
+
+    ldw r11, r3[4]			// decimation factor
     ldaw r10, sp[S_SECOND_STAGE]
     stw r11, r10[S_SECOND_STAGE_PHASE_COUNT]
 
@@ -389,6 +450,20 @@ output_phase:
     //
     ldw r0, r4[S_OUTPUT_STORAGE_0];
     ldw r1, r4[S_OUTPUT_STORAGE_1];
+
+    //
+    // DC offset removal
+    //
+    ldaw r4, sp[S_SETTINGS_OFFSET]
+    ldw r4, r4[S_DC_OFFSET_REMOVAL_ENABLED]
+    bf r4, dc_offset_removal_complete
+
+    ldaw r4, sp[S_DC_ELIMINATE]
+dc_offset_removal_ch0:
+    DC_OFFSET_REMOVAL(S_D_PREV_Y_0, S_PREV_X_0, r0);
+dc_offset_removal_ch1:
+    DC_OFFSET_REMOVAL(S_D_PREV_Y_1, S_PREV_X_1, r1);
+dc_offset_removal_complete:
 
     ldaw r4, sp[S_FRAME_OFFSET]
     ldw r6, r4[S_FRAME_0_INDEX]

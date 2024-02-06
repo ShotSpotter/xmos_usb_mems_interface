@@ -17,11 +17,11 @@
 #define MAX_DECIMATION_FACTOR 12
 
 // Defines for mic_array_decimator_conf_common_t
-#define DC_OFFSET_REMOVAL 0
-#define INDEX_BIT_REVERSAL 0
-#define WINDOWING_FUNCTION 0
-#define MIC_GAIN_COMPENSATION 0
-#define FIR_GAIN_COMPENSATION 0
+#define DC_OFFSET_REMOVAL 		1
+#define INDEX_BIT_REVERSAL		0
+#define WINDOWING_FUNCTION 		0
+#define MIC_GAIN_COMPENSATION 		0
+#define FIR_GAIN_COMPENSATION 		0
 
 /* Hardware resources */
 in port p_pdm_clk                = PORT_PDM_CLK;
