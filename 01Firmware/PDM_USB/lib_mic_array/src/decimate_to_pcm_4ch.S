@@ -16,7 +16,8 @@
 // Define critical frequency of third stage fir filter
 // Only define ONE of the following values - default (if no defines used is 8kHz)
 //
-#define THIRD_STAGE_8kHz
+//#define THIRD_STAGE_8kHz
+#define THIRD_STAGE_12kHz
 //#define THIRD_STAGE_16kHz
 //#define THIRD_STAGE_24kHz
 //#define THIRD_STAGE_32kHz
@@ -644,6 +645,8 @@ third_stage:
     //
 #if defined(THIRD_STAGE_8kHz)
     ldaw r11, cp[g_third_stage_fir_8kHz]
+#elif defined(THIRD_STAGE_12kHz)
+    ldaw r11, cp[g_third_stage_fir_12kHz]
 #elif defined(THIRD_STAGE_16kHz)
     ldaw r11, cp[g_third_stage_fir_16kHz]
 #elif defined(THIRD_STAGE_24kHz)
