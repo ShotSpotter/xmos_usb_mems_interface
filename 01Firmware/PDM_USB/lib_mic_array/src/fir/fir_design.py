@@ -360,12 +360,13 @@ def generate_third_stage_coefficients(body, name, Fs, fc, N):
 def generate_third_stage(header, body, third_stage_configs, combined_response, points, input_sample_rate, stop_band_atten):
 
   Fs = 96000.0					# sampling frequency
-  fcList = [16000.0, 14000.0, 12000.0, 10000.0, 8000.0, 6000.0, 4000.0] # critical frequency
+  fcList = [40000, 32000, 24000, 16000, 8000]   # critical frequency
   N = 32					# coefficients
   for listIndex in range(0, len(fcList)):
     fc = fcList[listIndex]
-    name = 'g_third_stage_fir_' + str(int(fc)) 
-    generate_third_stage_coefficients(body, name, Fs, fc, N)
+    fcName = str(int(fc / 1000)) + 'kHz'
+    name = 'g_third_stage_fir_' + fcName
+    generate_third_stage_coefficients(body, name, Fs, float(fc), N)
   
 
 ###############################################################################

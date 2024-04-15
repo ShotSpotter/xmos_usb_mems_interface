@@ -12,6 +12,16 @@
         #define MIC_ARRAY_DC_OFFSET_LOG2 8
 #endif
 
+//
+// Define critical frequency of third stage fir filter
+// Only define ONE of the following values - default (if no defines used is 8kHz)
+//
+#define THIRD_STAGE_8kHz
+//#define THIRD_STAGE_16kHz
+//#define THIRD_STAGE_24kHz
+//#define THIRD_STAGE_32kHz
+//#define THIRD_STAGE_40kHz
+
 #define SECOND_STAGE_COEF_COUNT         32
 #define SECOND_STAGE_BUFFER_SIZE        (SECOND_STAGE_COEF_COUNT * 2)
 #define SECOND_STAGE_HALF_FILTER_OFFSET (SECOND_STAGE_COEF_COUNT * 2)
@@ -632,7 +642,19 @@ third_stage:
     //
     // Pointer to fir filter coefficients
     //
-    ldaw r11, cp[g_third_stage_fir_8000]
+#if defined(THIRD_STAGE_8kHz)
+    ldaw r11, cp[g_third_stage_fir_8kHz]
+#elif defined(THIRD_STAGE_16kHz)
+    ldaw r11, cp[g_third_stage_fir_16kHz]
+#elif defined(THIRD_STAGE_24kHz)
+    ldaw r11, cp[g_third_stage_fir_24kHz]
+#elif defined(THIRD_STAGE_32kHz)
+    ldaw r11, cp[g_third_stage_fir_32kHz]
+#elif defined(THIRD_STAGE_40kHz)
+    ldaw r11, cp[g_third_stage_fir_40kHz]
+#else
+    ldaw r11, cp[g_third_stage_fir_8kHz]
+#endif
     //
     // Value to increment data pointer for next channel (bytes)
     //
