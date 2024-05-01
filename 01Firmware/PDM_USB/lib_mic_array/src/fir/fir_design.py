@@ -347,7 +347,7 @@ def generate_third_stage_coefficients(body, name, Fs, fc, N):
   body.write('const int ' + name + '[{0}]'.format(coefs) + ' = {\n')
   print('creating third stage coefficients: ' + name + ' with {0} poles, {1} coefficients, Fs: {2}kHz and fc: {3}kHz'.format(N, coefs, int(Fs/1000), int(fc/1000)))
   for n in range(0, coefs):
-    coef = (coefList[n] * (2.0**30)) / maxCoef				# Scale coefficients to get reasonable output
+    coef = (coefList[n] * (2.0**30)) / (maxCoef * 3.65)				# Scale coefficients to get reasonable output
     lcoef = int(coef)
     if (n % 8) == 0:
         body.write('\t')
