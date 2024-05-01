@@ -144,27 +144,31 @@ pdm_rx_8ch_loop:
 	unzip r3, r4, 0
 	std r3, r4, r10[0]
 
+        //
+        // Map to output ports 0, 2, 0, 2, 1, 3, 1 so that microphone sequence becomes
+        // mic 0, 1, 2, 3, 4, 5, 6, 7 (as opposed to 0, 4, 1, 5, 2, 6, 3 as previously)
+        //
 	ldc r9, MIC_ARRAY_CH0
 	FIR();						// FIR filter result is in r3
         ldw r1, r11[S_OUT_PORT_0]			// Get first output port
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH4}
 	FIR();						// FIR filter based on r9, result is in r3
-        ldw r1, r11[S_OUT_PORT_1]			// Get second output port
+        ldw r1, r11[S_OUT_PORT_2]			// Get second output port
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH1}
 	FIR();
-        ldw r1, r11[S_OUT_PORT_2]
+        ldw r1, r11[S_OUT_PORT_0]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH5}
 	FIR();
-        ldw r1, r11[S_OUT_PORT_3]
+        ldw r1, r11[S_OUT_PORT_2]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH2}
 	FIR();
-        ldw r1, r11[S_OUT_PORT_0]
+        ldw r1, r11[S_OUT_PORT_1]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH6}
 	FIR();
-        ldw r1, r11[S_OUT_PORT_1]
+        ldw r1, r11[S_OUT_PORT_3]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH3}
 	FIR();
-        ldw r1, r11[S_OUT_PORT_2]
+        ldw r1, r11[S_OUT_PORT_1]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH7}
         FIR();							// CH7 FIR filter result is in r3
 // These two options replace unused channel 7 debug patterns

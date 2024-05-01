@@ -16,8 +16,9 @@
 // Define critical frequency of third stage fir filter
 // Only define ONE of the following values - default (if no defines used is 8kHz)
 //
-//#define THIRD_STAGE_8kHz
-#define THIRD_STAGE_12kHz
+#define THIRD_STAGE_ON
+#define THIRD_STAGE_8kHz
+//#define THIRD_STAGE_12kHz
 //#define THIRD_STAGE_16kHz
 //#define THIRD_STAGE_24kHz
 //#define THIRD_STAGE_32kHz
@@ -677,7 +678,9 @@ third_stage_loop1:
     //
     // Store channel 0 output (overwrite second stage output value)
     //
+#ifdef THIRD_STAGE_ON
     stw r0, r10[S_OUTPUT_STORAGE_0]
+#endif
     //
     add r7, r7, r6		// r7 = data pointer, r6 = bytes to next channel's data
 
@@ -694,8 +697,9 @@ third_stage_loop2:
     //
     // Store channel 1 output (overwrite second stage output value)
     //
+#ifdef THIRD_STAGE_ON
     stw r0, r10[S_OUTPUT_STORAGE_1]
-
+#endif
     //
     retsp 0
 
