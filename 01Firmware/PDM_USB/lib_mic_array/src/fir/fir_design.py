@@ -347,7 +347,12 @@ def generate_third_stage_coefficients(body, name, Fs, fc, N):
   body.write('const int ' + name + '[{0}]'.format(coefs) + ' = {\n')
   print('creating third stage coefficients: ' + name + ' with {0} poles, {1} coefficients, Fs: {2}kHz and fc: {3}kHz'.format(N, coefs, int(Fs/1000), int(fc/1000)))
   for n in range(0, coefs):
-    coef = (coefList[n] * (2.0**30)) / (maxCoef * 3.65)				# Scale coefficients to get reasonable output
+    #
+    # After comparison with sceptre 2 signal was attenuated too much at a factor of 3.65
+    # Results showed that with enclosure sceptre 3 signal needed to be increased by a factor of 2
+    # - therefore reduce divisor in following calculation from 3.65 to 1.82
+    #
+    coef = (coefList[n] * (2.0**30)) / (maxCoef * 1.82)				# Scale coefficients to get reasonable output
     lcoef = int(coef)
     if (n % 8) == 0:
         body.write('\t')
