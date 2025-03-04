@@ -142,7 +142,7 @@ def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=
     # w = weights*test_weight*(a!= 0.0)
 
     try:
-      h = signal.remez(num_taps, bands, a, w)
+      h = signal.remez(num_taps, bands, a, weight=w)
 
       (_, H) = signal.freqz(h, worN=2048)
 
