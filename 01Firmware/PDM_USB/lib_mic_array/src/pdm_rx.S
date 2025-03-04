@@ -70,7 +70,7 @@
 #define S_BUFFER_MASK			(S_BUFFER_SIZE - 1)
 #define S_SINE_INDEX_MASK		((1 << 7) - 1)
 
-//#define OUTPUT_RANDOM
+#define OUTPUT_RANDOM
 //#define OUTPUT_SINE_WAVE
 
 #define STACKWORDS			(S_BUFFER + S_BUFFER_SIZE)

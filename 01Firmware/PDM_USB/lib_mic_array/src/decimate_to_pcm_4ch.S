@@ -17,12 +17,12 @@
 // Only define ONE of the following values - default (if no defines used is 8kHz)
 //
 #define THIRD_STAGE_ON
-#define THIRD_STAGE_8kHz
+//#define THIRD_STAGE_8kHz
 //#define THIRD_STAGE_12kHz
 //#define THIRD_STAGE_16kHz
 //#define THIRD_STAGE_24kHz
 //#define THIRD_STAGE_32kHz
-//#define THIRD_STAGE_40kHz
+#define THIRD_STAGE_40kHz
 
 #define SECOND_STAGE_COEF_COUNT         32
 #define SECOND_STAGE_BUFFER_SIZE        (SECOND_STAGE_COEF_COUNT * 2)
