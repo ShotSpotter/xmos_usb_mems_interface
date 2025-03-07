@@ -281,6 +281,21 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
   if total_abs_sum*int32_max > int64_max:
     print("WARNING: error in second stage too large")
 
+  body.write("\n")
+  header.write("\n")
+  #
+  # write pass through filter
+  #
+  header.write(f"extern const int g_second_stage_passthrough32[{len(coefs)//2}];\n")
+  body.write("const int g_second_stage_passthrough32[" + f"{len(coefs)//2}" + "] = {\n")
+
+  zero_coefs_index = (len(coefs) // 2) - 2
+  for i in range(0, len(coefs)//2):
+    coef = 0
+    if i >= zero_coefs_index:
+        coef = 0x3ffffffb
+    body.write("\t0x{:08x},\n".format(coef))
+  body.write("};\n\n")
 
    # add our debugging data
   body.write("\n")

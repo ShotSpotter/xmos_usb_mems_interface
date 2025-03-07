@@ -13,10 +13,17 @@
 #endif
 
 //
+// Build firmware for public safety (default) or critical infrastructure
+// define CRITICAL_INFRASTURE token if required
+//
+#define CRITICAL_INFRASTRUCTURE
+//
 // Define critical frequency of third stage fir filter
 // Only define ONE of the following values - default (if no defines used is 8kHz)
 //
+#ifdef CRITICAL_INFRASTRUCTURE
 #define THIRD_STAGE_ON
+#endif
 #define THIRD_STAGE_8kHz
 //#define THIRD_STAGE_12kHz
 //#define THIRD_STAGE_16kHz
@@ -560,7 +567,11 @@ divide_by_four:
     //
     // Pointer to second stage fir filter coefficients
     //
+#ifdef CRITICAL_INFRASTRUCTURE
+    ldaw r11, cp[g_second_stage_passthrough32]
+#else
     ldaw r11, cp[g_second_stage_fir32]
+#endif
     //
     // Value to increment data pointer for next channel (bytes)
     //

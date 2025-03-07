@@ -1,4 +1,4 @@
-// Copyright (c) 2024, XMOS Ltd, All rights reserved
+// Copyright (c) 2025, XMOS Ltd, All rights reserved
 const int g_first_stage_fir_0[256] = {
 	0xfdc3b1f7, 0xff3acfac, 0xfed512c8, 0x004c307d, 0xfe83e9ec, 0xfffb07a1, 0xff954abd, 0x010c6872, 
 	0xfe4539da, 0xffbc5790, 0xff569aac, 0x00cdb860, 0xff0571cf, 0x007c8f84, 0x0016d2a0, 0x018df055, 
@@ -130,6 +130,26 @@ const int g_second_stage_fir32[16] = {
 	0x0e426978,
 	0x0ed33161,
 	0x0f1d633b,
+};
+
+
+const int g_second_stage_passthrough32[16] = {
+	0x00000000,
+	0x00000000,
+	0x00000000,
+	0x00000000,
+	0x00000000,
+	0x00000000,
+	0x00000000,
+	0x00000000,
+	0x00000000,
+	0x00000000,
+	0x00000000,
+	0x00000000,
+	0x00000000,
+	0x00000000,
+	0x3ffffffb,
+	0x3ffffffb,
 };
 
 
