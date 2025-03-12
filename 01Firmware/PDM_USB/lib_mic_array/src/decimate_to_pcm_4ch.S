@@ -14,17 +14,22 @@
 
 //
 // Build firmware for public safety (default) or critical infrastructure
-// define CRITICAL_INFRASTURE token if required
+// SERVICE_TYPE defines which service to build
 //
-#define CRITICAL_INFRASTRUCTURE
+#define CRITICAL_INFRASTRUCTURE		1
+#define PUBLIC_SAFETY			2
+#define SERVICE_TYPE			CRITICAL_INFRASTRUCTURE
+//#define SERVICE_TYPE			PUBLIC_SAFETY
 //
 // Define critical frequency of third stage fir filter
 // Only define ONE of the following values - default (if no defines used is 8kHz)
 //
-#ifdef CRITICAL_INFRASTRUCTURE
 #define THIRD_STAGE_ON
-#endif
+#if SERVICE_TYPE == PUBLIC_SAFETY
 #define THIRD_STAGE_8kHz
+#elif SERVICE_TYPE == CRITICAL_INFRASTRUTURE
+#define THIRD_STAGE_40kHz
+#endif
 //#define THIRD_STAGE_12kHz
 //#define THIRD_STAGE_16kHz
 //#define THIRD_STAGE_24kHz
@@ -567,9 +572,9 @@ divide_by_four:
     //
     // Pointer to second stage fir filter coefficients
     //
-#ifdef CRITICAL_INFRASTRUCTURE
-    ldaw r11, cp[g_second_stage_passthrough32]
-#else
+#if SERVICE_TYPE == CRITICAL_INFRASTRUCTURE
+    ldaw r11, cp[g_second_stage_fir32_critical_infrastructure]
+#elif SERVICE_TYPE == PUBLIC_SAFETY
     ldaw r11, cp[g_second_stage_fir32]
 #endif
     //

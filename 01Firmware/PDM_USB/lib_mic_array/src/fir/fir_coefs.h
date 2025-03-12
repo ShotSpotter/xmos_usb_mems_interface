@@ -7,7 +7,7 @@ extern const int fir1_debug[48];
 
 extern const int g_second_stage_fir32[16];
 
-extern const int g_second_stage_passthrough32[16];
+extern const int g_second_stage_fir32_critical_infrastructure[16];
 
 extern const int g_sine_wave3[128];
 extern const int g_crc_constants[2];

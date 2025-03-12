@@ -284,18 +284,13 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
   body.write("\n")
   header.write("\n")
   #
-  # write pass through filter
+  # write critical infrastructure fir32 filter with 30 kHz roll-off and 40 kHz cut-off
   #
-  header.write(f"extern const int g_second_stage_passthrough32[{len(coefs)//2}];\n")
-  body.write("const int g_second_stage_passthrough32[" + f"{len(coefs)//2}" + "] = {\n")
+  header.write(f"extern const int g_second_stage_fir32_critical_infrastructure[{len(coefs)//2}];\n")
+  body.write("const int g_second_stage_fir32_critical_infrastructure[" + f"{len(coefs)//2}" + "] = {\n")
+  body.write("\t0x137F1F3, 0x15CA500, 0x1C8C6DB, 0x27910AA, 0x364FD6F, 0x484082B, 0x5C9BD44, 0x7285993,\n")
+  body.write("\t0x892C1B9, 0x9F93B42, 0xB4D5B44, 0xC80B6D6, 0xD8829E5, 0xE5740D6, 0xEE61E70, 0xF2EDCC6};\n")
 
-  zero_coefs_index = (len(coefs) // 2) - 2
-  for i in range(0, len(coefs)//2):
-    coef = 0
-    if i >= zero_coefs_index:
-        coef = 0x3ffffffb
-    body.write("\t0x{:08x},\n".format(coef))
-  body.write("};\n\n")
 
    # add our debugging data
   body.write("\n")
