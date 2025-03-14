@@ -13,7 +13,7 @@
 #endif
 
 //
-// Build firmware for public safety (default) or critical infrastructure
+// Build firmware for public safety or critical infrastructure
 // SERVICE_TYPE defines which service to build
 //
 #define CRITICAL_INFRASTRUCTURE		1
@@ -24,11 +24,11 @@
 // Define critical frequency of third stage fir filter
 // Only define ONE of the following values - default (if no defines used is 8kHz)
 //
-#define THIRD_STAGE_ON
 #if SERVICE_TYPE == PUBLIC_SAFETY
 #define THIRD_STAGE_8kHz
+#define THIRD_STAGE_ON
 #elif SERVICE_TYPE == CRITICAL_INFRASTRUTURE
-#define THIRD_STAGE_40kHz
+//#define THIRD_STAGE_40kHz
 #endif
 //#define THIRD_STAGE_12kHz
 //#define THIRD_STAGE_16kHz
