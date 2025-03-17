@@ -108,7 +108,7 @@ void genclock();
 #ifdef CRITICAL_INFRASTRUCTURE
 #define BCD_DEVICE_J            2
 #define BCD_DEVICE_M            6
-#define BCD_DEVICE_N            14
+#define BCD_DEVICE_N            15
 # else
 #define BCD_DEVICE_J            2
 #define BCD_DEVICE_M            6
