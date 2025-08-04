@@ -28,6 +28,9 @@ void DFUHandler(server interface i_dfu i, chanend ?c_user_cmd);
 on tile[AUDIO_IO_TILE] : port p_mclk_in                     = PORT_MCLK_IN;
 on tile[XUD_TILE] : in port p_for_mclk_count                = PORT_MCLK_COUNT;
 
+/* Board revision fuses -- Port declarations */
+on tile[PDM_TILE] : in port p_boardrev_fuses               = PORT_FUSES_A_TO_D;
+
 /* Clock blocks */
 on tile[AUDIO_IO_TILE] : clock    clk_audio_mclk            = CLKBLK_MCLK;       /* Master clock */
 
@@ -49,7 +52,7 @@ void thread_speed()
 
 
 /* Core USB Audio functions - must be called on the Tile connected to the USB Phy */
-void usb_audio_core(chanend c_mix_out, chanend ?c_clk_int, chanend ?c_clk_ctl, client interface i_dfu ?dfuInterface)
+void usb_audio_core(chanend c_mix_out, chanend ?c_clk_int, chanend ?c_clk_ctl, chanend ?c_boardrev_xud, client interface i_dfu ?dfuInterface)
 {
     chan c_sof;
     chan c_xud_out[ENDPOINT_COUNT_OUT];              /* Endpoint channels for XUD */
@@ -84,7 +87,7 @@ void usb_audio_core(chanend c_mix_out, chanend ?c_clk_int, chanend ?c_clk_ctl, c
         /* Endpoint 0 Core */
         {
             thread_speed();
-            Endpoint0( c_xud_out[0], c_xud_in[0], c_aud_ctl, c_mix_ctl, c_clk_ctl, c_EANativeTransport_ctrl, dfuInterface);
+            Endpoint0( c_xud_out[0], c_xud_in[0], c_aud_ctl, c_mix_ctl, c_clk_ctl, c_EANativeTransport_ctrl, c_boardrev_xud, dfuInterface);
         }
 
         /* Decoupling core */
@@ -110,6 +113,31 @@ void usb_audio_io(chanend c_aud_in, chanend ?c_adc, chanend ?c_aud_cfg, streamin
     }
 } /* usb_audio_io */
 
+/*
+    Both XUD and PDM code need to know the board rev but they
+    run on different tiles, so we need a thread that queries
+    the board rev fuses and distributes it to both tiles.
+*/
+void boardrev_fuse_read(in port p_boardrev_fuses, chanend c_boardrev_xud, chanend c_boardrev_pdm)
+{
+    thread_speed();
+    int warmups = 1 << 20;
+    /*
+        We only read board fuses once and I'm worried about doing so at
+        startup, so read and throw away a few thousand times before
+        accepting a value.
+    */
+    for (int i=0; i < warmups; i++) {
+        p_boardrev_fuses :> void;
+    }
+    /* Send fuse value to XUD and PDM threads, which are waiting on the channel. */
+    int value;
+    p_boardrev_fuses :> value;
+    c_boardrev_xud <: value;
+    c_boardrev_pdm <: value;
+    return;
+    /* thread exit */
+}
 
 
 /* Main for USB Audio Applications */
@@ -125,6 +153,8 @@ int main(){
     interface i_dfu dfuInterface;
     chan c_mix_out;
     chan c_pdm_pcm;
+    chan c_boardrev_xud;
+    chan c_boardrev_pdm;
 
 
     par
@@ -132,7 +162,7 @@ int main(){
         on tile[XUD_TILE]:
         par
         {
-            usb_audio_core(c_mix_out, c_clk_int, c_clk_ctl, dfuInterface);
+            usb_audio_core(c_mix_out, c_clk_int, c_clk_ctl, c_boardrev_xud, dfuInterface);
         }
 
         on tile[AUDIO_IO_TILE]:
@@ -145,8 +175,9 @@ int main(){
         on tile[PDM_TILE]:
         par
         {
+            boardrev_fuse_read(p_boardrev_fuses, c_boardrev_xud, c_boardrev_pdm);
             DFUHandler(dfuInterface, null);
-            pcm_pdm_mic(c_pdm_pcm);
+            pcm_pdm_mic(c_pdm_pcm, c_boardrev_pdm);
         }
     }
 

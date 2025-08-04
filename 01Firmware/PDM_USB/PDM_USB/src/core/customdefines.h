@@ -8,12 +8,6 @@
 #define _CUSTOMDEFINES_H_
 #endif
 
-/* Prototype for our custom genclock() task */
-void genclock();
-
-#define USER_MAIN_CORES \
-            on tile[1] : genclock();
-
 /*
  * Device configuration option defines to override default defines found devicedefines.h
  *
@@ -103,16 +97,16 @@ void genclock();
 
 // #define BCD_DEVICE              0x0001
 
-#define CRITICAL_INFRASTRUCTURE 1
+// #define CRITICAL_INFRASTRUCTURE 1
 
 #ifdef CRITICAL_INFRASTRUCTURE
 #define BCD_DEVICE_J            2
 #define BCD_DEVICE_M            6
 #define BCD_DEVICE_N            15
-# else
+#else
 #define BCD_DEVICE_J            2
-#define BCD_DEVICE_M            6
-#define BCD_DEVICE_N            0
+#define BCD_DEVICE_M            7
+#define BCD_DEVICE_N            1
 #endif
 
 #define AUDIO_CLASS             2

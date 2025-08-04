@@ -20,7 +20,15 @@
  *  \param c_EANativeTransport_ctrl Optional chanend to be connected to EA Native
  *                                  endpoint manager if present
  */
-void Endpoint0(chanend c_ep0_out, chanend c_ep0_in, chanend c_audioCtrl,
-        chanend ?c_mix_ctl,chanend ?c_clk_ctl, chanend ?c_EANativeTransport_ctr, client interface i_dfu dfuInterface);
+void Endpoint0(
+        chanend c_ep0_out,
+        chanend c_ep0_in,
+        chanend c_audioCtrl,
+        chanend ?c_mix_ctl,
+        chanend ?c_clk_ctl,
+        chanend ?c_EANativeTransport_ctr,
+        chanend ?c_boardrev_xud,
+        client interface i_dfu dfuInterface
+);
 
 #endif

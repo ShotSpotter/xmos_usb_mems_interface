@@ -28,6 +28,7 @@
 /* Support for C */
 #define null 0
 #define outuint(c, x)   asm ("out res[%0], %1" :: "r" (c), "r" (x))
+#define inuint(c, x)    asm ("in %0, res[%1]" : "=r" (x) : "r" (c))
 #define chkct(c, x)     asm ("chkct res[%0], %1" :: "r" (c), "r" (x))
 #endif
 
@@ -162,13 +163,23 @@ const unsigned g_chanCount_In_HS[INPUT_FORMAT_COUNT]       = {HS_STREAM_FORMAT_I
 };
 
 /* Endpoint 0 function.  Handles all requests to the device */
-void Endpoint0(chanend c_ep0_out, chanend c_ep0_in, chanend c_audioControl,
-		chanend c_mix_ctl, chanend c_clk_ctl, chanend c_EANativeTransport_ctrl,
-		CLIENT_INTERFACE(i_dfu, dfuInterface)) {
+void Endpoint0(
+	chanend c_ep0_out,
+	chanend c_ep0_in,
+	chanend c_audioControl,
+	chanend c_mix_ctl,
+	chanend c_clk_ctl,
+	chanend c_EANativeTransport_ctrl,
+	chanend c_boardrev_xud,
+	CLIENT_INTERFACE(i_dfu, dfuInterface))
+{
 	USB_SetupPacket_t sp;
 	XUD_ep ep0_out = XUD_InitEp(c_ep0_out);
 	XUD_ep ep0_in = XUD_InitEp(c_ep0_in);
-
+	/* blocks waiting for fuse read (done once) */
+	int boardrev;
+	//boardrev = boardrev_wait(chanend c_boardrev_xud);
+	inuint(c_boardrev_xud, boardrev);  /* Using inuint() instead of XC ':>' operator */
 	/* Init tables for volumes (+ 1 for master) */
 	for (int i = 0; i < NUM_USB_CHAN_OUT + 1; i++) {
 		volsOut[i] = 0;
@@ -313,6 +324,7 @@ void Endpoint0(chanend c_ep0_out, chanend c_ep0_in, chanend c_audioControl,
 				cfgDesc_Audio2.Audio_In_Format.bBitResolution = HS_STREAM_FORMAT_INPUT_1_RESOLUTION_BITS;
 				cfgDesc_Audio2.Audio_In_Endpoint.wMaxPacketSize = HS_STREAM_FORMAT_INPUT_1_MAXPACKETSIZE;
 				cfgDesc_Audio2.Audio_In_ClassStreamInterface.bNrChannels = NUM_USB_CHAN_IN;
+				cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.bmChannelConfig = boardrev;
 				result = USB_StandardRequests(ep0_out, ep0_in,
 						(unsigned char*)&devDesc_Audio2, sizeof(devDesc_Audio2),
 						(unsigned char*)&cfgDesc_Audio2, sizeof(cfgDesc_Audio2),

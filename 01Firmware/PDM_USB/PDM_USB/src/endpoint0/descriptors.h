@@ -286,7 +286,7 @@ typedef struct
 }__attribute__((packed)) USB_Config_Descriptor_Audio2_t;
 
 #if 1
-USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
+USB_Config_Descriptor_Audio2_t cfgDesc_Audio2 =
 {
     .Config =
     {

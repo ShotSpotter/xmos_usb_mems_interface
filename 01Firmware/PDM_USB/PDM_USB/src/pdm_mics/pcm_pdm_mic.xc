@@ -114,8 +114,10 @@ void pdm_process(streaming chanend c_ds_output[MIC_ARRAY_DECIMATORS], chanend c_
 #error MAX_FREQ > 96000 NOT CURRENTLY SUPPORTED
 #endif
 
-void pcm_pdm_mic(chanend c_pcm_out)
+void pcm_pdm_mic(chanend c_pcm_out, chanend c_boardrev_pcm)
 {
+    int boardrev;
+    c_boardrev_pcm :> boardrev;
     streaming chan c_pdm_mic_0_to_1, c_pdm_mic_2_to_3;
     streaming chan c_pdm_mic_4_to_5, c_pdm_mic_6_to_7;
     streaming chan c_ds_output[MIC_ARRAY_DECIMATORS];
