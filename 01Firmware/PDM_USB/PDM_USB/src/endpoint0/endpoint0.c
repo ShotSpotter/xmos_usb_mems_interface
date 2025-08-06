@@ -324,7 +324,23 @@ void Endpoint0(
 				cfgDesc_Audio2.Audio_In_Format.bBitResolution = HS_STREAM_FORMAT_INPUT_1_RESOLUTION_BITS;
 				cfgDesc_Audio2.Audio_In_Endpoint.wMaxPacketSize = HS_STREAM_FORMAT_INPUT_1_MAXPACKETSIZE;
 				cfgDesc_Audio2.Audio_In_ClassStreamInterface.bNrChannels = NUM_USB_CHAN_IN;
-				//cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.bmChannelConfig = boardrev;
+				// These are one-byte fields in the spec, but not in descriptor.h. Device did not enumerate
+				// if I failed to coerce to char() here.
+				cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.bmChannelConfig = (char) boardrev;
+				switch (boardrev) {
+					case 0xf:
+						cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.iTerminal = offsetof(StringDescTable_t, iTerminalStrMICROPHONE_VM3000)/sizeof(char *);
+						break;
+					case 0xe:
+						cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.iTerminal = offsetof(StringDescTable_t, iTerminalStrMICROPHONE_IM72D128V01)/sizeof(char *);
+						break;
+					case 0xd:
+						cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.iTerminal = offsetof(StringDescTable_t, iTerminalStrMICROPHONE_PRIMO_EM215)/sizeof(char *);
+						break;
+					default:
+						/* leave as empty string */
+						break;
+				}
 				result = USB_StandardRequests(ep0_out, ep0_in,
 						(unsigned char*)&devDesc_Audio2, sizeof(devDesc_Audio2),
 						(unsigned char*)&cfgDesc_Audio2, sizeof(cfgDesc_Audio2),

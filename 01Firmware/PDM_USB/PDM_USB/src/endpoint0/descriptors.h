@@ -102,6 +102,10 @@ typedef struct
 #endif
 
     STR_TABLE_ENTRY(iAPInterfaceStr);
+    /* which entry we use is set by boardrev */
+    STR_TABLE_ENTRY(iTerminalStrMICROPHONE_VM3000);
+    STR_TABLE_ENTRY(iTerminalStrMICROPHONE_IM72D128V01);
+    STR_TABLE_ENTRY(iTerminalStrMICROPHONE_PRIMO_EM215);
 } StringDescTable_t;
 
 StringDescTable_t g_strTable =
@@ -126,6 +130,9 @@ StringDescTable_t g_strTable =
 #endif
 
     .iAPInterfaceStr             = "iAP Interface",
+    .iTerminalStrMICROPHONE_VM3000      = "microphone:vm3000",
+    .iTerminalStrMICROPHONE_IM72D128V01 = "microphone:im72d128v01",
+    .iTerminalStrMICROPHONE_PRIMO_EM215 = "microphone:primo-em215",
 };
 
 /***** Device Descriptors *****/
@@ -286,6 +293,7 @@ typedef struct
 }__attribute__((packed)) USB_Config_Descriptor_Audio2_t;
 
 #if 1
+
 USB_Config_Descriptor_Audio2_t cfgDesc_Audio2 =
 {
     .Config =
@@ -529,7 +537,7 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2 =
 
             .bCSourceID                = ID_CLKSEL,
             .bmControls                = 0x0000,
-            .iTerminal                 = offsetof(StringDescTable_t, usbOutputTermStr_Audio2)/sizeof(char *)
+            .iTerminal                 = 0,
         },
 #endif
 
