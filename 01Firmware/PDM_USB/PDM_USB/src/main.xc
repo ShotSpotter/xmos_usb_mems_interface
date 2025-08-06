@@ -8,6 +8,8 @@
 #include <xs1.h>
 #include <xclib.h>
 #include <print.h>
+#include <stdio.h>
+
 
 #include "xud.h"                 /* XMOS USB Device Layer defines and functions */
 
@@ -20,6 +22,7 @@
 #include "clocking.h"
 
 #include "pcm_pdm_mic.h"
+#include "boardrev.h"
 
 [[distributable]]
 void DFUHandler(server interface i_dfu i, chanend ?c_user_cmd);
@@ -113,14 +116,11 @@ void usb_audio_io(chanend c_aud_in, chanend ?c_adc, chanend ?c_aud_cfg, streamin
     }
 } /* usb_audio_io */
 
-/*
-    Both XUD and PDM code need to know the board rev but they
-    run on different tiles, so we need a thread that queries
-    the board rev fuses and distributes it to both tiles.
-*/
+
 void boardrev_fuse_read(in port p_boardrev_fuses, chanend c_boardrev_xud, chanend c_boardrev_pdm)
 {
-    thread_speed();
+
+    printf("boardrev_fuse_read start\n");
     int warmups = 1 << 20;
     /*
         We only read board fuses once and I'm worried about doing so at
@@ -132,12 +132,16 @@ void boardrev_fuse_read(in port p_boardrev_fuses, chanend c_boardrev_xud, chanen
     }
     /* Send fuse value to XUD and PDM threads, which are waiting on the channel. */
     int value;
+
     p_boardrev_fuses :> value;
+    printf("boardrev_fuse_read value %d\n", value);
     c_boardrev_xud <: value;
     c_boardrev_pdm <: value;
+    printf("boardrev_fuse_read quit\n");
     return;
     /* thread exit */
 }
+
 
 
 /* Main for USB Audio Applications */

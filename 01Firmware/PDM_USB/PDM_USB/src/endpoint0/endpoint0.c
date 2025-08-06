@@ -23,12 +23,12 @@
 #include "dfu_types.h"
 #include "xc_ptr.h"
 #include "audiorequests.h"
+#include "boardrev.h"
 
 #ifndef __XC__
 /* Support for C */
 #define null 0
 #define outuint(c, x)   asm ("out res[%0], %1" :: "r" (c), "r" (x))
-#define inuint(c, x)    asm ("in %0, res[%1]" : "=r" (x) : "r" (c))
 #define chkct(c, x)     asm ("chkct res[%0], %1" :: "r" (c), "r" (x))
 #endif
 
@@ -177,10 +177,10 @@ void Endpoint0(
 	XUD_ep ep0_out = XUD_InitEp(c_ep0_out);
 	XUD_ep ep0_in = XUD_InitEp(c_ep0_in);
 	/* blocks waiting for fuse read (done once) */
+
 	int boardrev;
-	//boardrev = boardrev_wait(chanend c_boardrev_xud);
-	inuint(c_boardrev_xud, boardrev);  /* Using inuint() instead of XC ':>' operator */
-	/* Init tables for volumes (+ 1 for master) */
+	boardrev = boardrev_fuse_wait_value(c_boardrev_xud, 1);
+
 	for (int i = 0; i < NUM_USB_CHAN_OUT + 1; i++) {
 		volsOut[i] = 0;
 		mutesOut[i] = 0;
@@ -324,7 +324,7 @@ void Endpoint0(
 				cfgDesc_Audio2.Audio_In_Format.bBitResolution = HS_STREAM_FORMAT_INPUT_1_RESOLUTION_BITS;
 				cfgDesc_Audio2.Audio_In_Endpoint.wMaxPacketSize = HS_STREAM_FORMAT_INPUT_1_MAXPACKETSIZE;
 				cfgDesc_Audio2.Audio_In_ClassStreamInterface.bNrChannels = NUM_USB_CHAN_IN;
-				cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.bmChannelConfig = boardrev;
+				//cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.bmChannelConfig = boardrev;
 				result = USB_StandardRequests(ep0_out, ep0_in,
 						(unsigned char*)&devDesc_Audio2, sizeof(devDesc_Audio2),
 						(unsigned char*)&cfgDesc_Audio2, sizeof(cfgDesc_Audio2),
