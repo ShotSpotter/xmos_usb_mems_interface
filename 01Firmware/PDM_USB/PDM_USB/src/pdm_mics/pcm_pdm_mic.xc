@@ -135,10 +135,10 @@ void pcm_pdm_mic(chanend c_pcm_out, chanend c_boardrev_pcm)
     {
         // Mics 1 to 8
         mic_array_pdm_rx(p_pdm_mics_0_to_7, c_pdm_mic_0_to_1, c_pdm_mic_2_to_3, c_pdm_mic_4_to_5, c_pdm_mic_6_to_7);
-        mic_array_decimate_to_pcm_2ch(c_pdm_mic_0_to_1, c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
-        mic_array_decimate_to_pcm_2ch(c_pdm_mic_2_to_3, c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
-        mic_array_decimate_to_pcm_2ch(c_pdm_mic_4_to_5, c_ds_output[2], MIC_ARRAY_NO_INTERNAL_CHANS);
-        mic_array_decimate_to_pcm_2ch(c_pdm_mic_6_to_7, c_ds_output[3], MIC_ARRAY_NO_INTERNAL_CHANS);
+        mic_array_decimate_to_pcm_2ch(c_pdm_mic_0_to_1, c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS, boardrev);
+        mic_array_decimate_to_pcm_2ch(c_pdm_mic_2_to_3, c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS, boardrev);
+        mic_array_decimate_to_pcm_2ch(c_pdm_mic_4_to_5, c_ds_output[2], MIC_ARRAY_NO_INTERNAL_CHANS, boardrev);
+        mic_array_decimate_to_pcm_2ch(c_pdm_mic_6_to_7, c_ds_output[3], MIC_ARRAY_NO_INTERNAL_CHANS, boardrev);
         // Process decimated data
         pdm_process(c_ds_output, c_pcm_out);
     }

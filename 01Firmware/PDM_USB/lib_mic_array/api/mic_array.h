@@ -134,10 +134,11 @@ typedef unsigned mic_array_internal_audio_channels;
  *                                   the client of this task and this task.
  *  \param channels                  A pointer to an array of mic_array_internal_audio_channels. This can be set to
  *                                   MIC_ARRAY_NO_INTERNAL_CHANS if none are requires.
+ *  \param boardrev                  Board revision value (0x00-0xFF) passed to the assembly code.
  */
 void mic_array_decimate_to_pcm_2ch(
         streaming chanend c_from_pdm_interface,
-        streaming chanend c_frame_output, mic_array_internal_audio_channels * channels);
+        streaming chanend c_frame_output, mic_array_internal_audio_channels * channels, unsigned boardrev);
 
 /** Far end channel connector.
  *

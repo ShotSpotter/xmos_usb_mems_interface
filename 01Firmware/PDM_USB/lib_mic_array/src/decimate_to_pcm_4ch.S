@@ -66,7 +66,8 @@
 
 #define S_FAR_END_CHANNEL_0             10
 #define S_FAR_END_CHANNEL_1             11
-#define S_STORAGE_SIZE                  12
+#define S_BOARDREV                      12
+#define S_STORAGE_SIZE                  13
 
 #define S_DC_ELIMINATE                  (S_STORAGE + S_STORAGE_SIZE)
 #define S_PREV_X_0                      0
@@ -213,9 +214,10 @@ mic_array_decimate_to_pcm_2ch:
 
     DUALENTSP_lu6 STACKWORDS
 
-    ldaw r3, sp[S_STORAGE]
-    stw r0, r3[S_C_INPUT]
-    stw r1, r3[S_C_OUTPUT]
+    ldaw r11, sp[S_STORAGE]
+    stw r0, r11[S_C_INPUT]
+    stw r1, r11[S_C_OUTPUT]
+    stw r3, r11[S_BOARDREV]
 
     clre			// Stop events for this thread
 
