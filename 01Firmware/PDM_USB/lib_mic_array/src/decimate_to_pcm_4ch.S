@@ -58,6 +58,7 @@
 #define S_UNUSED                        0
 #define S_C_INPUT                       1
 #define S_C_OUTPUT                      2
+#define S_BOARDREV                      3
 
 #define S_D_DC_OFFSET_LOG2_CH01		2
 
@@ -66,8 +67,7 @@
 
 #define S_FAR_END_CHANNEL_0             10
 #define S_FAR_END_CHANNEL_1             11
-#define S_BOARDREV                      12
-#define S_STORAGE_SIZE                  13
+#define S_STORAGE_SIZE                  12
 
 #define S_DC_ELIMINATE                  (S_STORAGE + S_STORAGE_SIZE)
 #define S_PREV_X_0                      0
@@ -145,6 +145,8 @@
 
 #define S_SETTINGS_OFFSET		(S_FRAME_OFFSET + FRAME_STACK_SIZE)
 #define S_DC_OFFSET_REMOVAL_ENABLED     2
+#define S_SECOND_STAGE_FILTER_PTR       3
+#define S_THIRD_STAGE_FILTER_PTR        4
 #define S_SETTINGS_SIZE                 8
 
 #define STACKWORDS                      (S_SETTINGS_OFFSET + S_SETTINGS_SIZE)
@@ -214,6 +216,9 @@ mic_array_decimate_to_pcm_2ch:
 
     DUALENTSP_lu6 STACKWORDS
 
+// For clarity, read the three arguments passed to mic_array_decimate_to_pcm_2ch()
+// off the stack in one place. However, as r3 will be overwritten before it can be
+// used, we will have to re-read boardrev in lines 576 and 682
     ldaw r11, sp[S_STORAGE]
     stw r0, r11[S_C_INPUT]
     stw r1, r11[S_C_OUTPUT]
@@ -302,6 +307,62 @@ configure:
     ldw r11, r3[4]			// decimation factor
     ldaw r10, sp[S_SECOND_STAGE]
     stw r11, r10[S_SECOND_STAGE_PHASE_COUNT]
+
+    //
+    // Select filter coefficients based on boardrev (done once during configuration)
+    //
+    ldaw r4, sp[S_STORAGE]
+    ldw r11, r4[S_BOARDREV]
+
+    // Select second stage filter
+    ldc r9, 0xFF
+    eq r9, r11, r9
+    bt r9, config_second_stage_0xFF
+    ldc r9, 0xFE
+    eq r9, r11, r9
+    bt r9, config_second_stage_0xFE
+    ldc r9, 0xFD
+    eq r9, r11, r9
+    bt r9, config_second_stage_0xFD
+    // Default case
+    ldaw r11, cp[g_second_stage_fir32]
+    bu config_second_stage_done
+config_second_stage_0xFF:
+    ldaw r11, cp[g_second_stage_fir32]
+    bu config_second_stage_done
+config_second_stage_0xFE:
+    ldaw r11, cp[g_second_stage_fir32]
+    bu config_second_stage_done
+config_second_stage_0xFD:
+    ldaw r11, cp[g_second_stage_fir32_critical_infrastructure]
+config_second_stage_done:
+    ldaw r0, sp[S_SETTINGS_OFFSET]
+    stw r11, r0[S_SECOND_STAGE_FILTER_PTR]
+
+    // Select third stage filter
+    ldc r9, 0xFF
+    eq r9, r11, r9
+    bt r9, config_third_stage_0xFF
+    ldc r9, 0xFE
+    eq r9, r11, r9
+    bt r9, config_third_stage_0xFE
+    ldc r9, 0xFD
+    eq r9, r11, r9
+    bt r9, config_third_stage_0xFD
+    // Default case
+    ldaw r11, cp[g_third_stage_fir_8kHz]
+    bu config_third_stage_done
+config_third_stage_0xFF:
+    ldaw r11, cp[g_third_stage_fir_8kHz]
+    bu config_third_stage_done
+config_third_stage_0xFE:
+    ldaw r11, cp[g_third_stage_fir_16kHz]
+    bu config_third_stage_done
+config_third_stage_0xFD:
+    ldaw r11, cp[g_third_stage_fir_40kHz]
+config_third_stage_done:
+    ldaw r0, sp[S_SETTINGS_OFFSET]
+    stw r11, r0[S_THIRD_STAGE_FILTER_PTR]
 
 init_frame_index:
     ldaw r11, sp[S_FRAME_OFFSET]
@@ -563,17 +624,15 @@ divide_by_four:
 
     ldaw r10, sp[S_OUTPUT_STORAGE]
     //
+    // Load pre-selected second stage fir filter coefficients pointer before dualentsp
+    // to avoid needing offset adjustment
+    //
+    ldaw r4, sp[S_SETTINGS_OFFSET]
+    ldw r11, r4[S_SECOND_STAGE_FILTER_PTR]
+    //
     // This instruction changes sp so cannot reference sp directly for the remainder of this function
     //
     dualentsp 1
-    //
-    // Pointer to second stage fir filter coefficients
-    //
-#ifdef CRITICAL_INFRASTRUCTURE
-    ldaw r11, cp[g_second_stage_fir32_critical_infrastructure]
-#else
-    ldaw r11, cp[g_second_stage_fir32]
-#endif
     //
     // Value to increment data pointer for next channel (bytes)
     //
@@ -655,23 +714,10 @@ third_stage:
     //
     // Now apply filter to data in third stage buffer at r7
     //
-    // Pointer to fir filter coefficients
+    // Load pre-selected third stage fir filter coefficients pointer
     //
-#if defined(THIRD_STAGE_8kHz)
-    ldaw r11, cp[g_third_stage_fir_8kHz]
-#elif defined(THIRD_STAGE_12kHz)
-    ldaw r11, cp[g_third_stage_fir_12kHz]
-#elif defined(THIRD_STAGE_16kHz)
-    ldaw r11, cp[g_third_stage_fir_16kHz]
-#elif defined(THIRD_STAGE_24kHz)
-    ldaw r11, cp[g_third_stage_fir_24kHz]
-#elif defined(THIRD_STAGE_32kHz)
-    ldaw r11, cp[g_third_stage_fir_32kHz]
-#elif defined(THIRD_STAGE_40kHz)
-    ldaw r11, cp[g_third_stage_fir_40kHz]
-#else
-    ldaw r11, cp[g_third_stage_fir_8kHz]
-#endif
+    ldaw r4, sp[S_SETTINGS_OFFSET]
+    ldw r11, r4[S_THIRD_STAGE_FILTER_PTR]
     //
     // Value to increment data pointer for next channel (bytes)
     //
@@ -691,9 +737,7 @@ third_stage_loop1:
     //
     // Store channel 0 output (overwrite second stage output value)
     //
-#ifdef THIRD_STAGE_ON
     stw r0, r10[S_OUTPUT_STORAGE_0]
-#endif
     //
     add r7, r7, r6		// r7 = data pointer, r6 = bytes to next channel's data
 
@@ -710,9 +754,7 @@ third_stage_loop2:
     //
     // Store channel 1 output (overwrite second stage output value)
     //
-#ifdef THIRD_STAGE_ON
     stw r0, r10[S_OUTPUT_STORAGE_1]
-#endif
     //
     retsp 0
 
