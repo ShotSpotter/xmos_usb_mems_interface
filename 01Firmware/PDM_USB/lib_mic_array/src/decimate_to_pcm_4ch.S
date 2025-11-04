@@ -1,6 +1,23 @@
 // Copyright (c) 2015-2016, XMOS Ltd, All rights reserved
-    .section    .dp.data,"awd",@progbits
-    .text
+// Additional code by Richard Boulderstone and
+// Robert B. Calhoun is Copyright (c) 2024-2025 SoundThinking Inc.
+//
+// Assembly-language implementation of mic_array_decimate_to_pcm_2ch(),
+// based on XMOS reference code. The reference code used FIR filters of
+// inadequate size because of compute limitation. In this version, we run
+// one decimator for every two channels instead of one decimator for
+// every four channels, removing the compute limtation but limiting
+// the total number of channels supported by a two-tile XMOS chip to 8.
+//
+// The filters used are defined by at runtime by hardware fuses that
+// are passed into this code via the boardrev argument. Currently,
+// three boardrev values are defined:
+// 0xFF 7-mic board with Vesper VM3000 digital microphone     ( 8 kHz cutoff)
+// 0xFE 7-mic board with Infineon IM72D128 digital microphone (16 kHz cutoff)
+// 0xFD 8-mic board with Primo EM215 analog mic + PDM ADC     (40 kHz cutoff)
+
+.section    .dp.data,"awd",@progbits
+.text
 
 #include "mic_array_conf.h"
 
@@ -12,24 +29,6 @@
         #define MIC_ARRAY_DC_OFFSET_LOG2 8
 #endif
 
-//
-// Build firmware for public safety or critical infrastructure
-// Default is public safety; CRITICAL_INFRASTRUCTURE defines
-// an alternative filter with low pass cutoff of 48 kHz.
-
-// Define critical frequency of third stage fir filter
-#define CRITICAL_INFRASTRUCTURE 1
-#ifdef CRITICAL_INFRASTRUCTURE
-
-#else
-#define THIRD_STAGE_ON
-#define THIRD_STAGE_8kHz
-//#define THIRD_STAGE_12kHz
-//#define THIRD_STAGE_16kHz
-//#define THIRD_STAGE_24kHz
-//#define THIRD_STAGE_32kHz
-//#define THIRD_STAGE_40kHz
-#endif
 
 #define SECOND_STAGE_COEF_COUNT         32
 #define SECOND_STAGE_BUFFER_SIZE        (SECOND_STAGE_COEF_COUNT * 2)
@@ -122,7 +121,7 @@
 #define S_D_OUTPUT_2			3
 #define S_D_OUTPUT_3			4
 #define S_D_OUTPUT_4			5
-#define S_OUTPUT_STORAGE_SIZE           16 
+#define S_OUTPUT_STORAGE_SIZE           16
 
 //
 // Frame - used to transfer output to calling process

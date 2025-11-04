@@ -97,17 +97,9 @@
 
 // #define BCD_DEVICE              0x0001
 
-// #define CRITICAL_INFRASTRUCTURE 1
-
-#ifdef CRITICAL_INFRASTRUCTURE
-#define BCD_DEVICE_J            2
-#define BCD_DEVICE_M            6
-#define BCD_DEVICE_N            15
-#else
 #define BCD_DEVICE_J            2
 #define BCD_DEVICE_M            7
 #define BCD_DEVICE_N            1
-#endif
 
 #define AUDIO_CLASS             2
 #define AUDIO_CLASS_FALLBACK    0
