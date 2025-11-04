@@ -10,11 +10,11 @@
 // the total number of channels supported by a two-tile XMOS chip to 8.
 //
 // The filters used are defined by at runtime by hardware fuses that
-// are passed into this code via the boardrev argument. Currently,
-// three boardrev values are defined:
-// 0xFF 7-mic board with Vesper VM3000 digital microphone     ( 8 kHz cutoff)
-// 0xFE 7-mic board with Infineon IM72D128 digital microphone (16 kHz cutoff)
-// 0xFD 8-mic board with Primo EM215 analog mic + PDM ADC     (40 kHz cutoff)
+// are passed into this code via the boardrev argument. Hardware uses
+// 4-bit fuses (0-15). Currently, three boardrev values are defined:
+// 0x0F (15) 7-mic board with Vesper VM3000 digital microphone     ( 8 kHz cutoff)
+// 0x0E (14) 7-mic board with Infineon IM72D128 digital microphone (16 kHz cutoff)
+// 0x0D (13) 8-mic board with Primo EM215 analog mic + PDM ADC     (40 kHz cutoff)
 
 .section    .dp.data,"awd",@progbits
 .text
@@ -314,51 +314,51 @@ configure:
     ldaw r4, sp[S_STORAGE]
     ldw r8, r4[S_BOARDREV]
 
-    // Select second stage filter
-    ldc r9, 0xFF
+    // Select second stage filter based on boardrev (4-bit fuse value 0-15)
+    ldc r9, 0x0F
     eq r9, r8, r9
-    bt r9, config_second_stage_0xFF
-    ldc r9, 0xFE
+    bt r9, config_second_stage_0x0F
+    ldc r9, 0x0E
     eq r9, r8, r9
-    bt r9, config_second_stage_0xFE
-    ldc r9, 0xFD
+    bt r9, config_second_stage_0x0E
+    ldc r9, 0x0D
     eq r9, r8, r9
-    bt r9, config_second_stage_0xFD
+    bt r9, config_second_stage_0x0D
     // Default case
     ldaw r11, cp[g_second_stage_fir32]
     bu config_second_stage_done
-config_second_stage_0xFF:
+config_second_stage_0x0F:
     ldaw r11, cp[g_second_stage_fir32]
     bu config_second_stage_done
-config_second_stage_0xFE:
+config_second_stage_0x0E:
     ldaw r11, cp[g_second_stage_fir32]
     bu config_second_stage_done
-config_second_stage_0xFD:
+config_second_stage_0x0D:
     ldaw r11, cp[g_second_stage_fir32_critical_infrastructure]
 config_second_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
     stw r11, r0[S_SECOND_STAGE_FILTER_PTR]
 
-    // Select third stage filter (r8 still contains boardrev)
-    ldc r9, 0xFF
+    // Select third stage filter (r8 still contains boardrev, 4-bit value 0-15)
+    ldc r9, 0x0F
     eq r9, r8, r9
-    bt r9, config_third_stage_0xFF
-    ldc r9, 0xFE
+    bt r9, config_third_stage_0x0F
+    ldc r9, 0x0E
     eq r9, r8, r9
-    bt r9, config_third_stage_0xFE
-    ldc r9, 0xFD
+    bt r9, config_third_stage_0x0E
+    ldc r9, 0x0D
     eq r9, r8, r9
-    bt r9, config_third_stage_0xFD
+    bt r9, config_third_stage_0x0D
     // Default case
     ldaw r11, cp[g_third_stage_fir_8kHz]
     bu config_third_stage_done
-config_third_stage_0xFF:
+config_third_stage_0x0F:
     ldaw r11, cp[g_third_stage_fir_8kHz]
     bu config_third_stage_done
-config_third_stage_0xFE:
+config_third_stage_0x0E:
     ldaw r11, cp[g_third_stage_fir_16kHz]
     bu config_third_stage_done
-config_third_stage_0xFD:
+config_third_stage_0x0D:
     ldaw r11, cp[g_third_stage_fir_40kHz]
 config_third_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]

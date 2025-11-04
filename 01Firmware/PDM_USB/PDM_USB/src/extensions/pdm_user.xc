@@ -7,18 +7,18 @@
 unsigned gain = 1;
 
 void user_pdm_init(int boardrev){
-    /* Set digital gain based on board revision */
+    /* Set digital gain based on board revision (4-bit fuse value 0-15) */
     switch(boardrev){
         // Vesper VM3000
-        case 0xFF:
+        case 0x0F:  // 15 decimal
             gain = 1;
             break;
         // Infineon IM72D128
-        case 0xFE:
+        case 0x0E:  // 14 decimal
             gain = 3;
             break;
         // Primo EM215
-        case 0xFD:
+        case 0x0D:  // 13 decimal
             gain = 16;
             break;
         default:
