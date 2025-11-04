@@ -7,7 +7,9 @@
 #include <platform.h>
 #include <xs1.h>
 #include <stdlib.h>
+#ifdef DEBUG
 #include <stdio.h>
+#endif
 #include <string.h>
 #include <xclib.h>
 #include <stdint.h>
@@ -50,7 +52,9 @@ void pdm_process(streaming chanend c_ds_output[MIC_ARRAY_DECIMATORS], chanend c_
         c_audio :> samplerate;
 
         unsigned decimationfactor = 96000/samplerate;
+#ifdef DEBUG
         printf("decimationfactor: %d, samplerate: %d\n", decimationfactor, samplerate);
+#endif
 
         unsafe
         {
@@ -135,6 +139,10 @@ void pcm_pdm_mic(chanend c_pcm_out, chanend c_boardrev_pcm)
     //Mics 1 to 8
     configure_in_port(p_pdm_mics_0_to_7, pdmclk);
     start_clock(pdmclk);
+
+#ifdef DEBUG
+    printf("In pcm_pdm_mic(), boardrev is %d\n", boardrev);
+#endif
 
     par
     {

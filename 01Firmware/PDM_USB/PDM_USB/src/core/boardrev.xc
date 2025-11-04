@@ -16,15 +16,23 @@
     function in this XC code that can be linked from endpoint0.c
 */
 #include "boardrev.h"
+#ifdef DEBUG
 #include <stdio.h>
+#endif
 
 
 int boardrev_fuse_wait_value(chanend c_boardrev, int tile)
 {
+#ifdef DEBUG
     printf("boardrev_fuse_wait_value start tile %d\n", tile);
+#endif
     int value;
+#ifdef DEBUG
     printf("boardrev_fuse_wait_value\n");
+#endif
     c_boardrev :> value;
+#ifdef DEBUG
     printf("boardrev_fuse_wait_value tile %d retval %d\n", tile, value);
+#endif
     return value;
 }

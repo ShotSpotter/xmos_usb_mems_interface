@@ -2,7 +2,9 @@
 #include "mic_array.h"
 #include <xs1.h>
 #include <string.h>
+#ifdef DEBUG
 #include <stdio.h>
+#endif
 
 #define XASSERT_UNIT DEBUG_MIC_ARRAY
 
@@ -53,7 +55,9 @@ void mic_array_init_time_domain_frame(
 
    memset(audio, 0, sizeof(mic_array_frame_time_domain)*frames);
 
+#ifdef DEBUG
    printf("decimator_count: %d, frames: %d\n", decimator_count, frames);
+#endif
 
    for(unsigned i=0;i<decimator_count;i++)
         c_from_decimator[i] <: frames;

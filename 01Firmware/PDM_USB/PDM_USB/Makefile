@@ -30,6 +30,9 @@ BUILD_FLAGS = \
 	-Xmapper --map \
 	-Xmapper MAPFILE
 
+# Uncomment for debug output
+# BUILD_FLAGS += -DDEBUG
+
 
 # The USED_MODULES variable lists other module used by the application.
 USED_MODULES = \

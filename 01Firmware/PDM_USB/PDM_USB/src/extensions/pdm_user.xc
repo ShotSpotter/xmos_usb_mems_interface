@@ -2,6 +2,9 @@
 #include <platform.h>
 #include <xs1.h>
 #include "mic_array.h"
+#ifdef DEBUG
+#include <stdio.h>
+#endif
 #include "../core/customdefines.h"
 
 unsigned gain = 1;
@@ -25,6 +28,9 @@ void user_pdm_init(int boardrev){
             gain = 1;
             break;
     }
+#ifdef DEBUG
+    printf("user_pdm_init(%d) set gain to %d\n", boardrev, gain);
+#endif
 }
 
 unsafe void user_pdm_process(mic_array_frame_time_domain * unsafe audio, int output[]){

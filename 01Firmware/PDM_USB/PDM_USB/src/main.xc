@@ -8,7 +8,9 @@
 #include <xs1.h>
 #include <xclib.h>
 #include <print.h>
+#ifdef DEBUG
 #include <stdio.h>
+#endif
 
 
 #include "xud.h"                 /* XMOS USB Device Layer defines and functions */
@@ -119,8 +121,9 @@ void usb_audio_io(chanend c_aud_in, chanend ?c_adc, chanend ?c_aud_cfg, streamin
 
 void boardrev_fuse_read(in port p_boardrev_fuses, chanend c_boardrev_xud, chanend c_boardrev_pdm)
 {
-
+#ifdef DEBUG
     printf("boardrev_fuse_read start\n");
+#endif
     int warmups = 1 << 20;
     /*
         We only read board fuses once and I'm worried about doing so at
@@ -134,10 +137,14 @@ void boardrev_fuse_read(in port p_boardrev_fuses, chanend c_boardrev_xud, chanen
     int value;
 
     p_boardrev_fuses :> value;
+#ifdef DEBUG
     printf("boardrev_fuse_read value %d\n", value);
+#endif
     c_boardrev_xud <: value;
     c_boardrev_pdm <: value;
+#ifdef DEBUG
     printf("boardrev_fuse_read quit\n");
+#endif
     return;
     /* thread exit */
 }
