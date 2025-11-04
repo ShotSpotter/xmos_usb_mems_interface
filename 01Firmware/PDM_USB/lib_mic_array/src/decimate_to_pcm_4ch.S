@@ -310,19 +310,20 @@ configure:
 
     //
     // Select filter coefficients based on boardrev (done once during configuration)
+    // Use r8 for boardrev value to avoid conflicts with r11 (required for LDWCPL)
     //
     ldaw r4, sp[S_STORAGE]
-    ldw r11, r4[S_BOARDREV]
+    ldw r8, r4[S_BOARDREV]
 
     // Select second stage filter
     ldc r9, 0xFF
-    eq r9, r11, r9
+    eq r9, r8, r9
     bt r9, config_second_stage_0xFF
     ldc r9, 0xFE
-    eq r9, r11, r9
+    eq r9, r8, r9
     bt r9, config_second_stage_0xFE
     ldc r9, 0xFD
-    eq r9, r11, r9
+    eq r9, r8, r9
     bt r9, config_second_stage_0xFD
     // Default case
     ldaw r11, cp[g_second_stage_fir32]
@@ -339,15 +340,15 @@ config_second_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
     stw r11, r0[S_SECOND_STAGE_FILTER_PTR]
 
-    // Select third stage filter
+    // Select third stage filter (r8 still contains boardrev)
     ldc r9, 0xFF
-    eq r9, r11, r9
+    eq r9, r8, r9
     bt r9, config_third_stage_0xFF
     ldc r9, 0xFE
-    eq r9, r11, r9
+    eq r9, r8, r9
     bt r9, config_third_stage_0xFE
     ldc r9, 0xFD
-    eq r9, r11, r9
+    eq r9, r8, r9
     bt r9, config_third_stage_0xFD
     // Default case
     ldaw r11, cp[g_third_stage_fir_8kHz]
