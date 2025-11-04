@@ -33,6 +33,7 @@ clock pdmclk                     = on tile[PDM_TILE]: XS1_CLKBLK_3;
 in buffered port:32 p_pdm_mics_0_to_7   = PORT_PDM_DATA_0_to_7;
 
 /* User hooks */
+void user_pdm_init(int boardrev);
 unsafe void user_pdm_process(mic_array_frame_time_domain * unsafe audio, int output[]);
 
 mic_array_frame_time_domain mic_audio[MIC_ARRAY_DECIMATORS];
@@ -119,6 +120,10 @@ void pcm_pdm_mic(chanend c_pcm_out, chanend c_boardrev_pcm)
 {
     int boardrev;
     boardrev = boardrev_fuse_wait_value(c_boardrev_pcm, 0);
+
+    /* Initialize digital gain based on board revision */
+    user_pdm_init(boardrev);
+
     streaming chan c_pdm_mic_0_to_1, c_pdm_mic_2_to_3;
     streaming chan c_pdm_mic_4_to_5, c_pdm_mic_6_to_7;
     streaming chan c_ds_output[MIC_ARRAY_DECIMATORS];
