@@ -10,14 +10,14 @@ the required libraries and removes unrelated hardware. We have made the followin
 * Use one decimator instance (see `decimate_to_pcm4ch.S`) for every two mics instead of one for every four to remove
   a computation performance limitation with that prevented the use of longer FIR filters. Note this reduces
   the total mic capacity of the board to 8 channels.
-* The eight buttons/switches on the reference schematic have been repurposed as board revision fuses, allowing 256
-variants. Three variants are currently defined:
+* The four buttons/switches on the reference schematic have been repurposed as board revision fuses, allowing 16
+  board variants. Three variants are currently defined:
 
 | Fuse | Microphone        | Sensitivity | AOP        | Cutoff freq | gain |
 |------|-------------------|--------------------------|-------------|------|
-| 0xFF | Vesper VM3000     | -26 dBFS    | 122 dB SPL | 8 kHz       | 1    |
-| 0xFE | Infineon IM72D128 | -36 dBFS    | 130 dB SPL | 16 kHz      | 3    |
-| 0xFD | Primo EM215       | -67 dBFS    | 150 dB SPL | 32 kHz      | 16   |
+|  0xF | Vesper VM3000     | -26 dBFS    | 122 dB SPL | 8 kHz       | 1    |
+|  0xE | Infineon IM72D128 | -36 dBFS    | 130 dB SPL | 16 kHz      | 3    |
+|  0xD | Primo EM215       | -67 dBFS    | 150 dB SPL | 32 kHz      | 16   |
 
 Sensitivity is relative to 1 kHz 94 dB SPL unless otherwise noted.
 
@@ -65,6 +65,15 @@ cd /XMOS/XTC/15.3.1/
 cd xmos_usb_mems_interface/01Firmware/PDM_USB/PDM_USB
 xmake clean
 xmake
+```
+
+Rebuiding with console:
+
+Uncomment the DEBUG flag in the Makefile, rebuild, run with `xrun --io`.
+```
+xmake clean
+xmake
+xrun --io  bin/SST-XMOS-001_v2.8.0.xe
 ```
 
 Factory image:
