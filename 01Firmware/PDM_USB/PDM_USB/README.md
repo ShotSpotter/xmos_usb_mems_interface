@@ -172,3 +172,17 @@ Nov  2 20:33:27 kern.info kernel: [  936.650906] usb 1-1: Manufacturer: SST
 Nov  2 20:34:15 kern.debug Application: Starting
 Nov  2 20:34:15 kern.debug Application: usbArray: 'xCORE-200'
 ```
+
+Analyzing Results
+=================
+When `OUTPUT_RANDOM` defined in `pdm_rx.S`, uniform random noise is injected into channel 7. This is a good way to verify that the filter and gain settings for each board are as desired.
+
+Examples:
+
+BoardRev = 0xF (Vesper VM3000)
+----------------
+![VM3000](./vm3000.png)
+
+BoardRev = 0xE (Infineon IM72D128)
+----------------------------------
+![Infineon IM72D128](infineon.png)
