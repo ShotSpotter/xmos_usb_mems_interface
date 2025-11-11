@@ -60,9 +60,9 @@ Rebuilding:
 ```
 #  start xmos shell. You must be in the XTC directory to source `SetEnv`.
 
-cd /XMOS/XTC/15.3.1/
+cd ~/XMOS/XTC/15.3.1/
 . SetEnv
-cd xmos_usb_mems_interface/01Firmware/PDM_USB/PDM_USB
+cd ~/xmos_usb_mems_interface/01Firmware/PDM_USB/PDM_USB
 xmake clean
 xmake
 ```
