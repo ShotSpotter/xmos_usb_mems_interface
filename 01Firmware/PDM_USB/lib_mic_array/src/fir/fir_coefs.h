@@ -6,8 +6,20 @@ extern const int g_first_stage_fir_debug[48];
 
 #define FIRST_STAGE_MAX_PASSBAND_OUTPUT (619343346)
 
-extern const int g_second_stage_fir32[16];
-extern const int g_second_stage_fir32_debug[32];
+extern const int g_second_stage_fir32_42kHz[16];
+extern const int g_second_stage_fir32_42kHz_debug[32];
+
+extern const int g_second_stage_fir32_36kHz[16];
+extern const int g_second_stage_fir32_36kHz_debug[32];
+
+extern const int g_second_stage_fir32_28kHz[16];
+extern const int g_second_stage_fir32_28kHz_debug[32];
+
+extern const int g_second_stage_fir32_20kHz[16];
+extern const int g_second_stage_fir32_20kHz_debug[32];
+
+extern const int g_second_stage_fir32_12kHz[16];
+extern const int g_second_stage_fir32_12kHz_debug[32];
 
 extern const int g_second_stage_fir32_critical_infrastructure[16];
 

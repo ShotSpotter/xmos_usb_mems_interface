@@ -21,7 +21,7 @@ void user_pdm_init(int boardrev){
         // but SensApp will treat both boards as "Scepter3", so scale by 10^(10/20).
         // target is 124 dB SPL at 0 dBFS.
         case 0x0E:  // 14 decimal
-            gain = 3;
+            gain = 1;
             break;
         // Primo EM215. This mic + amplifier chain has approximately 24 dB lower
         // sensitivity than the VM3000, but the board will be identified as Scepter3_HDR

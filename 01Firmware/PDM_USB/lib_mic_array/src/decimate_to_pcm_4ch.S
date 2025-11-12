@@ -325,16 +325,17 @@ configure:
     eq r9, r8, r9
     bt r9, config_second_stage_0x0D
     // Default case
-    ldaw r11, cp[g_second_stage_fir32]
+    ldaw r11, cp[g_second_stage_fir32_20kHz]
     bu config_second_stage_done
 config_second_stage_0x0F:
-    ldaw r11, cp[g_second_stage_fir32]
+    ldaw r11, cp[g_second_stage_fir32_20kHz]
     bu config_second_stage_done
+// fuses are bad on primo boards, marked as 0xE
 config_second_stage_0x0E:
-    ldaw r11, cp[g_second_stage_fir32]
+    ldaw r11, cp[g_second_stage_fir32_42kHz]
     bu config_second_stage_done
 config_second_stage_0x0D:
-    ldaw r11, cp[g_second_stage_fir32_critical_infrastructure]
+    ldaw r11, cp[g_second_stage_fir32_42kHz]
 config_second_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
     stw r11, r0[S_SECOND_STAGE_FILTER_PTR]
@@ -356,10 +357,10 @@ config_third_stage_0x0F:
     ldaw r11, cp[g_third_stage_fir_8kHz]
     bu config_third_stage_done
 config_third_stage_0x0E:
-    ldaw r11, cp[g_third_stage_fir_16kHz]
+    ldaw r11, cp[g_third_stage_fir_32kHz]
     bu config_third_stage_done
 config_third_stage_0x0D:
-    ldaw r11, cp[g_third_stage_fir_40kHz]
+    ldaw r11, cp[g_third_stage_fir_32kHz]
 config_third_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
     stw r11, r0[S_THIRD_STAGE_FILTER_PTR]

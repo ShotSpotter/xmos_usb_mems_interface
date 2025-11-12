@@ -6,7 +6,7 @@ TARGET = SST-XMOS-001_V1.xn
 # The APP_NAME variable determines the name of the final .xe file. It should
 # not include the .xe postfix. If left blank the name will default to
 # the project name
-APP_NAME = SST-XMOS-001_v2.8.2
+APP_NAME = SST-XMOS-001_v2.8.4
 
 # note: CRITICAL_INFRASTRUCTURE not defined
 
@@ -30,8 +30,8 @@ BUILD_FLAGS = \
 	-Xmapper --map \
 	-Xmapper MAPFILE
 
-# Uncomment for debug output
-# BUILD_FLAGS += -DDEBUG
+# Add to BUILD_FLAGS for console messages
+#   -DDEBUG
 
 
 # The USED_MODULES variable lists other module used by the application.

@@ -257,7 +257,12 @@ def first_stage_output_coefficients(header, body, points, first_stage_num_taps, 
 
 ###############################################################################
 
-def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps, stop_band_atten):
+# Despite how this is used in the reference code, sbw is actually a transition half-width,
+# not a stop band frequency. The reference code only works because it is called with
+# pbw = 0.0313 (12 kHz), sbw = 0.0625 (24 kz) resulting in
+# bands = [0, 0.0313, 0.0625, 0.1875, 0.1875, 0.5]
+# 
+def generate_second_stage(header, body, points, pbw, sbw, second_stage_num_taps, stop_band_atten):
 
   # This must reflect the output decimation ratio: 48/384 => 1/8
   nulls = 1.0/8.0
@@ -275,14 +280,15 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
   #ensure the there is never any overflow
   coefs /= sum(abs(coefs))
 
-  header.write(f"extern const int g_second_stage_fir32[{len(coefs)//2}];\n")
-  body.write(         f"const int g_second_stage_fir32[{len(coefs)//2}] = {{\n    ")
+  passband_kHz = int(pbw * 384)
+
+  header.write(f"extern const int g_second_stage_fir32_{passband_kHz}kHz[{len(coefs)//2}];\n")
+  body.write(         f"const int g_second_stage_fir32_{passband_kHz}kHz[{len(coefs)//2}] = {{\n    ")
 
   total_abs_sum = np.int64(0)
   for i in range(0, len(coefs)//2):
     if coefs[i] > 0.5:
       print("Single coefficient too big in second stage FIR")
-    print(f"coefs[i]= {coefs[i]}")
     d_int = np.int32(coefs[i]*float(int32_max)*2.0)
     total_abs_sum += np.abs(np.int64(d_int)*2)
     body.write(f"0x{ctypes.c_uint(d_int).value:08x},")
@@ -293,9 +299,9 @@ def generate_second_stage(header, body, points,  pbw, sbw, second_stage_num_taps
     print("WARNING: error in second stage too large")
 
   # Same filter in a decimal format for python / matlab
-  header.write(f"extern const int g_second_stage_fir32_debug[{str(second_stage_num_taps)}];\n")
+  header.write(f"extern const int g_second_stage_fir32_{passband_kHz}kHz_debug[{str(second_stage_num_taps)}];\n")
   header.write("\n")
-  body.write(         f"const int g_second_stage_fir32_debug[{str(second_stage_num_taps)}] = {{\n    ")
+  body.write(         f"const int g_second_stage_fir32_{passband_kHz}kHz_debug[{str(second_stage_num_taps)}] = {{\n    ")
   for i in range(0, len(coefs)):
     decimalized_coef = int(float(int32_max)*coefs[i])
     body.write(f"{decimalized_coef:10d},")
@@ -473,7 +479,17 @@ if __name__ == "__main__":
   print("Stop band attenuation: " + str(second_stage_stop_band_atten)+ "dB.")
   print("Stop bandwidth: " + str(args.second_stage_stop_bw) + "kHz")
 
-  second_stage_response = generate_second_stage(header, body, points//8, second_stage_pbw, second_stage_sbw, second_stage_num_taps, second_stage_stop_band_atten)
+
+  # third stage filter list: fcList = [40000, 32000, 24000, 16000, 12000, 8000]   # critical frequency
+
+  second_stage_filters_kHz = [42.0, 36.0, 28.0, 20.0, 12.0]
+  for f in second_stage_filters_kHz:
+    print(f"Generate three-band 2nd stage with pass band {f}kHz")
+    second_stage_response = generate_second_stage(header, body, points//8, f/(input_sample_rate/8.0), 4.0/(input_sample_rate/8.0), second_stage_num_taps, -65.0)
+
+#  second_stage_response = generate_second_stage(header, body, points//8, second_stage_pbw, second_stage_sbw - second_stage_pbw, second_stage_num_taps, second_stage_stop_band_atten)
+
+
   for r in range(0, points//(8*4)):
     combined_response[r] = combined_response[r] * abs(second_stage_response[r])
 
