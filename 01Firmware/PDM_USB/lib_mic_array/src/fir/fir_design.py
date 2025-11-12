@@ -261,7 +261,7 @@ def first_stage_output_coefficients(header, body, points, first_stage_num_taps, 
 # not a stop band frequency. The reference code only works because it is called with
 # pbw = 0.0313 (12 kHz), sbw = 0.0625 (24 kz) resulting in
 # bands = [0, 0.0313, 0.0625, 0.1875, 0.1875, 0.5]
-# 
+
 def generate_second_stage(header, body, points, pbw, sbw, second_stage_num_taps, stop_band_atten):
 
   # This must reflect the output decimation ratio: 48/384 => 1/8
@@ -366,34 +366,38 @@ def generate_constant_expressions(taps):
 
 def generate_third_stage_coefficients(body, name, Fs, fc, N):
 
-  coefs = int(N/2)
-  coefList = []
-  for n in range(0, coefs):
+# this uses the window technique to generate all N coefficients
+  coefs = np.zeros(N)
+  for n in range(0, N):
     m = n - ((N - 1) / 2)
     gamma = (2.0 * math.pi * fc) / Fs
     h = math.sin(m * gamma) / (m * math.pi)
     n_w = n - (N / 2)
     h_w = 0.54 + 0.46 * math.cos((math.pi * (2.0 * n_w + 1)) / (N - 1.0))
-    coef = h * h_w
-    coefList.append(coef)
+    coefs[n] = h * h_w
 
-  maxCoef = max(coefList)
-  header.write(f"extern const int {name}[{coefs}];\n")
-  body.write(         f"const int {name}[{coefs}] = {{\n    ")
-  print('creating third stage coefficients: ' + name + ' with {0} poles, {1} coefficients, Fs: {2}kHz and fc: {3}kHz'.format(N, coefs, int(Fs/1000), int(fc/1000)))
-  for n in range(0, coefs):
-    #
-    # After comparison with sceptre 2 signal was attenuated too much at a factor of 3.65
-    # Results showed that with enclosure sceptre 3 signal needed to be increased by a factor of 2
-    # - therefore reduce divisor in following calculation from 3.65 to 1.82
-    #
-    coef = (coefList[n] * (2.0**30)) / (maxCoef * 1.82)				# Scale coefficients to get reasonable output
-    lcoef = int(coef)
-    body.write("{0:#0{1}x}".format(lcoef & 0xffffffff, 10) + ',')
-    body.write(break_every_8(n))
-  body.write('};\n')
-  body.write("\n")
+  # Use same method as second stage to ensure the there is never any overflow
+  # Use of abs() covers worst-case situation where data and coefficients match in sign.
+  coefs /= sum(abs(coefs))
 
+  # Filter is symmetric, so only output the first half of coefficients
+  num_output_coefs = N // 2
+  total_abs_sum = np.int64(0)
+  header.write(f"extern const int {name}[{num_output_coefs}];\n")
+  body.write(         f"const int {name}[{num_output_coefs}] = {{\n    ")
+  print(f"creating third stage coefficients: {name} with {N} poles, {num_output_coefs} coefficients output (symmetric), Fs: {int(Fs/1000)} kHz and fc: {int(fc/1000)} kHz")
+  print(coefs)
+  for i in range(0, num_output_coefs):
+    if coefs[i] > 0.5:
+      print("Single coefficient too big in third-stage FIR")
+    d_int = np.int32(coefs[i]*float(int32_max)*2.0)
+    total_abs_sum += np.abs(np.int64(d_int)*2)
+    body.write(f"0x{ctypes.c_uint(d_int).value:08x},")
+    body.write(break_every_8(i))
+  body.write("};\n\n")
+
+  if total_abs_sum*int32_max > int64_max:
+    print("WARNING: error in second stage too large")
 
 def generate_third_stage(header, body, third_stage_configs, combined_response, points, input_sample_rate, stop_band_atten):
 

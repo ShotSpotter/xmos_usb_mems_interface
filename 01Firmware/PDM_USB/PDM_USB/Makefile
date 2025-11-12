@@ -28,7 +28,8 @@ BUILD_FLAGS = \
 	-Wall \
 	-Wno-timing \
 	-Xmapper --map \
-	-Xmapper MAPFILE
+	-Xmapper MAPFILE \
+	-DDEBUG
 
 # Add to BUILD_FLAGS for console messages
 #   -DDEBUG
