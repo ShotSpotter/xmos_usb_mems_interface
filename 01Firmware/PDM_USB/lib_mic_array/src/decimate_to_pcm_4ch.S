@@ -330,7 +330,8 @@ configure:
 config_second_stage_0x0F:
     ldaw r11, cp[g_second_stage_fir32_20kHz]
     bu config_second_stage_done
-// fuses are bad on primo boards, marked as 0xE
+// FIXME: Due to a schematic error, fuses on Primo mic boards are marked as 0xE
+// FIXME: For this build, apply Critical Infrastructure filters to 0xE boards
 config_second_stage_0x0E:
     ldaw r11, cp[g_second_stage_fir32_42kHz]
     bu config_second_stage_done
@@ -356,6 +357,8 @@ config_second_stage_done:
 config_third_stage_0x0F:
     ldaw r11, cp[g_third_stage_fir_8kHz]
     bu config_third_stage_done
+// FIXME: Due to a schematic error, fuses on Primo mic boards are marked as 0xE
+// FIXME: For this build, apply Critical Infrastructure filters to 0xE boards
 config_third_stage_0x0E:
     ldaw r11, cp[g_third_stage_fir_32kHz]
     bu config_third_stage_done

@@ -332,7 +332,9 @@ void Endpoint0(
 						cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.iTerminal = offsetof(StringDescTable_t, iTerminalStrMICROPHONE_VM3000)/sizeof(char *);
 						break;
 					case 0xe:
-						cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.iTerminal = offsetof(StringDescTable_t, iTerminalStrMICROPHONE_IM72D128V01)/sizeof(char *);
+						// FIXME: due to a schematic error, both Primo mic boards and Infineon mic boards report fuse values of 0xE. For this build (2.8.4), treat 0xE as Primo
+						cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.iTerminal = offsetof(StringDescTable_t, iTerminalStrMICROPHONE_PRIMO_EM215)/sizeof(char *);
+						//cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.iTerminal = offsetof(StringDescTable_t, iTerminalStrMICROPHONE_IM72D128V01)/sizeof(char *);
 						break;
 					case 0xd:
 						cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.iTerminal = offsetof(StringDescTable_t, iTerminalStrMICROPHONE_PRIMO_EM215)/sizeof(char *);
