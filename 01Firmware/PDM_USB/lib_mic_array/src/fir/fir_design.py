@@ -320,15 +320,6 @@ def generate_second_stage(header, body, points, pbw, sbw, second_stage_num_taps,
 
 ###############################################################################
 def generate_constant_expressions(taps):
-  # Fixed critical infrastructure fir32 filter with 30 kHz roll-off and 40 kHz cut-off
-  header.write(f"extern const int g_second_stage_fir32_critical_infrastructure[{taps//2}];\n")
-  header.write("\n")
-
-  body.write(         f"const int g_second_stage_fir32_critical_infrastructure[{taps//2}] = {{\n")
-  body.write("    0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,\n")
-  body.write("    0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x07878787, 0x0F0F0F0E, 0x2D2D2D2A, 0x3C3C3C38\n")
-  body.write("    };\n")
-  body.write("\n")
 
   # synthetic data for injection via OUTPUT_SIN and OUTPUT_RANDOM
   header.write("extern const int g_sine_wave3[128];\n")
@@ -359,6 +350,22 @@ def generate_constant_expressions(taps):
   body.write("// {CRC polynominal to use, bogus data to checksum}\n")
   body.write("const int g_crc_constants[2] = {0xEDB88320, 0xFFFFFFFF};\n")
   body.write("\n")
+
+  # Filter is symmetric, so only output the first half of coefficients
+  N = taps
+  coefs = np.zeros(N)
+  num_output_coefs = N // 2
+  name = 'g_third_stage_fir_' + 'disabled'
+  header.write(f"extern const int {name}[{num_output_coefs}];\n")
+  body.write(         f"const int {name}[{num_output_coefs}] = {{\n    ")
+  print(f"creating third stage disabled coefficients")
+  print(coefs)
+  for i in range(0, num_output_coefs):
+    d_int = np.int32(coefs[i]*float(int32_max)*2.0)
+    body.write(f"0x{ctypes.c_uint(d_int).value:08x},")
+    body.write(break_every_8(i))
+  body.write("};\n\n")
+
   return
 
 

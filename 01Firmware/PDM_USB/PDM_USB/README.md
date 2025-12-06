@@ -35,12 +35,100 @@ Taps: 48 (fixed)
 Second stage:
 Input: 384 kHz
 Output: 96 kHz
-Tags: 16
+Tags: 32 (implemented as symmetric 16)
 
 Third stage:
 Input: 96 kHz
 Output: 96 kHz
-Taps: 32
+Taps: 32 (implemented as symmetric 16)
+
+
+For high-frequency signals, use a second stage filter of 43.999 khz
+and remove the third stage entirely.
+
+GROUP DELAY ANALYSIS FOR BULLET N-WAVE DETECTION
+======================================================================
+
+STAGE 1: PDM Decimation Filter
+  Taps: 48
+  Filter type: Symmetric FIR (linear phase)
+  Group delay (samples): 23.5
+  Group delay (time): 0.008 ms
+  After decimation ÷8: equivalent to 0.061 ms at 384 kHz
+
+STAGE 2: Anti-Aliasing Filter (43.9999 kHz)
+  Taps: 32
+  Filter type: Symmetric FIR (linear phase)
+  Group delay (samples): 15.5
+  Group delay (time): 0.040 ms
+  After decimation ÷4: equivalent to 0.161 ms at 96 kHz
+
+STAGE 3: Cleanup Filter (47.9999 kHz) - OPTIONAL
+  Taps: 32
+  Filter type: Windowed FIR (linear phase)
+  Group delay (samples): 15.5
+  Group delay (time): 0.161 ms
+
+TOTAL GROUP DELAY:
+----------------------------------------------------------------------
+  Without Stage 3: 0.223 ms
+  With Stage 3:    0.384 ms
+  Stage 3 adds:    0.161 ms (72.5% increase)
+
+BULLET N-WAVE CHARACTERISTICS:
+----------------------------------------------------------------------
+  Typical N-wave rise time: 50-200 microseconds
+  Critical frequencies: 5-20 kHz (fundamental waveform)
+  Harmonics extend to: 40+ kHz
+
+Phase Delay at Key Frequencies (with Stage 3):
+     5.0 kHz: 0.1615 ms,   290.6°
+    10.0 kHz: 0.1615 ms,   581.2°
+    15.0 kHz: 0.1615 ms,   871.9°
+    20.0 kHz: 0.1615 ms,  1162.5°
+    25.0 kHz: 0.1615 ms,  1453.1°
+    30.0 kHz: 0.1615 ms,  1743.8°
+    35.0 kHz: 0.1615 ms,  2034.4°
+    40.0 kHz: 0.1615 ms,  2325.0°
+    44.0 kHz: 0.1615 ms,  2557.5°
+
+IMPACT ASSESSMENT:
+======================================================================
+
+LINEAR PHASE FIR:
+  * Constant group delay across all frequencies
+  * No phase distortion - all frequency components delayed equally
+  * Preserves waveform features
+
+Stage 3 Trade-off:
+  Adds: 0.161 ms additional delay
+  Benefit: Cleaner 44-48 kHz band of unfiltered PDM noise
+  Risk: Additional 0.161 ms could affect time-of-arrival accuracy
+
+RECOMMENDATION:
+  For high-frequency (near-Nyquist) signals:
+  → SKIP Stage 3 to minimize group delay
+  → Stage 2 (43.9999 kHz) provides all necessary anti-aliasing
+  → Saves 0.161 ms = 161 microseconds
+
+Setting Filters
+--------------
+The size of the filter coefficients is trivial, so all filter coefficients are
+compiled in. Different harware boards and use cases need different filters; to
+change filters, modify the switch statement that starts around line 317 in
+`01Firmware/PDM_USB/lib_mic_array/src/decimate_to_pcm_4ch.S`. This is the
+block starting with:
+```
+// Select second stage filter based on boardrev (4-bit fuse value 0-15)
+```
+The switch statement for the third stage filter starts with line
+```
+// Select third stage filter (r8 still contains boardrev, 4-bit value 0-15)
+```
+To disable the third stage filter entirely, select filter:
+```
+g_third_stage_fir_disabled
+```
 
 
 
@@ -186,3 +274,5 @@ BoardRev = 0xF (Vesper VM3000)
 BoardRev = 0xE (Infineon IM72D128)
 ----------------------------------
 ![Infineon IM72D128](infineon.png)
+
+
