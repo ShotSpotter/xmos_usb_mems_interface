@@ -113,6 +113,18 @@ const int g_first_stage_fir_debug[48] = {
       12291802,    8958056,    6298618,    4244465,    2714604,    1622893,     883159,     492968,
     };
 
+const int g_second_stage_fir32_43kHz[16] = {
+    0xffacc0ff, 0xfed8c8ae, 0xfda0a22a, 0xfc73f226, 0xfb967da1, 0xfade8425, 0xfa2f003d, 0xfa1f9566,
+    0xfbbf78b2, 0xff77179a, 0x046c971b, 0x095bed8f, 0x0ddeb82a, 0x126206a9, 0x16cb7f6e, 0x19bf82be,
+    };
+
+const int g_second_stage_fir32_43kHz_debug[32] = {
+      -2727808,   -9673641,  -19902187,  -29755117,  -37011759,  -43040237,  -48791521,  -49296717,
+     -35668903,   -4486195,   37112717,   78509767,  116349973,  154207060,  191217591,  215990623,
+     215990623,  191217591,  154207060,  116349973,   78509767,   37112717,   -4486195,  -35668903,
+     -49296717,  -48791521,  -43040237,  -37011759,  -29755117,  -19902187,   -9673641,   -2727808,
+    };
+
 const int g_second_stage_fir32_42kHz[16] = {
     0xffac6ef8, 0xfed79ac5, 0xfd9e1221, 0xfc6fc68e, 0xfb90a35b, 0xfad6aab1, 0xfa24a35f, 0xfa12a5cc,
     0xfbb0dbd5, 0xff682f1c, 0x045e3829, 0x094e0def, 0x0dd13889, 0x12557214, 0x16c09244, 0x19b60193,
@@ -198,6 +210,11 @@ const int g_sine_wave3[128] = {
 
 // {CRC polynominal to use, bogus data to checksum}
 const int g_crc_constants[2] = {0xEDB88320, 0xFFFFFFFF};
+
+const int g_third_stage_fir_47kHz[16] = {
+    0xffd52a45, 0x00332db3, 0xffb7e6bc, 0x006bdb3e, 0xff5f0320, 0x00ea7eb3, 0xfeb3d1f7, 0x01cb3c4e,
+    0xfd90abe7, 0x0344b196, 0xfb9f7a05, 0x05eb3420, 0xf7c3eb2e, 0x0c37d334, 0xead7e09d, 0x40af5aeb,
+    };
 
 const int g_third_stage_fir_40kHz[16] = {
     0x000e5d96, 0x001129ed, 0xffbdf087, 0x0086fed0, 0xff368119, 0x00d6db22, 0xff9098ba, 0xff65fc5e,

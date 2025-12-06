@@ -402,7 +402,7 @@ def generate_third_stage_coefficients(body, name, Fs, fc, N):
 def generate_third_stage(header, body, third_stage_configs, combined_response, points, input_sample_rate, stop_band_atten):
 
   Fs = 96000.0					# sampling frequency
-  fcList = [40000, 32000, 24000, 16000, 12000, 8000]   # critical frequency
+  fcList = [47999, 40000, 32000, 24000, 16000, 12000, 8000]   # critical frequency
   N = 32					# coefficients
   for listIndex in range(0, len(fcList)):
     fc = fcList[listIndex]
@@ -486,7 +486,7 @@ if __name__ == "__main__":
 
   # third stage filter list: fcList = [40000, 32000, 24000, 16000, 12000, 8000]   # critical frequency
 
-  second_stage_filters_kHz = [42.0, 36.0, 28.0, 20.0, 12.0]
+  second_stage_filters_kHz = [43.999, 42.0, 36.0, 28.0, 20.0, 12.0]
   for f in second_stage_filters_kHz:
     print(f"Generate three-band 2nd stage with pass band {f}kHz")
     second_stage_response = generate_second_stage(header, body, points//8, f/(input_sample_rate/8.0), 4.0/(input_sample_rate/8.0), second_stage_num_taps, -65.0)

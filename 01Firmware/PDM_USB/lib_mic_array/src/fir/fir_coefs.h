@@ -6,6 +6,9 @@ extern const int g_first_stage_fir_debug[48];
 
 #define FIRST_STAGE_MAX_PASSBAND_OUTPUT (619343346)
 
+extern const int g_second_stage_fir32_43kHz[16];
+extern const int g_second_stage_fir32_43kHz_debug[32];
+
 extern const int g_second_stage_fir32_42kHz[16];
 extern const int g_second_stage_fir32_42kHz_debug[32];
 
@@ -27,6 +30,7 @@ extern const int g_sine_wave3[128];
 
 extern const int g_crc_constants[2];
 
+extern const int g_third_stage_fir_47kHz[16];
 extern const int g_third_stage_fir_40kHz[16];
 extern const int g_third_stage_fir_32kHz[16];
 extern const int g_third_stage_fir_24kHz[16];
