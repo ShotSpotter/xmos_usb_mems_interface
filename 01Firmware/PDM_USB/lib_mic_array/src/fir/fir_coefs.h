@@ -24,8 +24,6 @@ extern const int g_second_stage_fir32_20kHz_debug[32];
 extern const int g_second_stage_fir32_12kHz[16];
 extern const int g_second_stage_fir32_12kHz_debug[32];
 
-extern const int g_sine_wave3[128];
-
 extern const int g_crc_constants[2];
 
 extern const int g_third_stage_fir_disabled[16];

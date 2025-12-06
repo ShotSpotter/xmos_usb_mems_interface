@@ -321,37 +321,14 @@ def generate_second_stage(header, body, points, pbw, sbw, second_stage_num_taps,
 ###############################################################################
 def generate_constant_expressions(taps):
 
-  # synthetic data for injection via OUTPUT_SIN and OUTPUT_RANDOM
-  header.write("extern const int g_sine_wave3[128];\n")
-  header.write("\n")
-
-  body.write("const int g_sine_wave3[128] = {\n")
-  body.write("\t0x00000000, 0x02ECB69A, 0x05D79F74, 0x08BEEDEA, 0x0BA0D792, 0x0E7B9554, 0x114D6485, 0x141487FD,\n")
-  body.write("\t0x16CF4928, 0x197BF915, 0x1C18F181, 0x1EA495D8, 0x211D5439, 0x2381A668, 0x25D012C4, 0x28072D2B,\n")
-  body.write("\t0x2A2597DD, 0x2C2A0455, 0x2E133415, 0x2FDFF96B, 0x318F382C, 0x331FE662, 0x34910CF0, 0x35E1C82D,\n")
-  body.write("\t0x3711486D, 0x381ED281, 0x3909C030, 0x39D18095, 0x3A759880, 0x3AF5A2BE, 0x3B515057, 0x3B8868C0,\n")
-  body.write("\t0x3B9ACA00, 0x3B8868C0, 0x3B515057, 0x3AF5A2BE, 0x3A759880, 0x39D18095, 0x3909C030, 0x381ED281,\n")
-  body.write("\t0x3711486D, 0x35E1C82D, 0x34910CF0, 0x331FE662, 0x318F382C, 0x2FDFF96B, 0x2E133415, 0x2C2A0455,\n")
-  body.write("\t0x2A2597DD, 0x28072D2B, 0x25D012C4, 0x2381A668, 0x211D5439, 0x1EA495D8, 0x1C18F181, 0x197BF915,\n")
-  body.write("\t0x16CF4928, 0x141487FD, 0x114D6485, 0x0E7B9554, 0x0BA0D792, 0x08BEEDEA, 0x05D79F74, 0x02ECB69A,\n")
-  body.write("\t0x00000000, 0xFD134966, 0xFA28608C, 0xF7411216, 0xF45F286E, 0xF1846AAC, 0xEEB29B7B, 0xEBEB7803,\n")
-  body.write("\t0xE930B6D8, 0xE68406EB, 0xE3E70E7F, 0xE15B6A28, 0xDEE2ABC7, 0xDC7E5998, 0xDA2FED3C, 0xD7F8D2D5,\n")
-  body.write("\t0xD5DA6823, 0xD3D5FBAB, 0xD1ECCBEB, 0xD0200695, 0xCE70C7D4, 0xCCE0199E, 0xCB6EF310, 0xCA1E37D3,\n")
-  body.write("\t0xC8EEB793, 0xC7E12D7F, 0xC6F63FD0, 0xC62E7F6B, 0xC58A6780, 0xC50A5D42, 0xC4AEAFA9, 0xC4779740,\n")
-  body.write("\t0xC4653600, 0xC4779740, 0xC4AEAFA9, 0xC50A5D42, 0xC58A6780, 0xC62E7F6B, 0xC6F63FD0, 0xC7E12D7F,\n")
-  body.write("\t0xC8EEB793, 0xCA1E37D3, 0xCB6EF310, 0xCCE0199E, 0xCE70C7D4, 0xD0200695, 0xD1ECCBEB, 0xD3D5FBAB,\n")
-  body.write("\t0xD5DA6823, 0xD7F8D2D5, 0xDA2FED3C, 0xDC7E5998, 0xDEE2ABC7, 0xE15B6A28, 0xE3E70E7F, 0xE68406EB,\n")
-  body.write("\t0xE930B6D8, 0xEBEB7803, 0xEEB29B7B, 0xF1846AAC, 0xF45F286E, 0xF7411216, 0xFA28608C, 0xFD134966};\n")
-  body.write("\n")
-
   header.write(f"extern const int g_crc_constants[2];\n")
   header.write("\n")
 
-  body.write("// {CRC polynominal to use, bogus data to checksum}\n")
+  body.write("// CRC polynominal to use, bogus data to checksum\n")
   body.write("const int g_crc_constants[2] = {0xEDB88320, 0xFFFFFFFF};\n")
   body.write("\n")
 
-  # Filter is symmetric, so only output the first half of coefficients
+  body.write("// Fake filter used to disable third stage entirely.\n")
   N = taps
   coefs = np.zeros(N)
   num_output_coefs = N // 2

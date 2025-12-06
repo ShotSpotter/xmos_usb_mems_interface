@@ -58,7 +58,7 @@
 
 #define S_CONTROL_VARIABLES 		(S_IN_DATA_SIZE)
 #define S_IN_PORT			(0)
-#define S_SINE_INDEX			(1)
+#define S_IMPULSE_INDEX			(1)
 #define S_OUT_PORT_0			(2)
 #define S_OUT_PORT_1			(3)
 #define S_OUT_PORT_2			(4)
@@ -68,10 +68,10 @@
 #define S_BUFFER			(S_CONTROL_VARIABLES + S_CONTROL_VARIABLES_SIZE)
 #define S_BUFFER_SIZE			(1 << 12)
 #define S_BUFFER_MASK			(S_BUFFER_SIZE - 1)
-#define S_SINE_INDEX_MASK		((1 << 7) - 1)
+#define S_IMPULSE_PERIOD		(65536)
 
+//#define OUTPUT_IMPULSE
 //#define OUTPUT_RANDOM
-//#define OUTPUT_SINE_WAVE
 
 #define STACKWORDS			(S_BUFFER + S_BUFFER_SIZE)
 
@@ -171,32 +171,38 @@ pdm_rx_8ch_loop:
         ldw r1, r11[S_OUT_PORT_1]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH7}
         FIR();							// CH7 FIR filter result is in r3
-// These two options replace unused channel 7 debug patterns
-#ifdef OUTPUT_SINE_WAVE
-	ldw r4, r11[S_SINE_INDEX]			// Increment sine index
-        add r4, r4, 1
-        ldc r3, S_SINE_INDEX_MASK			// Mask to restrict sine index to 0 to 127
-        and r4, r4, r3
-        stw r4, r11[S_SINE_INDEX]			// Store index
-	ldaw r11, cp[g_sine_wave3]			// Get sine curve
-        ldw r3, r11[r4]					// Overwrite r3 with sine wave
-	ldaw r11, sp[S_CONTROL_VARIABLES]
+
+// These options replace unused channel 7 with debug patterns
+// OUTPUT_RANDOM and OUTPUT_IMPULSE are mutually exclusive
+
+#ifdef OUTPUT_IMPULSE
+// Periodic impulse for filter frequency response analysis.
+// Output is the impulse response of stage 2 + stage 3 filters.
+// FFT the captured output to see the complete magnitude response.
+
+	ldw r4, r11[S_IMPULSE_INDEX]			// Load impulse counter
+	add r4, r4, 1					// Increment counter
+	ldc r3, S_IMPULSE_PERIOD-1			// Load period mask
+	and r4, r4, r3					// Wrap counter to [0, PERIOD-1]
+	stw r4, r11[S_IMPULSE_INDEX]			// Store updated counter
+	eq r3, r4, 0					// r3 = 1 if counter==0, else 0
+	neg r3, r3					// r3 = 0xFFFFFFFF if impulse, else 0
+	shr r3, r3, 1					// r3 = 0x7FFFFFFF if impulse, else 0
 #endif
 
 #ifdef OUTPUT_RANDOM
 // Enable white noise output to support analysis of 2nd stage filter frequency response.
-// 1) we are not seeding this with the xmos hardware RNG so the output
-//    is deterministic! See lib_random for how to seed with hardware.
-// 2) OUTPUT_RANDOM and OUTPUT_SINE_WAVE are mutually exclusive
+// We are not seeding this with the xmos hardware RNG so the output
+// is deterministic. See lib_random for how to seed with hardware.
 
 	ldaw r11, cp[g_crc_constants]			// load data to checksum (-1, per lib_random) into r1
 	ldw r1, r11[1]
 	ldaw r11, cp[g_crc_constants]			// load crc polynominal to use (0xEDB88320, per lib_random) into r4
 	ldw r4, r11[0]
 	ldaw r11, sp[S_CONTROL_VARIABLES]		// set r11 to point on stack
-	ldw r3, r11[S_SINE_INDEX]				// load previous crc (reusing S_SINE_INDEX for storage)
-	crc32 r3, r1, r4						// compute crc
-	stw r3, r11[S_SINE_INDEX]				// Store updated crc value, leaving r3 unchanged to output
+	ldw r3, r11[S_IMPULSE_INDEX]			// load previous crc (reusing S_IMPULSE_INDEX for storage)
+	crc32 r3, r1, r4				// compute crc
+	stw r3, r11[S_IMPULSE_INDEX]			// Store updated crc value, leaving r3 unchanged to output
 #endif
 
 	// output is in r3; load on MIC_ARRAY_CH0 is a pointless
