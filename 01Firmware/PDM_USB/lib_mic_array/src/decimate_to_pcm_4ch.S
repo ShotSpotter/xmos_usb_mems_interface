@@ -14,7 +14,7 @@
 // 4-bit fuses (0-15). Currently, three boardrev values are defined:
 // 0x0F (15) 7-mic board with Vesper VM3000 digital microphone     ( 8 kHz cutoff)
 // 0x0E (14) 7-mic board with Infineon IM72D128 digital microphone (16 kHz cutoff)
-// 0x0D (13) 8-mic board with Primo EM215 analog mic + PDM ADC     (40 kHz cutoff)
+// 0x0D (13) 8-mic board with Primo EM215 analog mic + PDM ADC     (43.999 kHz cutoff)
 
 .section    .dp.data,"awd",@progbits
 .text
@@ -43,7 +43,7 @@
 //
 // All sizes are 32 bit words
 //
-//  S_STORAGE                       of S_STORAGE_SIZE 
+//  S_STORAGE                       of S_STORAGE_SIZE
 //  S_SECOND_STAGE_DATA             of S_SECOND_STAGE_DATA_SIZE
 //  S_SECOND_STAGE                  of S_SECOND_STAGE_SIZE
 //  S_OUTPUT_STORAGE                of S_OUTPUT_STORAGE_SIZE
@@ -333,10 +333,10 @@ config_second_stage_0x0F:
 // FIXME: Due to a schematic error, fuses on Primo mic boards are marked as 0xE
 // FIXME: For this build, apply Critical Infrastructure filters to 0xE boards
 config_second_stage_0x0E:
-    ldaw r11, cp[g_second_stage_fir32_42kHz]
+    ldaw r11, cp[g_second_stage_fir32_43kHz]
     bu config_second_stage_done
 config_second_stage_0x0D:
-    ldaw r11, cp[g_second_stage_fir32_42kHz]
+    ldaw r11, cp[g_second_stage_fir32_43kHz]
 config_second_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
     stw r11, r0[S_SECOND_STAGE_FILTER_PTR]
@@ -360,7 +360,7 @@ config_third_stage_0x0F:
 // FIXME: Due to a schematic error, fuses on Primo mic boards are marked as 0xE
 // FIXME: For this build, apply Critical Infrastructure filters to 0xE boards
 config_third_stage_0x0E:
-    ldaw r11, cp[g_third_stage_fir_32kHz]
+    ldaw r11, cp[g_third_stage_fir_disabled]
     bu config_third_stage_done
 config_third_stage_0x0D:
     ldaw r11, cp[g_third_stage_fir_32kHz]
@@ -682,6 +682,14 @@ third_stage:
     .cfi_startproc
     .issue_mode dual
     //
+    // Check if third stage is disabled
+    //
+    ldaw r4, sp[S_SETTINGS_OFFSET]
+    ldw r5, r4[S_THIRD_STAGE_FILTER_PTR]
+    ldaw r11, cp[g_third_stage_fir_disabled]
+    eq r4, r5, r11
+    bt r4, third_stage_disabled
+    //
     // Load current values from output stage 2
     //
     ldaw r10, sp[S_OUTPUT_STORAGE]
@@ -759,6 +767,13 @@ third_stage_loop2:
     // Store channel 1 output (overwrite second stage output value)
     //
     stw r0, r10[S_OUTPUT_STORAGE_1]
+    //
+    retsp 0
+
+third_stage_disabled:
+    //
+    // Third stage is disabled - return immediately without processing
+    // This preserves the second stage output values unchanged
     //
     retsp 0
 
