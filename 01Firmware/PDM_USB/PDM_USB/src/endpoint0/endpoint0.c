@@ -328,19 +328,17 @@ void Endpoint0(
 				// if I failed to coerce to char() here.
 				cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.bmChannelConfig = (char) boardrev;
 				switch (boardrev) {
-					case 0xf:
+					case 0xF:  // VM3000
 						cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.iTerminal = offsetof(StringDescTable_t, iTerminalStrMICROPHONE_VM3000)/sizeof(char *);
 						break;
-					case 0xe:
-						// FIXME: due to a schematic error, both Primo mic boards and Infineon mic boards report fuse values of 0xE. For this build (2.8.4), treat 0xE as Primo
-						cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.iTerminal = offsetof(StringDescTable_t, iTerminalStrMICROPHONE_PRIMO_EM215)/sizeof(char *);
-						//cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.iTerminal = offsetof(StringDescTable_t, iTerminalStrMICROPHONE_IM72D128V01)/sizeof(char *);
+					case 0xE:  // IM72D128
+						cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.iTerminal = offsetof(StringDescTable_t, iTerminalStrMICROPHONE_IM72D128V01)/sizeof(char *);
 						break;
-					case 0xd:
+					case 0xC:  // EM215
 						cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.iTerminal = offsetof(StringDescTable_t, iTerminalStrMICROPHONE_PRIMO_EM215)/sizeof(char *);
 						break;
 					default:
-						/* leave as empty string */
+						cfgDesc_Audio2.Audio_CS_Control_Int.Audio_In_InputTerminal.iTerminal = offsetof(StringDescTable_t, iTerminalStrMICROPHONE_UNDEFINED)/sizeof(char *);
 						break;
 				}
 				result = USB_StandardRequests(ep0_out, ep0_in,

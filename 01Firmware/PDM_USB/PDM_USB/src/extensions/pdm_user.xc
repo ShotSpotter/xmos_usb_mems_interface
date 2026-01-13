@@ -18,17 +18,15 @@ void user_pdm_init(int boardrev){
             gain = 1;
             break;
         // Infineon IM72D128. This mic has 10 dB lower sensitivity than the VM3000
-        // but SensApp will treat both boards as "Scepter3", so scale by 10^(10/20).
+        // but SensApp will treat both boards as "Scepter3", so scale by 10^(10/20) = 3.162 => 3 as an int
         // target is 124 dB SPL at 0 dBFS.
-
-        // FIXME: Due to schematic error, the prototype Primo mic boards report fuse values of 0xE.
         case 0x0E:  // 14 decimal
-            gain = 1;
+            gain = 3;
             break;
         // Primo EM215. This mic + amplifier chain has approximately 24 dB lower
         // sensitivity than the VM3000, but the board will be identified as Scepter3_HDR
         // target is 148 dB SPL at 0 dBFS.
-        case 0x0D:  // 13 decimal
+        case 0x0C:  // 12 decimal
             gain = 1;
             break;
         default:

@@ -6,13 +6,7 @@ TARGET = SST-XMOS-001_V1.xn
 # The APP_NAME variable determines the name of the final .xe file. It should
 # not include the .xe postfix. If left blank the name will default to
 # the project name
-APP_NAME = SST-XMOS-001_v2.8.6
-
-# FIXME: This build is targeted primarily at a Critical Infrastructure test.
-# Due to a schematic error, Primo mic boards were built with fuse setting 0xE,
-# which was also used for Public Safety Infineon mic boards. After the hardware
-# has been fixed, search the files changed in this commit for FIXME flags and
-# correct the fuse switch statements.
+APP_NAME = SST-XMOS-001_v2.9.0
 
 BUILD_FLAGS = \
 	-DADAT_TX_USE_SHARED_BUFF=1 \

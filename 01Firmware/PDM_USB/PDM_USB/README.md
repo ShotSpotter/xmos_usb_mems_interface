@@ -13,13 +13,15 @@ the required libraries and removes unrelated hardware. We have made the followin
 * The four buttons/switches on the reference schematic have been repurposed as board revision fuses, allowing 16
   board variants. Three variants are currently defined:
 
-| Fuse | Microphone        | Sensitivity | AOP        | Cutoff freq | gain |
-|------|-------------------|--------------------------|-------------|------|
-|  0xF | Vesper VM3000     | -26 dBFS    | 122 dB SPL | 8 kHz       | 1    |
-|  0xE | Infineon IM72D128 | -36 dBFS    | 130 dB SPL | 16 kHz      | 3    |
-|  0xD | Primo EM215       | -67 dBFS    | 150 dB SPL | 32 kHz      | 16   |
+| Fuse | Microphone        | Sensitivity | AOP        | Resonance freq | Cutoff freq | gain |
+|------|-------------------|--------------------------|----------------|-------------|------|
+|  0xF | Vesper VM3000     | -26 dBFS    | 122 dB SPL | ~12.5 kHz      |   8 kHz     | 1    |
+|  0xE | Infineon IM72D128 | -36 dBFS    | 130 dB SPL | ~37.0 kHz      |  24 kHz     | 3    |
+|  0xC | Primo EM215       | -67 dBFS    | 150 dB SPL | > 40 kHz       |  43.99 kHz  | 1*   |
 
 Sensitivity is relative to 1 kHz 94 dB SPL unless otherwise noted.
+
+* Primo EM215 gain is purposely set low so that 0 dBFS = 148 dB SPL, vs 0 dBFS = 124 dBFS for public safety.
 
 The Vesper board is gain 1 because we previously designed our filters to match the output of other ShotSpotter
 sensors, namely that 94 dB SPL = 0 dB FS = 1.0 float. Gain of the IM72D128 is 10^((-36 - -26)/20) = 3.16. The

@@ -12,9 +12,10 @@
 // The filters used are defined by at runtime by hardware fuses that
 // are passed into this code via the boardrev argument. Hardware uses
 // 4-bit fuses (0-15). Currently, three boardrev values are defined:
-// 0x0F (15) 7-mic board with Vesper VM3000 digital microphone     ( 8 kHz cutoff)
-// 0x0E (14) 7-mic board with Infineon IM72D128 digital microphone (16 kHz cutoff)
-// 0x0D (13) 8-mic board with Primo EM215 analog mic + PDM ADC     (43.999 kHz cutoff)
+// 0x0F (15) 7-mic board with Vesper VM3000 digital microphone     (resonance ~12.5 kHz => 8 kHz cutoff)
+// 0x0E (14) 7-mic board with Infineon IM72D128 digital microphone (resonance ~37 kHz  => 24 kHz cutoff)
+// 0x0D (13) unused
+// 0x0C (12) 8-mic board with Primo EM215 analog mic + PDM ADC     (want as high as we can => 43.999 kHz cutoff)
 
 .section    .dp.data,"awd",@progbits
 .text
@@ -321,22 +322,21 @@ configure:
     ldc r9, 0x0E
     eq r9, r8, r9
     bt r9, config_second_stage_0x0E
-    ldc r9, 0x0D
+    ldc r9, 0x0C
     eq r9, r8, r9
-    bt r9, config_second_stage_0x0D
+    bt r9, config_second_stage_0x0C
     // Default case
+    ldaw r11, cp[g_second_stage_fir32_36kHz] // default like IM72D128
+    bu config_second_stage_done
+config_second_stage_0x0F: // VM3000
     ldaw r11, cp[g_second_stage_fir32_20kHz]
     bu config_second_stage_done
-config_second_stage_0x0F:
-    ldaw r11, cp[g_second_stage_fir32_20kHz]
+config_second_stage_0x0E: // IM72D128
+    ldaw r11, cp[g_second_stage_fir32_36kHz]
     bu config_second_stage_done
-// FIXME: Due to a schematic error, fuses on Primo mic boards are marked as 0xE
-// FIXME: For this build, apply Critical Infrastructure filters to 0xE boards
-config_second_stage_0x0E:
+config_second_stage_0x0C: // EM215
     ldaw r11, cp[g_second_stage_fir32_43kHz]
     bu config_second_stage_done
-config_second_stage_0x0D:
-    ldaw r11, cp[g_second_stage_fir32_43kHz]
 config_second_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
     stw r11, r0[S_SECOND_STAGE_FILTER_PTR]
@@ -348,22 +348,21 @@ config_second_stage_done:
     ldc r9, 0x0E
     eq r9, r8, r9
     bt r9, config_third_stage_0x0E
-    ldc r9, 0x0D
+    ldc r9, 0x0C
     eq r9, r8, r9
-    bt r9, config_third_stage_0x0D
+    bt r9, config_third_stage_0x0C
     // Default case
-    ldaw r11, cp[g_third_stage_fir_8kHz]
+    ldaw r11, cp[g_third_stage_fir_24kHz]  // default like IM72D128
     bu config_third_stage_done
 config_third_stage_0x0F:
-    ldaw r11, cp[g_third_stage_fir_8kHz]
+    ldaw r11, cp[g_third_stage_fir_8kHz]   // VM3000
     bu config_third_stage_done
-// FIXME: Due to a schematic error, fuses on Primo mic boards are marked as 0xE
-// FIXME: For this build, apply Critical Infrastructure filters to 0xE boards
 config_third_stage_0x0E:
-    ldaw r11, cp[g_third_stage_fir_disabled]
+    ldaw r11, cp[g_third_stage_fir_24kHz]  // IM72D128
     bu config_third_stage_done
-config_third_stage_0x0D:
-    ldaw r11, cp[g_third_stage_fir_32kHz]
+config_third_stage_0x0C:
+    ldaw r11, cp[g_third_stage_fir_disabled] // EM215
+    bu config_third_stage_done
 config_third_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
     stw r11, r0[S_THIRD_STAGE_FILTER_PTR]

@@ -106,6 +106,7 @@ typedef struct
     STR_TABLE_ENTRY(iTerminalStrMICROPHONE_VM3000);
     STR_TABLE_ENTRY(iTerminalStrMICROPHONE_IM72D128V01);
     STR_TABLE_ENTRY(iTerminalStrMICROPHONE_PRIMO_EM215);
+    STR_TABLE_ENTRY(iTerminalStrMICROPHONE_UNDEFINED);
 } StringDescTable_t;
 
 StringDescTable_t g_strTable =
@@ -130,9 +131,10 @@ StringDescTable_t g_strTable =
 #endif
 
     .iAPInterfaceStr             = "iAP Interface",
-    .iTerminalStrMICROPHONE_VM3000      = "microphone:vm3000",
-    .iTerminalStrMICROPHONE_IM72D128V01 = "microphone:im72d128v01",
-    .iTerminalStrMICROPHONE_PRIMO_EM215 = "microphone:primo-em215",
+    .iTerminalStrMICROPHONE_VM3000      = "microphone:vm3000",       // 0xF
+    .iTerminalStrMICROPHONE_IM72D128V01 = "microphone:im72d128v01",  // 0xE
+    .iTerminalStrMICROPHONE_PRIMO_EM215 = "microphone:primo-em215",  // 0xC
+    .iTerminalStrMICROPHONE_UNDEFINED   = "microphone:undefined",    // other
 };
 
 /***** Device Descriptors *****/
