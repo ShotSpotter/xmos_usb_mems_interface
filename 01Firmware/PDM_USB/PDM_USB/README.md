@@ -178,22 +178,45 @@ xflash --factory bin/SST-XMOS-001_v2.8.0.xe
 
 Upgrade images:
 
+* versions with even final digits are xflash versions
+* versions with odd final digits are the dfu-version of the previous xflash version
+
+Example:
+* 2.9.0 : xflash version (factory)
+* 2.9.1 : dfu version for xmosdfu.
+
 These will be installed from the sensor's dfu tool, but we need to format the firmware image using xflash on the build host.
 
 * make any needed coded changes
 * update 01Firmware/PDM_USB/PDM_USB/src/core/customdefines.h
+* update filename in Makefile
 * check it in
 * xmake clean && xmake
+* commit the factory version
+* bump 01Firmware/PDM_USB/PDM_USB/src/core/customdefines.h by 0.0.1
+* update filename in Makefile
+* xmake clean && xmake
 * make it into a firmware image using xflash
+* revert customdefines.h and Makefile so we're ready for the next code change.
 
 We use "upgrade 1" to be the last digit of our version.
 
 Factory image => 2.8.0
 Upgrade 1     => 2.8.1
 
+
+
 ```
 xflash --factory-version 15.2 --upgrade 1 bin/SST-XMOS-001_v2.8.1.xe -o SST-XMOS-001_v2.8.1.xflash_15.2.bin
 ```
+
+```
+xflash --factory-version 15.3 --upgrade 1 bin/SST-XMOS-001_v2.9.1.xe -o SST-XMOS-001_v2.9.1.xflash_15.3.bin
+xflash --factory-version 14.4 --upgrade 1 bin/SST-XMOS-001_v2.9.1.xe -o SST-XMOS-001_v2.9.1.xflash_14.4.bin
+```
+
+
+
 
 IMPORTANT: The binary must be built with `--factory-version` set to match the version of XMOS XTC
 that used to run `xflash`, not the version that was used to compile the `.xe` file. There is no
