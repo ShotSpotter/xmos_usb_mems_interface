@@ -71,6 +71,7 @@
 #define S_IMPULSE_PERIOD		(65536)
 
 //#define OUTPUT_IMPULSE
+//#define OUTPUT_SAWTOOTH
 //#define OUTPUT_RANDOM
 
 #define STACKWORDS			(S_BUFFER + S_BUFFER_SIZE)
@@ -111,6 +112,9 @@ pdm_rx_asm:
         stw r2, r11[S_OUT_PORT_1]
         stw r3, r11[S_OUT_PORT_2]
         stw r4, r11[S_OUT_PORT_3]
+	// initialize S_IMPULSE_INDEX
+	ldc r0, 0
+	stw r0, r11[S_IMPULSE_INDEX]
 
 	ldc r11, 0x5555
 	shl r11, r11, 16; mov r9, r11
@@ -172,8 +176,8 @@ pdm_rx_8ch_loop:
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH7}
         FIR();							// CH7 FIR filter result is in r3
 
-// These options replace unused channel 7 with debug patterns
-// OUTPUT_RANDOM and OUTPUT_IMPULSE are mutually exclusive
+// These options replace channel 8 with debug patterns
+// OUTPUT_RANDOM/OUTPUT_IMPULSE/OUTPUT_SAWTOOTH are mutually exclusive
 
 #ifdef OUTPUT_IMPULSE
 // Periodic impulse for filter frequency response analysis.
@@ -189,6 +193,20 @@ pdm_rx_8ch_loop:
 	neg r3, r3					// r3 = 0xFFFFFFFF if impulse, else 0
 	shr r3, r3, 1					// r3 = 0x7FFFFFFF if impulse, else 0
 #endif
+
+#ifdef OUTPUT_SAWTOOTH
+// Sawtooth wave for filter frequency response analysis.
+// Output is the sawtooth wave processed through stage 2 + stage 3 filters.
+
+	ldw r4, r11[S_IMPULSE_INDEX]			// Load impulse counter
+	ldc r3, 171					// Load increment value
+	add r4, r4, r3					// Increment counter by 171 for ~1 kHz
+	ldc r3, S_IMPULSE_PERIOD-1			// Load period mask
+	and r4, r4, r3					// Wrap counter to [0, PERIOD-1]
+	stw r4, r11[S_IMPULSE_INDEX]			// Store updated counter
+	shl r3, r4, 16					// r3 = counter << 16 (sawtooth output)
+#endif
+
 
 #ifdef OUTPUT_RANDOM
 // Enable white noise output to support analysis of 2nd stage filter frequency response.
