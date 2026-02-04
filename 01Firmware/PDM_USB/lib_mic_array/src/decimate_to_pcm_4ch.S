@@ -335,7 +335,7 @@ config_second_stage_0x0E: // IM72D128
     ldaw r11, cp[g_second_stage_fir32_36kHz]
     bu config_second_stage_done
 config_second_stage_0x0C: // EM215
-    ldaw r11, cp[g_second_stage_fir32_43kHz]
+    ldaw r11, cp[g_second_stage_fir32_44kHz]
     bu config_second_stage_done
 config_second_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]

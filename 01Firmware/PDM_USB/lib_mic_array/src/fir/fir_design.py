@@ -132,7 +132,7 @@ def break_every_8(i, indent="    "):
 
 ########################################
 
-def generate_stage(num_taps, bands, a, weights, divider=1, num_frequency_points=2048, stopband_attenuation = -65.0):
+def generate_stage_remez(num_taps, bands, a, weights, divider=1, num_frequency_points=2048, stopband_attenuation = -65.0):
 
   print(f"calling generate_stage num_taps={num_taps}, bands={bands}, a={a}, weights={weights}, stopband_attenuation={stopband_attenuation} ")
   w = np.ones(len(a))
@@ -206,7 +206,7 @@ def generate_first_stage_low_ripple(header, body, points, pbw, sbw, first_stage_
 
 def first_stage_output_coefficients(header, body, points, first_stage_num_taps, first_stage_stop_atten, nulls, a, w, bands):
 
-  first_stage_response, coefs =  generate_stage(
+  first_stage_response, coefs =  generate_stage_remez(
     first_stage_num_taps, bands, a, w, stopband_attenuation = first_stage_stop_atten)
 
   #ensure the there is never any overflow
@@ -272,21 +272,20 @@ def generate_second_stage(header, body, points, pbw, sbw, second_stage_num_taps,
   bands = [ 0,           pbw,
             nulls*1-sbw, nulls*1+sbw,
             nulls*2-sbw, 0.5]
-
-  second_stage_response, coefs =  generate_stage(
-    second_stage_num_taps, bands, a, w, stopband_attenuation = stop_band_atten)
-
+  _, coefs =  generate_stage_remez(second_stage_num_taps, bands, a, w, stopband_attenuation = stop_band_atten)
 
   #ensure the there is never any overflow
   coefs /= sum(abs(coefs))
+  # only print half of the coefficients for symmetry. If the number of coefficients is odd, include the middle coefficient
+  coefs_to_print = len(coefs)//2 + len(coefs) % 2
 
-  passband_kHz = int(pbw * 384)
+  fcName = f"{int(round(pbw * 384))}kHz"
 
-  header.write(f"extern const int g_second_stage_fir32_{passband_kHz}kHz[{len(coefs)//2}];\n")
-  body.write(         f"const int g_second_stage_fir32_{passband_kHz}kHz[{len(coefs)//2}] = {{\n    ")
+  header.write(f"extern const int g_second_stage_fir{second_stage_num_taps}_{fcName}[{coefs_to_print}];\n")
+  body.write(         f"const int g_second_stage_fir{second_stage_num_taps}_{fcName}[{coefs_to_print}] = {{\n    ")
 
   total_abs_sum = np.int64(0)
-  for i in range(0, len(coefs)//2):
+  for i in range(0, coefs_to_print):
     if coefs[i] > 0.5:
       print("Single coefficient too big in second stage FIR")
     d_int = np.int32(coefs[i]*float(int32_max)*2.0)
@@ -299,9 +298,9 @@ def generate_second_stage(header, body, points, pbw, sbw, second_stage_num_taps,
     print("WARNING: error in second stage too large")
 
   # Same filter in a decimal format for python / matlab
-  header.write(f"extern const int g_second_stage_fir32_{passband_kHz}kHz_debug[{str(second_stage_num_taps)}];\n")
+  header.write(f"extern const int g_second_stage_fir{second_stage_num_taps}_{fcName}_debug[{str(second_stage_num_taps)}];\n")
   header.write("\n")
-  body.write(         f"const int g_second_stage_fir32_{passband_kHz}kHz_debug[{str(second_stage_num_taps)}] = {{\n    ")
+  body.write(         f"const int g_second_stage_fir{second_stage_num_taps}_{fcName}_debug[{str(second_stage_num_taps)}] = {{\n    ")
   for i in range(0, len(coefs)):
     decimalized_coef = int(float(int32_max)*coefs[i])
     body.write(f"{decimalized_coef:10d},")
@@ -390,7 +389,7 @@ def generate_third_stage(header, body, third_stage_configs, combined_response, p
   N = 32					# coefficients
   for listIndex in range(0, len(fcList)):
     fc = fcList[listIndex]
-    fcName = str(int(fc / 1000)) + 'kHz'
+    fcName = str(int(round(fc / 1000))) + 'kHz'
     name = 'g_third_stage_fir_' + fcName
     generate_third_stage_coefficients(body, name, Fs, float(fc), N)
 
@@ -472,10 +471,12 @@ if __name__ == "__main__":
 
   second_stage_filters_kHz = [43.999, 42.0, 36.0, 28.0, 20.0, 12.0]
   for f in second_stage_filters_kHz:
+    if f == 48.0:
+      userbands = [0, 0.479,0.481, 0.489, 0.491, 0.5]
+    else:
+      userbands = None
     print(f"Generate three-band 2nd stage with pass band {f}kHz")
     second_stage_response = generate_second_stage(header, body, points//8, f/(input_sample_rate/8.0), 4.0/(input_sample_rate/8.0), second_stage_num_taps, -65.0)
-
-#  second_stage_response = generate_second_stage(header, body, points//8, second_stage_pbw, second_stage_sbw - second_stage_pbw, second_stage_num_taps, second_stage_stop_band_atten)
 
 
   for r in range(0, points//(8*4)):
@@ -493,6 +494,6 @@ if __name__ == "__main__":
   generate_third_stage(header, body, third_stage_configs, combined_response, points//(8*4), input_sample_rate/8.0/4.0, third_stage_stop_band_atten)
 
   header.write("#define THIRD_STAGE_COEFS_PER_STAGE (32)\n")
-  
+
   header.close()
   body.close()

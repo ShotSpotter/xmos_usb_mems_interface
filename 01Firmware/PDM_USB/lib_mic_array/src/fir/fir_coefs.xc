@@ -1,4 +1,4 @@
-// Copyright (c) 2025, XMOS Ltd, All rights reserved
+// Copyright (c) 2026, XMOS Ltd, All rights reserved
 const int g_first_stage_fir_0[256] = {
     0xfdc3b1f7, 0xff3acfac, 0xfed512c8, 0x004c307d, 0xfe83e9ec, 0xfffb07a1, 0xff954abd, 0x010c6872,
     0xfe4539da, 0xffbc5790, 0xff569aac, 0x00cdb860, 0xff0571cf, 0x007c8f84, 0x0016d2a0, 0x018df055,
@@ -113,12 +113,12 @@ const int g_first_stage_fir_debug[48] = {
       12291802,    8958056,    6298618,    4244465,    2714604,    1622893,     883159,     492968,
     };
 
-const int g_second_stage_fir32_43kHz[16] = {
+const int g_second_stage_fir32_44kHz[16] = {
     0xffacc0ff, 0xfed8c8ae, 0xfda0a22a, 0xfc73f226, 0xfb967da1, 0xfade8425, 0xfa2f003d, 0xfa1f9566,
     0xfbbf78b2, 0xff77179a, 0x046c971b, 0x095bed8f, 0x0ddeb82a, 0x126206a9, 0x16cb7f6e, 0x19bf82be,
     };
 
-const int g_second_stage_fir32_43kHz_debug[32] = {
+const int g_second_stage_fir32_44kHz_debug[32] = {
       -2727808,   -9673641,  -19902187,  -29755117,  -37011759,  -43040237,  -48791521,  -49296717,
      -35668903,   -4486195,   37112717,   78509767,  116349973,  154207060,  191217591,  215990623,
      215990623,  191217591,  154207060,  116349973,   78509767,   37112717,   -4486195,  -35668903,
@@ -194,7 +194,7 @@ const int g_third_stage_fir_disabled[16] = {
     0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
     };
 
-const int g_third_stage_fir_47kHz[16] = {
+const int g_third_stage_fir_48kHz[16] = {
     0xffd52a45, 0x00332db3, 0xffb7e6bc, 0x006bdb3e, 0xff5f0320, 0x00ea7eb3, 0xfeb3d1f7, 0x01cb3c4e,
     0xfd90abe7, 0x0344b196, 0xfb9f7a05, 0x05eb3420, 0xf7c3eb2e, 0x0c37d334, 0xead7e09d, 0x40af5aeb,
     };
