@@ -30,10 +30,11 @@
         #define MIC_ARRAY_DC_OFFSET_LOG2 8
 #endif
 
+#define SECOND_STAGE_TAPS 32                                                     // in words
+#define SECOND_STAGE_HISTORY_SIZE           (((SECOND_STAGE_TAPS) + 3) / 4) * 4  // Enforces >= SECOND_STAGE_TAPS and a multiple of 4. in words.
+#define SECOND_STAGE_BUFFER_SIZE            (SECOND_STAGE_HISTORY_SIZE * 2)      // x2 for circular buffer. in words
+#define SECOND_STAGE_HALF_FILTER_OFFSET     (((SECOND_STAGE_TAPS) + 1) / 2) * 4  // half-filter pointer offset. in BYTES
 
-#define SECOND_STAGE_COEF_COUNT         32
-#define SECOND_STAGE_BUFFER_SIZE        (SECOND_STAGE_COEF_COUNT * 2)
-#define SECOND_STAGE_HALF_FILTER_OFFSET (SECOND_STAGE_COEF_COUNT * 2)
 
 #define THIRD_STAGE_COEF_COUNT         	32
 #define THIRD_STAGE_BUFFER_SIZE        	(THIRD_STAGE_COEF_COUNT * 2)
@@ -82,7 +83,7 @@
 // S_SECOND_STAGE_DATA - Contains history of received from first fir filter so that second stage filter can be calculated
 //
 #define S_SECOND_STAGE_DATA             (S_DC_ELIMINATE + DC_ELIMINATE_STACK_SIZE)
-#define S_SECOND_STAGE_DATA_SIZE        (SECOND_STAGE_COEF_COUNT * 2 * 2)        // word count 32 poles * 2 blocks * 2 channels
+#define S_SECOND_STAGE_DATA_SIZE        (SECOND_STAGE_HISTORY_SIZE * 2 * 2)        // word count 32 poles * 2 blocks * 2 channels
 
 //
 // S_SECOND_STAGE - Control variables for second stage fir filter
@@ -152,14 +153,14 @@
 #define STACKWORDS                      (S_SETTINGS_OFFSET + S_SETTINGS_SIZE)
 
 //This inputs from the channel to the pdm interface and saves it twice in the
-//second stage FIR at offset OFFSET and OFFSET + SECOND_STAGE_COEF_COUNT
+//second stage FIR at offset OFFSET and OFFSET + SECOND_STAGE_HISTORY_SIZE
 #define INPUT_TO_OFFSET(OFFSET)\
     ldw r1, sp[S_C_INPUT];\
     in r0, res[r1];\
     {stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
-    {stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]; in r0, res[r1]};\
+    {stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_HISTORY_SIZE + OFFSET]; in r0, res[r1]};\
     {stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
-    {stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_COEF_COUNT + OFFSET]};
+    {stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_HISTORY_SIZE + OFFSET]};
 
 #define SAVE_SAMPLES_NORMAL(POINTER)\
     {ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
