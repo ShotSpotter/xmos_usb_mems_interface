@@ -30,10 +30,11 @@
         #define MIC_ARRAY_DC_OFFSET_LOG2 8
 #endif
 
-#define SECOND_STAGE_TAPS 32                                                     // in words
-#define SECOND_STAGE_HISTORY_SIZE           (((SECOND_STAGE_TAPS) + 3) / 4) * 4  // Enforces >= SECOND_STAGE_TAPS and a multiple of 4. in words.
-#define SECOND_STAGE_BUFFER_SIZE            (SECOND_STAGE_HISTORY_SIZE * 2)      // x2 for circular buffer. in words
-#define SECOND_STAGE_HALF_FILTER_OFFSET     (((SECOND_STAGE_TAPS) + 1) / 2) * 4  // half-filter pointer offset. in BYTES
+#define SECOND_STAGE_TAPS 32                                                        // In words.
+#define SECOND_STAGE_HISTORY_SIZE              (((SECOND_STAGE_TAPS + 3) / 4) * 4)  // Enforces >= SECOND_STAGE_TAPS and a multiple of 4. In words.
+#define SECOND_STAGE_BUFFER_SIZE               (SECOND_STAGE_HISTORY_SIZE * 2)      // x2 for circular buffer. In words.
+#define SECOND_STAGE_BUFFER_SIZE_BYTES         (SECOND_STAGE_BUFFER_SIZE  * 4)      // Buffer size per channel. In BYTES.
+#define SECOND_STAGE_HALF_FILTER_OFFSET_BYTES  (((SECOND_STAGE_TAPS + 1) / 2) * 4)  // Half-filter pointer offset. In BYTES.
 
 
 #define THIRD_STAGE_COEF_COUNT         	32
@@ -169,7 +170,15 @@
     stw r1, r8[r7];\
     stw r0, r8[r6];
 
-#define FIR_POINT(FILTER_INDEX, DATA_INDEX_1, DATA_INDEX_2) \
+// MAC two pair of data using using indexed double word load
+// assembly: ldd e, d, b[i]
+// d <- mem[b+i×Bpw×2], i in (0.11)
+// e <- mem[b+i×Bpw×2+Bpw]
+// r0, r1: accumulators
+// r2, r3: coefficients
+// r4, r5: data
+// r7, r8: left, right data pointers
+#define FIR_POINT_QUAD(FILTER_INDEX, DATA_INDEX_1, DATA_INDEX_2) \
     ldd r3, r2, r11[FILTER_INDEX]; \
     ldd r5, r4, r7[DATA_INDEX_1]; \
     maccs r0, r1, r4, r2; \
@@ -177,6 +186,37 @@
     ldd r5, r4, r8[DATA_INDEX_2]; \
     maccs r0, r1, r4, r3; \
     maccs r0, r1, r5, r2;
+
+// MAC one pair of data using indexed single word load
+// Note is not the same index as FIR_POINT_QUAD!
+// assembly: d, b[i]
+// d <- mem[b+i×Bpw], i in (0..11)
+// r0, r1: accumulators
+// r3    : coefficient
+// r5    : data
+// r7, r8: left, right data pointers
+// r2, r4: unused
+#define FIR_POINT_PAIR(FILTER_INDEX, DATA_INDEX_1, DATA_INDEX_2) \
+    ldw r3, r11[FILTER_INDEX]; \
+    ldw r5, r7[DATA_INDEX_1]; \
+    maccs r0, r1, r5, r3; \
+    ldw r5, r8[DATA_INDEX_2]; \
+    maccs r0, r1, r5, r3;
+
+// MAC one data point using indexed single word load
+// Note is not the same index as FIR_POINT_QUAD!
+// assembly: d, b[i]
+// d <- mem[b+i×Bpw], i in (0..11)
+// r0, r1: accumulators
+// r3    : coefficient
+// r5    : data
+// r7, r8: left, right data pointers
+// r2, r4: unused
+#define FIR_POINT_CENTER(FILTER_INDEX, DATA_INDEX_1) \
+    ldw r3, r11[FILTER_INDEX]; \
+    ldw r5, r7[DATA_INDEX_1]; \
+    maccs r0, r1, r5, r3;
+
 
 #define FIR_POINT_WORD() \
     ldw r4, r11[r2]; \
@@ -640,9 +680,8 @@ divide_by_four:
     //
     // Value to increment data pointer for next channel (bytes)
     //
-    ldc r6, SECOND_STAGE_BUFFER_SIZE
-    shl r6, r6, 2
-    ldc r8, SECOND_STAGE_HALF_FILTER_OFFSET
+    ldc r6, SECOND_STAGE_BUFFER_SIZE_BYTES
+    ldc r8, SECOND_STAGE_HALF_FILTER_OFFSET_BYTES
     add r8, r7, r8
 
     // r11 = coefs, r7 = data, r6 = buffer length for each channel
@@ -825,14 +864,14 @@ mic_array_decimate_to_pcm_2ch_fir_impl:
     //r0, r1, r2, r3, r4, r5, r7
     {ldc r0, 0; ldc r1, 0} //Initialise the accumulators
 
-    FIR_POINT(0, 0, 7)
-    FIR_POINT(1, 1, 6)
-    FIR_POINT(2, 2, 5)
-    FIR_POINT(3, 3, 4)
-    FIR_POINT(4, 4, 3)
-    FIR_POINT(5, 5, 2)
-    FIR_POINT(6, 6, 1)
-    FIR_POINT(7, 7, 0)
+    FIR_POINT_QUAD(0, 0, 7)
+    FIR_POINT_QUAD(1, 1, 6)
+    FIR_POINT_QUAD(2, 2, 5)
+    FIR_POINT_QUAD(3, 3, 4)
+    FIR_POINT_QUAD(4, 4, 3)
+    FIR_POINT_QUAD(5, 5, 2)
+    FIR_POINT_QUAD(6, 6, 1)
+    FIR_POINT_QUAD(7, 7, 0)
 
     retsp 0
     .cc_bottom mic_array_decimate_to_pcm_2ch_fir_impl.function
