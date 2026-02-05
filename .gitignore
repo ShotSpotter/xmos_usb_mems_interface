@@ -3,3 +3,4 @@
 .DS_Store
 .vscode
 flash_bin_node0
+env/
