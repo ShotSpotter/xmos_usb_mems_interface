@@ -165,7 +165,8 @@
     ldw r1, sp[S_C_INPUT];\
     in r0, res[r1];\
     {stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
-    {stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_HISTORY_SIZE + OFFSET]; in r0, res[r1]};\
+    {stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_HISTORY_SIZE + OFFSET]};\
+    {in r0, res[r1]};\
     {stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
     {stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_HISTORY_SIZE + OFFSET]};
 
