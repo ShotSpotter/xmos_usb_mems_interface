@@ -78,12 +78,14 @@
 #define S_STORAGE_SIZE                  12
 
 #define S_DC_ELIMINATE                  (S_STORAGE + S_STORAGE_SIZE)
+#define S_D_PREV_X_01                   0
 #define S_PREV_X_0                      0
 #define S_PREV_X_1                      1
 
-#define S_D_PREV_X_01                   0
+#define S_D_PREV_Y_01                   2
 #define S_D_PREV_Y_0                    2
 #define S_D_PREV_Y_1                    3
+
 #define DC_ELIMINATE_STACK_SIZE         12
 
 //
@@ -273,13 +275,12 @@ internal_channel_setup_complete:
     inct r2, res[r1]        // They say CONFIGURE_DECIMATOR
 
     //
-    // Initialise the DC offset removal.
+    // Initialise the DC offset removal using double-word store
     //
     ldaw r0, sp[S_DC_ELIMINATE];
     ldc r1, 0
     std r1, r1, r0[S_D_PREV_X_01]
-    std r1, r1, r0[S_D_PREV_Y_0]
-    std r1, r1, r0[S_D_PREV_Y_1]
+    std r1, r1, r0[S_D_PREV_Y_01]
 
 configure:
     DUALENTSP_lu6 0
@@ -337,7 +338,7 @@ configure:
     stw r11, r0[S_FRAME_SIZE_LOG2]
 
     ldaw r0, sp[S_SETTINGS_OFFSET]
-    ldw r11, r3[1]			//apply_dc_offset
+    ldw r11, r3[1]			// Enable DC offset removal
     stw r11, r0[S_DC_OFFSET_REMOVAL_ENABLED]
 
     ldw r11, r3[4]			// decimation factor
