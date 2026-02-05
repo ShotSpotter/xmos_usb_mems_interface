@@ -239,8 +239,8 @@
     {ldc r10, 16};\
     lextract r9, r9, r8, r10, 32;\
     {shl r8, r8, r10; stw REGISTER, r4[PREV_X]};\
-    lsub r11, r5, r5, r8, r4;\
-    lsub r11, r6, r6, r9, r11;\
+    ladd r11, r5, r5, r8, r4;\
+    ladd r11, r6, r6, r9, r11;\
     std r6, r5, r4[PREV_Y];\
     lextract REGISTER, r6, r5, r10, 32
 

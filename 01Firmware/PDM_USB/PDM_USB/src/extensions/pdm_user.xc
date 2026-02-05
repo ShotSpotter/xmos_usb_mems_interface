@@ -39,10 +39,8 @@ void user_pdm_init(int boardrev){
 }
 
 unsafe void user_pdm_process(mic_array_frame_time_domain * unsafe audio, int output[]){
-    // Output must be negated to address a long-standing issue with XMOS firmware
-    // in which it outputs inverse phase (positive pressure results in negative ouput.)
-    // Negate the output here until the root cause can be identified and fixed.
+    // Sign flip removed after fixing issue with DC_OFFSET_REMOVAL macro in decimate_to_pcm_4ch.S
     for(unsigned i=0; i<NUM_PDM_MICS; i++){
-        output[i] = -(gain * audio->data[i][0]);
+        output[i] = gain * audio->data[i][0];
     }
 }
