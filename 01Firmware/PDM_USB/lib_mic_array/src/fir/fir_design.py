@@ -8,8 +8,8 @@ Clean filter coefficient generator for XMOS microphone array decimation filters.
 
 This script generates three stages of FIR filters:
 1. First stage: PDM to 384 kHz (8:1 decimation) using lookup tables
-2. Second stage: 384 kHz to 48 kHz (8:1 decimation) using symmetric FIR
-3. Third stage: 48 kHz to 12 kHz (4:1 decimation) using symmetric FIR
+2. Second stage: 384 kHz to 96 kHz (4:1 decimation) using Type I FIR
+3. Third stage: 96 kHz to 24 kHz (4:1 decimation) using symmetric FIR (not used in current application)
 
 Key design principle: Separation of coefficient generation from file formatting.
 - Coefficient generation functions return data structures
@@ -45,13 +45,15 @@ FIRST_STAGE_CONFIG = {
     'use_low_ripple': False  # Set True for multi-null design
 }
 
-# Second stage: 384 kHz -> 48 kHz (decimation by 8)
+# Second stage: 384 kHz -> 96 kHz (decimation by 4)
 # Generate filters for different microphone types with different cutoff frequencies
+# Type I filters: 31 taps (odd), non-zero at Nyquist, output all coefficients
 SECOND_STAGE_CONFIG = {
-    'num_taps': 32,
+    'num_taps': 31,
     'stop_atten_db': -65.0,
     'transition_width_khz': 4.0,
-    'filters_khz': [43.999, 42.0, 36.0, 28.0, 20.0, 12.0]  # Cutoff frequencies
+    'filters_khz': [48.0, 44.0, 36.0, 30.0, 24.0],  # Cutoff frequencies (>=28 kHz)
+    'use_kaiser_for_max': True  # Use Kaiser window for maximum bandwidth filter
 }
 
 # Third stage: 48 kHz -> 12 kHz (decimation by 4)
@@ -243,37 +245,56 @@ def generate_first_stage_coefficients():
 
 def generate_second_stage_coefficients(cutoff_khz):
     """
-    Generate second stage filter for given cutoff frequency.
+    Generate second stage Type I filter for given cutoff frequency.
 
-    Second stage decimates 384 kHz to 48 kHz (8:1 decimation).
+    Second stage decimates 384 kHz to 96 kHz (4:1 decimation).
+    Type I: 31 taps (odd), non-zero at Nyquist.
 
     Args:
         cutoff_khz: Cutoff frequency in kHz
 
     Returns:
         dict with keys:
-            'coefs': Filter coefficients (all taps)
+            'coefs': Filter coefficients (all 31 taps)
             'name': Filter name (e.g., '36kHz')
     """
     config = SECOND_STAGE_CONFIG
     stage_sample_rate = PDM_SAMPLE_RATE_KHZ / 8.0  # 384 kHz
+    num_taps = config['num_taps']
 
     # Normalize frequencies
     passband = cutoff_khz / stage_sample_rate
     transition_width = config['transition_width_khz'] / stage_sample_rate
-    nulls = 1.0 / 8.0  # Decimation ratio
+    nulls = 1.0 / 4.0  # Decimation ratio (4:1)
 
-    # Three-band design: passband, transition, stopband
-    a = [1, 0, 0]
-    w = [1, 1, 1]
-    bands = [0, passband,
-             nulls*1 - transition_width, nulls*1 + transition_width,
-             nulls*2 - transition_width, 0.5]
+    # Use Kaiser window for maximum bandwidth filter (47.999 kHz)
+    if config.get('use_kaiser_for_max', False) and cutoff_khz >= 47.0:
+        # Kaiser window design for maximum bandwidth
+        # Cutoff at half Nyquist to allow transition band
+        nyquist = stage_sample_rate / 2.0
+        cutoff_normalized = cutoff_khz / nyquist
 
-    _, coefs = generate_stage_remez(
-        config['num_taps'], bands, a, w,
-        stopband_attenuation=config['stop_atten_db']
-    )
+        # Design Kaiser window FIR
+        # Use higher beta for better stopband attenuation
+        beta = 6.0  # Moderate stopband attenuation, good transition
+        coefs = signal.firwin(num_taps, cutoff_normalized, window=('kaiser', beta))
+    else:
+        # Three-band Remez design: passband, transition, stopband with nulls
+        a = [1, 0, 0]
+        w = [1, 1, 1]
+        bands = [0, passband,
+                 nulls*1 - transition_width, nulls*1 + transition_width,
+                 nulls*2 - transition_width, 0.5]
+
+        _, coefs = generate_stage_remez(
+            num_taps, bands, a, w,
+            stopband_attenuation=config['stop_atten_db']
+        )
+
+        # Check if filter generation succeeded
+        if coefs is None:
+            raise ValueError(f"Failed to generate {num_taps}-tap filter for {cutoff_khz} kHz cutoff. "
+                           f"Try adjusting transition width, number of taps, or cutoff frequency.")
 
     # Normalize to prevent overflow
     coefs /= sum(abs(coefs))
@@ -370,31 +391,42 @@ def write_first_stage(header, body, coef_data):
 
 
 def write_second_stage(header, body, coef_data):
-    """Write second stage filter coefficients to files."""
+    """Write second stage Type I filter coefficients to files."""
     coefs = coef_data['coefs']
     name = coef_data['name']
     num_taps = len(coefs)
 
-    # Write optimized coefficients (only first half for symmetric filter)
-    num_output_coefs = num_taps // 2
+    # Type I filters: Output all coefficients plus padding zero for alignment
+    # XMOS ldd instruction requires double-word alignment, so pad to even count
+    num_output_coefs = num_taps + 1  # 31 coefficients + 1 padding zero = 32
+
     header.write(f"extern const int g_second_stage_fir{num_taps}_{name}[{num_output_coefs}];\n")
     body.write(f"const int g_second_stage_fir{num_taps}_{name}[{num_output_coefs}] = {{\n    ")
 
-    for i in range(num_output_coefs):
+    # Write all coefficients
+    for i in range(num_taps):
         d_int = np.int32(coefs[i] * float(INT32_MAX) * 2.0)
         body.write(f"0x{ctypes.c_uint(d_int).value:08x},")
         body.write(break_every_8(i))
+
+    # Write padding zero
+    body.write("0x00000000,")
+    body.write(break_every_8(num_taps))
     body.write("};\n\n")
 
-    # Write debug coefficients (full precision decimal)
-    header.write(f"extern const int g_second_stage_fir{num_taps}_{name}_debug[{num_taps}];\n")
+    # Write debug coefficients (full precision decimal, including padding)
+    header.write(f"extern const int g_second_stage_fir{num_taps}_{name}_debug[{num_output_coefs}];\n")
     header.write("\n")
-    body.write(f"const int g_second_stage_fir{num_taps}_{name}_debug[{num_taps}] = {{\n    ")
+    body.write(f"const int g_second_stage_fir{num_taps}_{name}_debug[{num_output_coefs}] = {{\n    ")
 
     for i, coef in enumerate(coefs):
         decimalized_coef = int(float(INT32_MAX) * coef)
         body.write(f"{decimalized_coef:10d},")
         body.write(break_every_8(i))
+
+    # Write padding zero in debug array
+    body.write("         0,")
+    body.write(break_every_8(num_taps))
     body.write("};\n\n")
 
 
@@ -460,7 +492,7 @@ def main():
     print("Generating first stage filter...")
     first_stage_data = generate_first_stage_coefficients()
     write_first_stage(header, body, first_stage_data)
-    
+
     # Print summary matching original script format
     if first_stage_data['total_abs_sum'] > INT32_MAX:
         print("WARNING: error in first stage too large")
