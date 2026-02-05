@@ -30,12 +30,18 @@
         #define MIC_ARRAY_DC_OFFSET_LOG2 8
 #endif
 
-#define SECOND_STAGE_TAPS 32                                                        // In words.
-#define SECOND_STAGE_HISTORY_SIZE              (((SECOND_STAGE_TAPS + 3) / 4) * 4)  // Enforces >= SECOND_STAGE_TAPS and a multiple of 4. In words.
-#define SECOND_STAGE_BUFFER_SIZE               (SECOND_STAGE_HISTORY_SIZE * 2)      // x2 for circular buffer. In words.
-#define SECOND_STAGE_BUFFER_SIZE_BYTES         (SECOND_STAGE_BUFFER_SIZE  * 4)      // Buffer size per channel. In BYTES.
-#define SECOND_STAGE_HALF_FILTER_OFFSET_BYTES  (((SECOND_STAGE_TAPS + 1) / 2) * 4)  // Half-filter pointer offset. In BYTES.
+// We implement Type 1 (odd # of tap) filters with a final zero pad, so they also
+// have an "even" number of taps from the software perspective. But you will get crap
+// results if you use the more computationally-efficient Type 2 algorithm with a
+// Type 1 filter. So you must set SECOND_STAGE_TYPE_1 manually here:
+#define SECOND_STAGE_TYPE_1                    (1) // Type 1 FIR = 1, Type 2 FIR = 0
 
+#define SECOND_STAGE_TAPS 32                                                                        // Number of coefficient/taps in the whole (symmetric) filter. In words.
+#define SECOND_STAGE_HISTORY_SIZE              (((SECOND_STAGE_TAPS + 3) / 4) * 4)                  // Enforce SECOND_STAGE_HISTORY_SIZE >= SECOND_STAGE_TAPS and is a multiple of 4. In words.
+#define SECOND_STAGE_BUFFER_SIZE               (SECOND_STAGE_HISTORY_SIZE * 2)                      // We need 2x SECOND_STAGE_HISTORY_SIZE for the circular buffer. In words.
+#define SECOND_STAGE_BUFFER_SIZE_BYTES         (SECOND_STAGE_BUFFER_SIZE  * 4)                      // Buffer size per channel. In bytes.
+#define SECOND_STAGE_LEFT_OFFSET_BYTES         (0)                                                  // offset of the left pointer (r7), in bytes. (not used, it is zero)
+#define SECOND_STAGE_RIGHT_OFFSET_BYTES        ((SECOND_STAGE_TAPS / 2) * 4)                        // offset of the right pointer (r8), in bytes.
 
 #define THIRD_STAGE_COEF_COUNT         	32
 #define THIRD_STAGE_BUFFER_SIZE        	(THIRD_STAGE_COEF_COUNT * 2)
@@ -170,7 +176,25 @@
     stw r1, r8[r7];\
     stw r0, r8[r6];
 
-// MAC two pair of data using using indexed double word load
+
+// MAC a pair of data using using indexed double word load
+// for a total of two 2 MACs in 4 cycles
+// assembly: ldd e, d, b[i]
+// d <- mem[b+i×Bpw×2], i in (0.11)
+// e <- mem[b+i×Bpw×2+Bpw]
+// r0, r1: accumulators
+// r2, r3: coefficients
+// r4, r5: data
+// r8: data pointer
+// r9: coefficient pointer
+#define FIR_POINT_PAIR(FILTER_INDEX, DATA_INDEX) \
+    ldd r3, r2, r9[FILTER_INDEX]; \
+    ldd r5, r4, r8[DATA_INDEX]; \
+    maccs r0, r1, r4, r2; \
+    maccs r0, r1, r5, r3;
+
+// MAC two pairs of data using using indexed double word load
+// with symmetric coefficients, for a total of 4 MACs in 7 cycles
 // assembly: ldd e, d, b[i]
 // d <- mem[b+i×Bpw×2], i in (0.11)
 // e <- mem[b+i×Bpw×2+Bpw]
@@ -178,6 +202,7 @@
 // r2, r3: coefficients
 // r4, r5: data
 // r7, r8: left, right data pointers
+// r11: coefficient pointer
 #define FIR_POINT_QUAD(FILTER_INDEX, DATA_INDEX_1, DATA_INDEX_2) \
     ldd r3, r2, r11[FILTER_INDEX]; \
     ldd r5, r4, r7[DATA_INDEX_1]; \
@@ -186,37 +211,6 @@
     ldd r5, r4, r8[DATA_INDEX_2]; \
     maccs r0, r1, r4, r3; \
     maccs r0, r1, r5, r2;
-
-// MAC one pair of data using indexed single word load
-// Note is not the same index as FIR_POINT_QUAD!
-// assembly: d, b[i]
-// d <- mem[b+i×Bpw], i in (0..11)
-// r0, r1: accumulators
-// r3    : coefficient
-// r5    : data
-// r7, r8: left, right data pointers
-// r2, r4: unused
-#define FIR_POINT_PAIR(FILTER_INDEX, DATA_INDEX_1, DATA_INDEX_2) \
-    ldw r3, r11[FILTER_INDEX]; \
-    ldw r5, r7[DATA_INDEX_1]; \
-    maccs r0, r1, r5, r3; \
-    ldw r5, r8[DATA_INDEX_2]; \
-    maccs r0, r1, r5, r3;
-
-// MAC one data point using indexed single word load
-// Note is not the same index as FIR_POINT_QUAD!
-// assembly: d, b[i]
-// d <- mem[b+i×Bpw], i in (0..11)
-// r0, r1: accumulators
-// r3    : coefficient
-// r5    : data
-// r7, r8: left, right data pointers
-// r2, r4: unused
-#define FIR_POINT_CENTER(FILTER_INDEX, DATA_INDEX_1) \
-    ldw r3, r11[FILTER_INDEX]; \
-    ldw r5, r7[DATA_INDEX_1]; \
-    maccs r0, r1, r5, r3;
-
 
 #define FIR_POINT_WORD() \
     ldw r4, r11[r2]; \
@@ -367,16 +361,16 @@ configure:
     eq r9, r8, r9
     bt r9, config_second_stage_0x0C
     // Default case
-    ldaw r11, cp[g_second_stage_fir32_36kHz] // default like IM72D128
+    ldaw r11, cp[g_second_stage_fir31_36kHz] // default like IM72D128
     bu config_second_stage_done
 config_second_stage_0x0F: // VM3000
-    ldaw r11, cp[g_second_stage_fir32_20kHz]
+    ldaw r11, cp[g_second_stage_fir31_24kHz]
     bu config_second_stage_done
 config_second_stage_0x0E: // IM72D128
-    ldaw r11, cp[g_second_stage_fir32_36kHz]
+    ldaw r11, cp[g_second_stage_fir31_36kHz]
     bu config_second_stage_done
 config_second_stage_0x0C: // EM215
-    ldaw r11, cp[g_second_stage_fir32_44kHz]
+    ldaw r11, cp[g_second_stage_fir31_48kHz]
     bu config_second_stage_done
 config_second_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
@@ -462,7 +456,10 @@ confirm_init_complete:
     ldw r4, sp[S_C_OUTPUT]
     outct res[r4], 8 //WARNING: do not change this
 
-input_0_0:
+    // while (1) process
+
+#if SECOND_STAGE_TYPE_1
+fir_loop_type1:
     INPUT_TO_OFFSET(31)
     INPUT_TO_OFFSET(30)
     bl third_stage
@@ -470,7 +467,7 @@ input_0_0:
     bl post_process
     INPUT_TO_OFFSET(28)
     ldaw r7, dp[28]
-    bl divide_by_four
+    bl divide_by_four_type1
 
     INPUT_TO_OFFSET(27)
     INPUT_TO_OFFSET(26)
@@ -479,7 +476,7 @@ input_0_0:
     bl post_process
     INPUT_TO_OFFSET(24)
     ldaw r7, dp[24]
-    bl divide_by_four
+    bl divide_by_four_type1
 
     INPUT_TO_OFFSET(23)
     INPUT_TO_OFFSET(22)
@@ -488,7 +485,7 @@ input_0_0:
     bl post_process
     INPUT_TO_OFFSET(20)
     ldaw r7, dp[20]
-    bl divide_by_four
+    bl divide_by_four_type1
 
     INPUT_TO_OFFSET(19)
     INPUT_TO_OFFSET(18)
@@ -497,7 +494,7 @@ input_0_0:
     bl post_process
     INPUT_TO_OFFSET(16)
     ldaw r7, dp[16]
-    bl divide_by_four
+    bl divide_by_four_type1
 
     INPUT_TO_OFFSET(15)
     INPUT_TO_OFFSET(14)
@@ -506,7 +503,7 @@ input_0_0:
     bl post_process
     INPUT_TO_OFFSET(12)
     ldaw r7, dp[12]
-    bl divide_by_four
+    bl divide_by_four_type1
 
     INPUT_TO_OFFSET(11)
     INPUT_TO_OFFSET(10)
@@ -515,7 +512,7 @@ input_0_0:
     bl post_process
     INPUT_TO_OFFSET(8)
     ldaw r7, dp[8]
-    bl divide_by_four
+    bl divide_by_four_type1
 
     INPUT_TO_OFFSET(7)
     INPUT_TO_OFFSET(6)
@@ -524,7 +521,7 @@ input_0_0:
     bl post_process
     INPUT_TO_OFFSET(4)
     ldaw r7, dp[4]
-    bl divide_by_four
+    bl divide_by_four_type1
 
     INPUT_TO_OFFSET(3)
     INPUT_TO_OFFSET(2)
@@ -533,8 +530,83 @@ input_0_0:
     bl post_process
     INPUT_TO_OFFSET(0)
     ldaw r7, dp[0]
-    bl divide_by_four
-    bu input_0_0
+    bl divide_by_four_type1
+    bu fir_loop_type1
+#else
+fir_loop_type2:
+    INPUT_TO_OFFSET(31)
+    INPUT_TO_OFFSET(30)
+    bl third_stage
+    INPUT_TO_OFFSET(29)
+    bl post_process
+    INPUT_TO_OFFSET(28)
+    ldaw r7, dp[28]
+    bl divide_by_four_type2
+
+    INPUT_TO_OFFSET(27)
+    INPUT_TO_OFFSET(26)
+    bl third_stage
+    INPUT_TO_OFFSET(25)
+    bl post_process
+    INPUT_TO_OFFSET(24)
+    ldaw r7, dp[24]
+    bl divide_by_four_type2
+
+    INPUT_TO_OFFSET(23)
+    INPUT_TO_OFFSET(22)
+    bl third_stage
+    INPUT_TO_OFFSET(21)
+    bl post_process
+    INPUT_TO_OFFSET(20)
+    ldaw r7, dp[20]
+    bl divide_by_four_type2
+
+    INPUT_TO_OFFSET(19)
+    INPUT_TO_OFFSET(18)
+    bl third_stage
+    INPUT_TO_OFFSET(17)
+    bl post_process
+    INPUT_TO_OFFSET(16)
+    ldaw r7, dp[16]
+    bl divide_by_four_type2
+
+    INPUT_TO_OFFSET(15)
+    INPUT_TO_OFFSET(14)
+    bl third_stage
+    INPUT_TO_OFFSET(13)
+    bl post_process
+    INPUT_TO_OFFSET(12)
+    ldaw r7, dp[12]
+    bl divide_by_four_type2
+
+    INPUT_TO_OFFSET(11)
+    INPUT_TO_OFFSET(10)
+    bl third_stage
+    INPUT_TO_OFFSET(9)
+    bl post_process
+    INPUT_TO_OFFSET(8)
+    ldaw r7, dp[8]
+    bl divide_by_four_type2
+
+    INPUT_TO_OFFSET(7)
+    INPUT_TO_OFFSET(6)
+    bl third_stage
+    INPUT_TO_OFFSET(5)
+    bl post_process
+    INPUT_TO_OFFSET(4)
+    ldaw r7, dp[4]
+    bl divide_by_four_type2
+
+    INPUT_TO_OFFSET(3)
+    INPUT_TO_OFFSET(2)
+    bl third_stage
+    INPUT_TO_OFFSET(1)
+    bl post_process
+    INPUT_TO_OFFSET(0)
+    ldaw r7, dp[0]
+    bl divide_by_four_type2
+    bu fir_loop_type2
+#endif
 
     .cc_bottom mic_array_decimate_to_pcm_2ch.function
     .set    mic_array_decimate_to_pcm_2ch.nstackwords, STACKWORDS
@@ -658,13 +730,116 @@ do_the_rest:
     .size    post_process, .Lpost_process_tmp-post_process
     .cfi_endproc
 
-.globl    divide_by_four
+.globl    divide_by_four_type1
 .align    8
-.type    divide_by_four,@function
-.cc_top divide_by_four.function
-divide_by_four:
+.type    divide_by_four_type1,@function
+.cc_top divide_by_four_type1.function
+divide_by_four_type1:
     .cfi_startproc
     .issue_mode dual
+
+    // r0, r1 : FIR_POINT_PAIR accumulators
+    // r2, r3 : FIR_POINT_PAIR coefficients
+    // r4, r5 : FIR_POINT_PAIR data
+    // r6     : local used for moving pointers
+    // r7     : fixed INPUT data pointer
+    // r8     : working data pointer
+    // r9     : working coefficient pointer
+    // r10    : output storage pointer
+    // r11    : fixed coefficient pointer
+
+    ldaw r10, sp[S_OUTPUT_STORAGE]             // set output pointer
+    ldaw r4, sp[S_SETTINGS_OFFSET]
+    ldw r11, r4[S_SECOND_STAGE_FILTER_PTR]     // set coefficients pointer
+
+    // This instruction changes sp so cannot reference sp directly for the remainder of this function
+    dualentsp 1
+
+    // dispense with any fancy symmetry tricks and just blast through
+    // the data and coefficients two at a time. We can only use immediate mode index (0.11)
+    // so shift the pointer half-way through by SECOND_STAGE_RIGHT_OFFSET_BYTES.
+
+
+    // FIRST CHANNEL
+
+    //Initialize the accumulators
+    {ldc r0, 0; ldc r1, 0}
+    // set up our working pointers
+    {add r8, r7, 0; add r9, r11, 0}
+    FIR_POINT_PAIR(0, 0)
+    FIR_POINT_PAIR(1, 1)
+    FIR_POINT_PAIR(2, 2)
+    FIR_POINT_PAIR(3, 3)
+    FIR_POINT_PAIR(4, 4)
+    FIR_POINT_PAIR(5, 5)
+    FIR_POINT_PAIR(6, 6)
+    FIR_POINT_PAIR(7, 7)
+    // advance pointers to the second half
+    ldc r6, SECOND_STAGE_RIGHT_OFFSET_BYTES
+    {add r8, r8, r6; add r9, r9, r6}
+    FIR_POINT_PAIR(0, 0)
+    FIR_POINT_PAIR(1, 1)
+    FIR_POINT_PAIR(2, 2)
+    FIR_POINT_PAIR(3, 3)
+    FIR_POINT_PAIR(4, 4)
+    FIR_POINT_PAIR(5, 5)
+    FIR_POINT_PAIR(6, 6)
+    FIR_POINT_PAIR(7, 7)
+    // store channel 0
+    stw r0, r10[S_OUTPUT_STORAGE_0]
+
+    // SECOND CHANNEL
+
+    {ldc r0, 0; ldc r1, 0} //Initialize the accumulators
+    // advance to channel 1, reset the coefficients
+    ldc r6, SECOND_STAGE_BUFFER_SIZE_BYTES
+    {add r8, r7, r6; add r9, r11, 0}
+    FIR_POINT_PAIR(0, 0)
+    FIR_POINT_PAIR(1, 1)
+    FIR_POINT_PAIR(2, 2)
+    FIR_POINT_PAIR(3, 3)
+    FIR_POINT_PAIR(4, 4)
+    FIR_POINT_PAIR(5, 5)
+    FIR_POINT_PAIR(6, 6)
+    FIR_POINT_PAIR(7, 7)
+    // advance pointers to the second half
+    ldc r6, SECOND_STAGE_RIGHT_OFFSET_BYTES
+    {add r8, r8, r6; add r9, r9, r6}
+    FIR_POINT_PAIR(0, 0)
+    FIR_POINT_PAIR(1, 1)
+    FIR_POINT_PAIR(2, 2)
+    FIR_POINT_PAIR(3, 3)
+    FIR_POINT_PAIR(4, 4)
+    FIR_POINT_PAIR(5, 5)
+    FIR_POINT_PAIR(6, 6)
+    FIR_POINT_PAIR(7, 7)
+    // Store channel 1 output
+    stw r0, r10[S_OUTPUT_STORAGE_1]
+    //
+    retsp 1
+    .cc_bottom divide_by_four_type1.function
+    .set    divide_by_four_type1.nstackwords,1
+    .globl    divide_by_four_type1.nstackwords
+    .set    divide_by_four_type1.maxcores,1
+    .globl    divide_by_four_type1.maxcores
+    .set    divide_by_four_type1.maxtimers,0
+    .globl    divide_by_four_type1.maxtimers
+    .set    divide_by_four_type1.maxchanends,0
+    .globl    divide_by_four_type1.maxchanends
+.Ldivide_by_four_type1_tmp:
+    .size    divide_by_four_type1, .Ldivide_by_four_type1_tmp-divide_by_four_type1
+    .cfi_endproc
+
+
+.globl    divide_by_four_type2
+.align    8
+.type    divide_by_four_type2,@function
+.cc_top divide_by_four_type2.function
+divide_by_four_type2:
+    .cfi_startproc
+    .issue_mode dual
+    // r7 contains data pointer
+
 
     ldaw r10, sp[S_OUTPUT_STORAGE]
     //
@@ -680,8 +855,7 @@ divide_by_four:
     //
     // Value to increment data pointer for next channel (bytes)
     //
-    ldc r6, SECOND_STAGE_BUFFER_SIZE_BYTES
-    ldc r8, SECOND_STAGE_HALF_FILTER_OFFSET_BYTES
+    ldc r8, SECOND_STAGE_RIGHT_OFFSET_BYTES
     add r8, r7, r8
 
     // r11 = coefs, r7 = data, r6 = buffer length for each channel
@@ -691,6 +865,7 @@ divide_by_four:
     //
     stw r0, r10[S_OUTPUT_STORAGE_0]
     //
+    ldc r6, SECOND_STAGE_BUFFER_SIZE_BYTES
     add r7, r7, r6
     add r8, r8, r6
     bl mic_array_decimate_to_pcm_2ch_fir_impl
@@ -700,17 +875,17 @@ divide_by_four:
     stw r0, r10[S_OUTPUT_STORAGE_1]
     //
     retsp 1
-    .cc_bottom divide_by_four.function
-    .set    divide_by_four.nstackwords,1
-    .globl    divide_by_four.nstackwords
-    .set    divide_by_four.maxcores,1
-    .globl    divide_by_four.maxcores
-    .set    divide_by_four.maxtimers,0
-    .globl    divide_by_four.maxtimers
-    .set    divide_by_four.maxchanends,0
-    .globl    divide_by_four.maxchanends
-.Ldivide_by_four_tmp:
-    .size    divide_by_four, .Ldivide_by_four_tmp-divide_by_four
+    .cc_bottom divide_by_four_type2.function
+    .set    divide_by_four_type2.nstackwords,1
+    .globl    divide_by_four_type2.nstackwords
+    .set    divide_by_four_type2.maxcores,1
+    .globl    divide_by_four_type2.maxcores
+    .set    divide_by_four_type2.maxtimers,0
+    .globl    divide_by_four_type2.maxtimers
+    .set    divide_by_four_type2.maxchanends,0
+    .globl    divide_by_four_type2.maxchanends
+.Ldivide_by_four_type2_tmp:
+    .size    divide_by_four_type2, .Ldivide_by_four_type2_tmp-divide_by_four
     .cfi_endproc
 
 .globl    third_stage
