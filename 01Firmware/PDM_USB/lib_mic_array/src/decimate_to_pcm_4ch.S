@@ -460,7 +460,6 @@ confirm_init_complete:
 
     // while (1) process
 
-#if SECOND_STAGE_TYPE_1
 fir_loop_type1:
     INPUT_TO_OFFSET(31)
     INPUT_TO_OFFSET(30)
@@ -469,7 +468,7 @@ fir_loop_type1:
     bl post_process
     INPUT_TO_OFFSET(28)
     ldaw r7, dp[28]
-    bl divide_by_four_type1
+    bl divide_by_four
 
     INPUT_TO_OFFSET(27)
     INPUT_TO_OFFSET(26)
@@ -478,7 +477,7 @@ fir_loop_type1:
     bl post_process
     INPUT_TO_OFFSET(24)
     ldaw r7, dp[24]
-    bl divide_by_four_type1
+    bl divide_by_four
 
     INPUT_TO_OFFSET(23)
     INPUT_TO_OFFSET(22)
@@ -487,7 +486,7 @@ fir_loop_type1:
     bl post_process
     INPUT_TO_OFFSET(20)
     ldaw r7, dp[20]
-    bl divide_by_four_type1
+    bl divide_by_four
 
     INPUT_TO_OFFSET(19)
     INPUT_TO_OFFSET(18)
@@ -496,7 +495,7 @@ fir_loop_type1:
     bl post_process
     INPUT_TO_OFFSET(16)
     ldaw r7, dp[16]
-    bl divide_by_four_type1
+    bl divide_by_four
 
     INPUT_TO_OFFSET(15)
     INPUT_TO_OFFSET(14)
@@ -505,7 +504,7 @@ fir_loop_type1:
     bl post_process
     INPUT_TO_OFFSET(12)
     ldaw r7, dp[12]
-    bl divide_by_four_type1
+    bl divide_by_four
 
     INPUT_TO_OFFSET(11)
     INPUT_TO_OFFSET(10)
@@ -514,7 +513,7 @@ fir_loop_type1:
     bl post_process
     INPUT_TO_OFFSET(8)
     ldaw r7, dp[8]
-    bl divide_by_four_type1
+    bl divide_by_four
 
     INPUT_TO_OFFSET(7)
     INPUT_TO_OFFSET(6)
@@ -523,7 +522,7 @@ fir_loop_type1:
     bl post_process
     INPUT_TO_OFFSET(4)
     ldaw r7, dp[4]
-    bl divide_by_four_type1
+    bl divide_by_four
 
     INPUT_TO_OFFSET(3)
     INPUT_TO_OFFSET(2)
@@ -532,83 +531,8 @@ fir_loop_type1:
     bl post_process
     INPUT_TO_OFFSET(0)
     ldaw r7, dp[0]
-    bl divide_by_four_type1
+    bl divide_by_four
     bu fir_loop_type1
-#else
-fir_loop_type2:
-    INPUT_TO_OFFSET(31)
-    INPUT_TO_OFFSET(30)
-    bl third_stage
-    INPUT_TO_OFFSET(29)
-    bl post_process
-    INPUT_TO_OFFSET(28)
-    ldaw r7, dp[28]
-    bl divide_by_four_type2
-
-    INPUT_TO_OFFSET(27)
-    INPUT_TO_OFFSET(26)
-    bl third_stage
-    INPUT_TO_OFFSET(25)
-    bl post_process
-    INPUT_TO_OFFSET(24)
-    ldaw r7, dp[24]
-    bl divide_by_four_type2
-
-    INPUT_TO_OFFSET(23)
-    INPUT_TO_OFFSET(22)
-    bl third_stage
-    INPUT_TO_OFFSET(21)
-    bl post_process
-    INPUT_TO_OFFSET(20)
-    ldaw r7, dp[20]
-    bl divide_by_four_type2
-
-    INPUT_TO_OFFSET(19)
-    INPUT_TO_OFFSET(18)
-    bl third_stage
-    INPUT_TO_OFFSET(17)
-    bl post_process
-    INPUT_TO_OFFSET(16)
-    ldaw r7, dp[16]
-    bl divide_by_four_type2
-
-    INPUT_TO_OFFSET(15)
-    INPUT_TO_OFFSET(14)
-    bl third_stage
-    INPUT_TO_OFFSET(13)
-    bl post_process
-    INPUT_TO_OFFSET(12)
-    ldaw r7, dp[12]
-    bl divide_by_four_type2
-
-    INPUT_TO_OFFSET(11)
-    INPUT_TO_OFFSET(10)
-    bl third_stage
-    INPUT_TO_OFFSET(9)
-    bl post_process
-    INPUT_TO_OFFSET(8)
-    ldaw r7, dp[8]
-    bl divide_by_four_type2
-
-    INPUT_TO_OFFSET(7)
-    INPUT_TO_OFFSET(6)
-    bl third_stage
-    INPUT_TO_OFFSET(5)
-    bl post_process
-    INPUT_TO_OFFSET(4)
-    ldaw r7, dp[4]
-    bl divide_by_four_type2
-
-    INPUT_TO_OFFSET(3)
-    INPUT_TO_OFFSET(2)
-    bl third_stage
-    INPUT_TO_OFFSET(1)
-    bl post_process
-    INPUT_TO_OFFSET(0)
-    ldaw r7, dp[0]
-    bl divide_by_four_type2
-    bu fir_loop_type2
-#endif
 
     .cc_bottom mic_array_decimate_to_pcm_2ch.function
     .set    mic_array_decimate_to_pcm_2ch.nstackwords, STACKWORDS
@@ -732,11 +656,11 @@ do_the_rest:
     .size    post_process, .Lpost_process_tmp-post_process
     .cfi_endproc
 
-.globl    divide_by_four_type1
+.globl    divide_by_four
 .align    8
-.type    divide_by_four_type1,@function
-.cc_top divide_by_four_type1.function
-divide_by_four_type1:
+.type    divide_by_four,@function
+.cc_top divide_by_four.function
+divide_by_four:
     .cfi_startproc
     .issue_mode dual
 
@@ -819,76 +743,19 @@ divide_by_four_type1:
     stw r0, r10[S_OUTPUT_STORAGE_1]
     //
     retsp 1
-    .cc_bottom divide_by_four_type1.function
-    .set    divide_by_four_type1.nstackwords,1
-    .globl    divide_by_four_type1.nstackwords
-    .set    divide_by_four_type1.maxcores,1
-    .globl    divide_by_four_type1.maxcores
-    .set    divide_by_four_type1.maxtimers,0
-    .globl    divide_by_four_type1.maxtimers
-    .set    divide_by_four_type1.maxchanends,0
-    .globl    divide_by_four_type1.maxchanends
-.Ldivide_by_four_type1_tmp:
-    .size    divide_by_four_type1, .Ldivide_by_four_type1_tmp-divide_by_four_type1
+    .cc_bottom divide_by_four.function
+    .set    divide_by_four.nstackwords,1
+    .globl    divide_by_four.nstackwords
+    .set    divide_by_four.maxcores,1
+    .globl    divide_by_four.maxcores
+    .set    divide_by_four.maxtimers,0
+    .globl    divide_by_four.maxtimers
+    .set    divide_by_four.maxchanends,0
+    .globl    divide_by_four.maxchanends
+.Ldivide_by_four_type_tmp:
+    .size    divide_by_four, .Ldivide_by_four_type_tmp-divide_by_four
     .cfi_endproc
 
-
-.globl    divide_by_four_type2
-.align    8
-.type    divide_by_four_type2,@function
-.cc_top divide_by_four_type2.function
-divide_by_four_type2:
-    .cfi_startproc
-    .issue_mode dual
-    // r7 contains data pointer
-
-
-    ldaw r10, sp[S_OUTPUT_STORAGE]
-    //
-    // Load pre-selected second stage fir filter coefficients pointer before dualentsp
-    // to avoid needing offset adjustment
-    //
-    ldaw r4, sp[S_SETTINGS_OFFSET]
-    ldw r11, r4[S_SECOND_STAGE_FILTER_PTR]
-    //
-    // This instruction changes sp so cannot reference sp directly for the remainder of this function
-    //
-    dualentsp 1
-    //
-    // Value to increment data pointer for next channel (bytes)
-    //
-    ldc r8, SECOND_STAGE_RIGHT_OFFSET_BYTES
-    add r8, r7, r8
-
-    // r11 = coefs, r7 = data, r6 = buffer length for each channel
-    bl mic_array_decimate_to_pcm_2ch_fir_impl
-    //
-    // Store channel 0 output
-    //
-    stw r0, r10[S_OUTPUT_STORAGE_0]
-    //
-    ldc r6, SECOND_STAGE_BUFFER_SIZE_BYTES
-    add r7, r7, r6
-    add r8, r8, r6
-    bl mic_array_decimate_to_pcm_2ch_fir_impl
-    //
-    // Store channel 1 output
-    //
-    stw r0, r10[S_OUTPUT_STORAGE_1]
-    //
-    retsp 1
-    .cc_bottom divide_by_four_type2.function
-    .set    divide_by_four_type2.nstackwords,1
-    .globl    divide_by_four_type2.nstackwords
-    .set    divide_by_four_type2.maxcores,1
-    .globl    divide_by_four_type2.maxcores
-    .set    divide_by_four_type2.maxtimers,0
-    .globl    divide_by_four_type2.maxtimers
-    .set    divide_by_four_type2.maxchanends,0
-    .globl    divide_by_four_type2.maxchanends
-.Ldivide_by_four_type2_tmp:
-    .size    divide_by_four_type2, .Ldivide_by_four_type2_tmp-divide_by_four
-    .cfi_endproc
 
 .globl    third_stage
 .align    8
@@ -1028,38 +895,4 @@ zero_loop:
 
     retsp 0
     .cc_bottom zero_data_structure.function
-    .cfi_endproc
-
-.globl    mic_array_decimate_to_pcm_2ch_fir_impl
-.align    8
-.type    mic_array_decimate_to_pcm_2ch_fir_impl,@function
-.cc_top mic_array_decimate_to_pcm_2ch_fir_impl.function
-mic_array_decimate_to_pcm_2ch_fir_impl:
-    .cfi_startproc
-    .issue_mode dual
-
-    //r0, r1, r2, r3, r4, r5, r7
-    {ldc r0, 0; ldc r1, 0} //Initialise the accumulators
-
-    FIR_POINT_QUAD(0, 0, 7)
-    FIR_POINT_QUAD(1, 1, 6)
-    FIR_POINT_QUAD(2, 2, 5)
-    FIR_POINT_QUAD(3, 3, 4)
-    FIR_POINT_QUAD(4, 4, 3)
-    FIR_POINT_QUAD(5, 5, 2)
-    FIR_POINT_QUAD(6, 6, 1)
-    FIR_POINT_QUAD(7, 7, 0)
-
-    retsp 0
-    .cc_bottom mic_array_decimate_to_pcm_2ch_fir_impl.function
-    .set    mic_array_decimate_to_pcm_2ch_fir_impl.nstackwords, 0
-    .globl    mic_array_decimate_to_pcm_2ch_fir_impl.nstackwords
-    .set    mic_array_decimate_to_pcm_2ch_fir_impl.maxcores,1
-    .globl    mic_array_decimate_to_pcm_2ch_fir_impl.maxcores
-    .set    mic_array_decimate_to_pcm_2ch_fir_impl.maxtimers,0
-    .globl    mic_array_decimate_to_pcm_2ch_fir_impl.maxtimers
-    .set    mic_array_decimate_to_pcm_2ch_fir_impl.maxchanends,0
-    .globl    mic_array_decimate_to_pcm_2ch_fir_impl.maxchanends
-.Lmic_array_decimate_to_pcm_2ch_fir_impl_tmp:
-    .size    mic_array_decimate_to_pcm_2ch_fir_impl, .Lmic_array_decimate_to_pcm_2ch_fir_impl_tmp-mic_array_decimate_to_pcm_2ch_fir_impl
     .cfi_endproc
