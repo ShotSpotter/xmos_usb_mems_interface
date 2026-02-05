@@ -279,12 +279,14 @@ def generate_second_stage_coefficients(cutoff_khz):
         beta = 6.0  # Moderate stopband attenuation, good transition
         coefs = signal.firwin(num_taps, cutoff_normalized, window=('kaiser', beta))
     else:
-        # Three-band Remez design: passband, transition, stopband with nulls
-        a = [1, 0, 0]
-        w = [1, 1, 1]
+        # Two-band Remez design: simple passband and stopband
+        # Stopband starts at passband + transition width
+        stopband = passband + transition_width
+
+        a = [1, 0]  # Passband gain = 1, Stopband gain = 0
+        w = [1, 1]  # Equal weighting for passband and stopband
         bands = [0, passband,
-                 nulls*1 - transition_width, nulls*1 + transition_width,
-                 nulls*2 - transition_width, 0.5]
+                 stopband, 0.5]
 
         _, coefs = generate_stage_remez(
             num_taps, bands, a, w,
@@ -394,24 +396,30 @@ def write_second_stage(header, body, coef_data):
     """Write second stage Type I filter coefficients to files."""
     coefs = coef_data['coefs']
     name = coef_data['name']
+    # actual number of taps e.g. "31"
     num_taps = len(coefs)
 
     # Type I filters: Output all coefficients plus padding zero for alignment
-    # XMOS ldd instruction requires double-word alignment, so pad to even count
-    num_output_coefs = num_taps + 1  # 31 coefficients + 1 padding zero = 32
+    # XMOS ldd instruction requires double-word alignment, so pad to even count.
+    if coefs.shape[0] % 2 == 1:
+        coefs = np.append(coefs, 0.0)
+
+    num_output_coefs = coefs.shape[0]
+
+    dc_gain = coefs.sum()
+    body.write(f"const float g_second_stage_fir{num_taps}_{name}_gain = {dc_gain};\n\n")
+
+    body.write(f"const int g_second_stage_fir{num_taps}_{name}_gain_scaling_factor = {int(1.0/dc_gain)};\n\n")
 
     header.write(f"extern const int g_second_stage_fir{num_taps}_{name}[{num_output_coefs}];\n")
     body.write(f"const int g_second_stage_fir{num_taps}_{name}[{num_output_coefs}] = {{\n    ")
 
     # Write all coefficients
-    for i in range(num_taps):
-        d_int = np.int32(coefs[i] * float(INT32_MAX) * 2.0)
+    for i in range(num_output_coefs):
+        d_int = np.int32(coefs[i] * float(INT32_MAX))
         body.write(f"0x{ctypes.c_uint(d_int).value:08x},")
         body.write(break_every_8(i))
 
-    # Write padding zero
-    body.write("0x00000000,")
-    body.write(break_every_8(num_taps))
     body.write("};\n\n")
 
     # Write debug coefficients (full precision decimal, including padding)
@@ -424,9 +432,6 @@ def write_second_stage(header, body, coef_data):
         body.write(f"{decimalized_coef:10d},")
         body.write(break_every_8(i))
 
-    # Write padding zero in debug array
-    body.write("         0,")
-    body.write(break_every_8(num_taps))
     body.write("};\n\n")
 
 
