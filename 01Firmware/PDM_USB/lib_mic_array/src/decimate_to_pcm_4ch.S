@@ -31,10 +31,8 @@
 #endif
 
 // We implement Type 1 (odd # of tap) filters with a final zero pad, so they also
-// have an "even" number of taps from the software perspective. But you will get crap
-// results if you use the more computationally-efficient Type 2 algorithm with a
-// Type 1 filter. So you must set SECOND_STAGE_TYPE_1 manually here:
-#define SECOND_STAGE_TYPE_1                    (1) // Type 1 FIR = 1, Type 2 FIR = 0
+// have an "even" number of taps from the software perspective. Use "32" for 31 taps + pad.
+// Supported tap sizes: 32, 36, 40, 44, 48
 
 #define SECOND_STAGE_TAPS 48                                                                        // Number of coefficient/taps in the whole (symmetric) filter. In words.
 #define SECOND_STAGE_HISTORY_SIZE              (((SECOND_STAGE_TAPS + 3) / 4) * 4)                  // Enforce SECOND_STAGE_HISTORY_SIZE >= SECOND_STAGE_TAPS and is a multiple of 4. In words.
@@ -92,7 +90,7 @@
 // S_SECOND_STAGE_DATA - Contains history of received from first fir filter so that second stage filter can be calculated
 //
 #define S_SECOND_STAGE_DATA             (S_DC_ELIMINATE + DC_ELIMINATE_STACK_SIZE)
-#define S_SECOND_STAGE_DATA_SIZE        (SECOND_STAGE_HISTORY_SIZE * 2 * 2)        // word count 32 poles * 2 blocks * 2 channels
+#define S_SECOND_STAGE_DATA_SIZE        (SECOND_STAGE_HISTORY_SIZE * 2 * 2)        // word count 48 poles * 2 blocks * 2 channels
 
 //
 // S_SECOND_STAGE - Control variables for second stage fir filter
@@ -461,6 +459,7 @@ confirm_init_complete:
     // while (1) process
 
 fir_loop_type1:
+#if SECOND_STAGE_TAPS > 44
     INPUT_TO_OFFSET(47)
     INPUT_TO_OFFSET(46)
     bl third_stage
@@ -469,7 +468,9 @@ fir_loop_type1:
     INPUT_TO_OFFSET(44)
     ldaw r7, dp[44]
     bl divide_by_four
+#endif
 
+#if SECOND_STAGE_TAPS > 40
     INPUT_TO_OFFSET(43)
     INPUT_TO_OFFSET(42)
     bl third_stage
@@ -478,7 +479,9 @@ fir_loop_type1:
     INPUT_TO_OFFSET(40)
     ldaw r7, dp[40]
     bl divide_by_four
+#endif
 
+#if SECOND_STAGE_TAPS > 36
     INPUT_TO_OFFSET(39)
     INPUT_TO_OFFSET(38)
     bl third_stage
@@ -487,7 +490,9 @@ fir_loop_type1:
     INPUT_TO_OFFSET(36)
     ldaw r7, dp[36]
     bl divide_by_four
+#endif
 
+#if SECOND_STAGE_TAPS > 32
     INPUT_TO_OFFSET(35)
     INPUT_TO_OFFSET(34)
     bl third_stage
@@ -496,6 +501,7 @@ fir_loop_type1:
     INPUT_TO_OFFSET(32)
     ldaw r7, dp[32]
     bl divide_by_four
+#endif
 
     INPUT_TO_OFFSET(31)
     INPUT_TO_OFFSET(30)
@@ -736,10 +742,18 @@ divide_by_four:
     FIR_POINT_PAIR(5, 5)
     FIR_POINT_PAIR(6, 6)
     FIR_POINT_PAIR(7, 7)
+#if SECOND_STAGE_TAPS > 32
     FIR_POINT_PAIR(8, 8)
+#endif
+#if SECOND_STAGE_TAPS > 36
     FIR_POINT_PAIR(9, 9)
+#endif
+#if SECOND_STAGE_TAPS > 40
     FIR_POINT_PAIR(10, 10)
+#endif
+#if SECOND_STAGE_TAPS > 44
     FIR_POINT_PAIR(11, 11)
+#endif
     // advance pointers to the second half
     ldc r6, SECOND_STAGE_RIGHT_OFFSET_BYTES
     {add r8, r8, r6; add r9, r9, r6}
@@ -751,10 +765,18 @@ divide_by_four:
     FIR_POINT_PAIR(5, 5)
     FIR_POINT_PAIR(6, 6)
     FIR_POINT_PAIR(7, 7)
+#if SECOND_STAGE_TAPS > 32
     FIR_POINT_PAIR(8, 8)
+#endif
+#if SECOND_STAGE_TAPS > 36
     FIR_POINT_PAIR(9, 9)
+#endif
+#if SECOND_STAGE_TAPS > 40
     FIR_POINT_PAIR(10, 10)
+#endif
+#if SECOND_STAGE_TAPS > 44
     FIR_POINT_PAIR(11, 11)
+#endif
     // store channel 0
     stw r0, r10[S_OUTPUT_STORAGE_0]
 
@@ -772,10 +794,18 @@ divide_by_four:
     FIR_POINT_PAIR(5, 5)
     FIR_POINT_PAIR(6, 6)
     FIR_POINT_PAIR(7, 7)
+#if SECOND_STAGE_TAPS > 32
     FIR_POINT_PAIR(8, 8)
+#endif
+#if SECOND_STAGE_TAPS > 36
     FIR_POINT_PAIR(9, 9)
+#endif
+#if SECOND_STAGE_TAPS > 40
     FIR_POINT_PAIR(10, 10)
+#endif
+#if SECOND_STAGE_TAPS > 44
     FIR_POINT_PAIR(11, 11)
+#endif
     // advance pointers to the second half
     ldc r6, SECOND_STAGE_RIGHT_OFFSET_BYTES
     {add r8, r8, r6; add r9, r9, r6}
@@ -787,10 +817,18 @@ divide_by_four:
     FIR_POINT_PAIR(5, 5)
     FIR_POINT_PAIR(6, 6)
     FIR_POINT_PAIR(7, 7)
+#if SECOND_STAGE_TAPS > 32
     FIR_POINT_PAIR(8, 8)
+#endif
+#if SECOND_STAGE_TAPS > 36
     FIR_POINT_PAIR(9, 9)
+#endif
+#if SECOND_STAGE_TAPS > 40
     FIR_POINT_PAIR(10, 10)
+#endif
+#if SECOND_STAGE_TAPS > 44
     FIR_POINT_PAIR(11, 11)
+#endif
     // Store channel 1 output
     stw r0, r10[S_OUTPUT_STORAGE_1]
     //
