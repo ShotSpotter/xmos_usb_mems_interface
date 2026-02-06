@@ -34,7 +34,7 @@
 // have an "even" number of taps from the software perspective. Use "32" for 31 taps + pad.
 // Supported tap sizes: 32, 36, 40, 44, 48
 
-#define SECOND_STAGE_TAPS 36                                                                        // Number of coefficient/taps in the whole (symmetric) filter. In words.
+#define SECOND_STAGE_TAPS 32                                                                        // Number of coefficient/taps in the whole (symmetric) filter. In words.
 #define SECOND_STAGE_HISTORY_SIZE              (((SECOND_STAGE_TAPS + 3) / 4) * 4)                  // Enforce SECOND_STAGE_HISTORY_SIZE >= SECOND_STAGE_TAPS and is a multiple of 4. In words.
 #define SECOND_STAGE_BUFFER_SIZE               (SECOND_STAGE_HISTORY_SIZE * 2)                      // We need 2x SECOND_STAGE_HISTORY_SIZE for the circular buffer. In words.
 #define SECOND_STAGE_BUFFER_SIZE_BYTES         (SECOND_STAGE_BUFFER_SIZE  * 4)                      // Buffer size per channel. In bytes.
