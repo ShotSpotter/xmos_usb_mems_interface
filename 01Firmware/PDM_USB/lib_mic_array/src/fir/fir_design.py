@@ -47,13 +47,13 @@ FIRST_STAGE_CONFIG = {
 
 # Second stage: 384 kHz -> 96 kHz (decimation by 4)
 # Generate filters for different microphone types with different cutoff frequencies
-# Type I filters: 31 taps (odd), non-zero at Nyquist, output all coefficients
+# Type I filters: odd number of taps, non-zero at Nyquist, output all coefficients
 SECOND_STAGE_CONFIG = {
-    'num_taps': 47,
+    'num_taps': 31,
     'stop_atten_db': -65.0,
     'transition_width_khz': 4.0,
     'filters_khz': [48.0, 44.0, 36.0, 30.0, 24.0],  # Cutoff frequencies (>=28 kHz)
-    'use_kaiser_for_max': True  # Use Kaiser window for maximum bandwidth filter
+    'use_kaiser': [True, False, False, False, False], # list aligned  with above
 }
 
 # Third stage: 48 kHz -> 12 kHz (decimation by 4)
@@ -243,7 +243,7 @@ def generate_first_stage_coefficients():
     }
 
 
-def generate_second_stage_coefficients(cutoff_khz):
+def generate_second_stage_coefficients(cutoff_khz, use_kaiser):
     """
     Generate second stage Type I filter for given cutoff frequency.
 
@@ -265,18 +265,17 @@ def generate_second_stage_coefficients(cutoff_khz):
     # Normalize frequencies
     passband = cutoff_khz / stage_sample_rate
     transition_width = config['transition_width_khz'] / stage_sample_rate
-    nulls = 1.0 / 4.0  # Decimation ratio (4:1)
 
     # Use Kaiser window for maximum bandwidth filter (47.999 kHz)
-    if config.get('use_kaiser_for_max', False) and cutoff_khz >= 47.0:
+    if use_kaiser:
         # Kaiser window design for maximum bandwidth
-        # With 47 taps, we can achieve sharper transition
+        # With more taps, we can achieve sharper transition
         nyquist = stage_sample_rate / 2.0
         cutoff_normalized = cutoff_khz / nyquist
 
         # Design Kaiser window FIR
-        # Higher beta for sharper transition with 47 taps
-        beta = 8.0  # Sharper transition, better stopband attenuation
+        # Increase beta for sharper transition
+        beta = 12.0  # Sharper transition, better stopband attenuation
         coefs = signal.firwin(num_taps, cutoff_normalized, window=('kaiser', beta))
     else:
         # Two-band Remez design: simple passband and stopband
@@ -506,9 +505,9 @@ def main():
 
     # Generate and write second stage filters
     print("\nGenerating second stage filters...")
-    for cutoff in SECOND_STAGE_CONFIG['filters_khz']:
+    for cutoff, use_kaiser in zip(SECOND_STAGE_CONFIG['filters_khz'], SECOND_STAGE_CONFIG['use_kaiser']):
         print(f"  {cutoff} kHz cutoff")
-        second_stage_data = generate_second_stage_coefficients(cutoff)
+        second_stage_data = generate_second_stage_coefficients(cutoff, use_kaiser)
         write_second_stage(header, body, second_stage_data)
 
     # Write constants and disabled filter

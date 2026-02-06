@@ -34,7 +34,7 @@
 // have an "even" number of taps from the software perspective. Use "32" for 31 taps + pad.
 // Supported tap sizes: 32, 36, 40, 44, 48
 
-#define SECOND_STAGE_TAPS 48                                                                        // Number of coefficient/taps in the whole (symmetric) filter. In words.
+#define SECOND_STAGE_TAPS 36                                                                        // Number of coefficient/taps in the whole (symmetric) filter. In words.
 #define SECOND_STAGE_HISTORY_SIZE              (((SECOND_STAGE_TAPS + 3) / 4) * 4)                  // Enforce SECOND_STAGE_HISTORY_SIZE >= SECOND_STAGE_TAPS and is a multiple of 4. In words.
 #define SECOND_STAGE_BUFFER_SIZE               (SECOND_STAGE_HISTORY_SIZE * 2)                      // We need 2x SECOND_STAGE_HISTORY_SIZE for the circular buffer. In words.
 #define SECOND_STAGE_BUFFER_SIZE_BYTES         (SECOND_STAGE_BUFFER_SIZE  * 4)                      // Buffer size per channel. In bytes.
@@ -361,16 +361,16 @@ configure:
     eq r9, r8, r9
     bt r9, config_second_stage_0x0C
     // Default case
-    ldaw r11, cp[g_second_stage_fir47_36kHz] // default like IM72D128
+    ldaw r11, cp[g_second_stage_fir31_36kHz] // default like IM72D128
     bu config_second_stage_done
 config_second_stage_0x0F: // VM3000
-    ldaw r11, cp[g_second_stage_fir47_24kHz]
+    ldaw r11, cp[g_second_stage_fir31_24kHz]
     bu config_second_stage_done
 config_second_stage_0x0E: // IM72D128
-    ldaw r11, cp[g_second_stage_fir47_36kHz]
+    ldaw r11, cp[g_second_stage_fir31_36kHz]
     bu config_second_stage_done
 config_second_stage_0x0C: // EM215
-    ldaw r11, cp[g_second_stage_fir47_48kHz]
+    ldaw r11, cp[g_second_stage_fir31_48kHz]
     bu config_second_stage_done
 config_second_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
