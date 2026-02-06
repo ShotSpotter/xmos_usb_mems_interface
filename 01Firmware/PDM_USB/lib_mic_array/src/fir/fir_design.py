@@ -49,7 +49,7 @@ FIRST_STAGE_CONFIG = {
 # Generate filters for different microphone types with different cutoff frequencies
 # Type I filters: 31 taps (odd), non-zero at Nyquist, output all coefficients
 SECOND_STAGE_CONFIG = {
-    'num_taps': 31,
+    'num_taps': 47,
     'stop_atten_db': -65.0,
     'transition_width_khz': 4.0,
     'filters_khz': [48.0, 44.0, 36.0, 30.0, 24.0],  # Cutoff frequencies (>=28 kHz)
@@ -270,13 +270,13 @@ def generate_second_stage_coefficients(cutoff_khz):
     # Use Kaiser window for maximum bandwidth filter (47.999 kHz)
     if config.get('use_kaiser_for_max', False) and cutoff_khz >= 47.0:
         # Kaiser window design for maximum bandwidth
-        # Cutoff at half Nyquist to allow transition band
+        # With 47 taps, we can achieve sharper transition
         nyquist = stage_sample_rate / 2.0
         cutoff_normalized = cutoff_khz / nyquist
 
         # Design Kaiser window FIR
-        # Use higher beta for better stopband attenuation
-        beta = 6.0  # Moderate stopband attenuation, good transition
+        # Higher beta for sharper transition with 47 taps
+        beta = 8.0  # Sharper transition, better stopband attenuation
         coefs = signal.firwin(num_taps, cutoff_normalized, window=('kaiser', beta))
     else:
         # Two-band Remez design: simple passband and stopband

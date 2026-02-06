@@ -6,20 +6,20 @@ extern const int g_first_stage_fir_debug[48];
 
 #define FIRST_STAGE_MAX_PASSBAND_OUTPUT (619343346)
 
-extern const int g_second_stage_fir31_48kHz[32];
-extern const int g_second_stage_fir31_48kHz_debug[32];
+extern const int g_second_stage_fir47_48kHz[48];
+extern const int g_second_stage_fir47_48kHz_debug[48];
 
-extern const int g_second_stage_fir31_44kHz[32];
-extern const int g_second_stage_fir31_44kHz_debug[32];
+extern const int g_second_stage_fir47_44kHz[48];
+extern const int g_second_stage_fir47_44kHz_debug[48];
 
-extern const int g_second_stage_fir31_36kHz[32];
-extern const int g_second_stage_fir31_36kHz_debug[32];
+extern const int g_second_stage_fir47_36kHz[48];
+extern const int g_second_stage_fir47_36kHz_debug[48];
 
-extern const int g_second_stage_fir31_30kHz[32];
-extern const int g_second_stage_fir31_30kHz_debug[32];
+extern const int g_second_stage_fir47_30kHz[48];
+extern const int g_second_stage_fir47_30kHz_debug[48];
 
-extern const int g_second_stage_fir31_24kHz[32];
-extern const int g_second_stage_fir31_24kHz_debug[32];
+extern const int g_second_stage_fir47_24kHz[48];
+extern const int g_second_stage_fir47_24kHz_debug[48];
 
 extern const int g_crc_constants[2];
 

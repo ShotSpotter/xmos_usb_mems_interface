@@ -36,7 +36,7 @@
 // Type 1 filter. So you must set SECOND_STAGE_TYPE_1 manually here:
 #define SECOND_STAGE_TYPE_1                    (1) // Type 1 FIR = 1, Type 2 FIR = 0
 
-#define SECOND_STAGE_TAPS 32                                                                        // Number of coefficient/taps in the whole (symmetric) filter. In words.
+#define SECOND_STAGE_TAPS 48                                                                        // Number of coefficient/taps in the whole (symmetric) filter. In words.
 #define SECOND_STAGE_HISTORY_SIZE              (((SECOND_STAGE_TAPS + 3) / 4) * 4)                  // Enforce SECOND_STAGE_HISTORY_SIZE >= SECOND_STAGE_TAPS and is a multiple of 4. In words.
 #define SECOND_STAGE_BUFFER_SIZE               (SECOND_STAGE_HISTORY_SIZE * 2)                      // We need 2x SECOND_STAGE_HISTORY_SIZE for the circular buffer. In words.
 #define SECOND_STAGE_BUFFER_SIZE_BYTES         (SECOND_STAGE_BUFFER_SIZE  * 4)                      // Buffer size per channel. In bytes.
@@ -363,16 +363,16 @@ configure:
     eq r9, r8, r9
     bt r9, config_second_stage_0x0C
     // Default case
-    ldaw r11, cp[g_second_stage_fir31_36kHz] // default like IM72D128
+    ldaw r11, cp[g_second_stage_fir47_36kHz] // default like IM72D128
     bu config_second_stage_done
 config_second_stage_0x0F: // VM3000
-    ldaw r11, cp[g_second_stage_fir31_24kHz]
+    ldaw r11, cp[g_second_stage_fir47_24kHz]
     bu config_second_stage_done
 config_second_stage_0x0E: // IM72D128
-    ldaw r11, cp[g_second_stage_fir31_36kHz]
+    ldaw r11, cp[g_second_stage_fir47_36kHz]
     bu config_second_stage_done
 config_second_stage_0x0C: // EM215
-    ldaw r11, cp[g_second_stage_fir31_48kHz]
+    ldaw r11, cp[g_second_stage_fir47_48kHz]
     bu config_second_stage_done
 config_second_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
@@ -461,6 +461,42 @@ confirm_init_complete:
     // while (1) process
 
 fir_loop_type1:
+    INPUT_TO_OFFSET(47)
+    INPUT_TO_OFFSET(46)
+    bl third_stage
+    INPUT_TO_OFFSET(45)
+    bl post_process
+    INPUT_TO_OFFSET(44)
+    ldaw r7, dp[44]
+    bl divide_by_four
+
+    INPUT_TO_OFFSET(43)
+    INPUT_TO_OFFSET(42)
+    bl third_stage
+    INPUT_TO_OFFSET(41)
+    bl post_process
+    INPUT_TO_OFFSET(40)
+    ldaw r7, dp[40]
+    bl divide_by_four
+
+    INPUT_TO_OFFSET(39)
+    INPUT_TO_OFFSET(38)
+    bl third_stage
+    INPUT_TO_OFFSET(37)
+    bl post_process
+    INPUT_TO_OFFSET(36)
+    ldaw r7, dp[36]
+    bl divide_by_four
+
+    INPUT_TO_OFFSET(35)
+    INPUT_TO_OFFSET(34)
+    bl third_stage
+    INPUT_TO_OFFSET(33)
+    bl post_process
+    INPUT_TO_OFFSET(32)
+    ldaw r7, dp[32]
+    bl divide_by_four
+
     INPUT_TO_OFFSET(31)
     INPUT_TO_OFFSET(30)
     bl third_stage
@@ -700,6 +736,10 @@ divide_by_four:
     FIR_POINT_PAIR(5, 5)
     FIR_POINT_PAIR(6, 6)
     FIR_POINT_PAIR(7, 7)
+    FIR_POINT_PAIR(8, 8)
+    FIR_POINT_PAIR(9, 9)
+    FIR_POINT_PAIR(10, 10)
+    FIR_POINT_PAIR(11, 11)
     // advance pointers to the second half
     ldc r6, SECOND_STAGE_RIGHT_OFFSET_BYTES
     {add r8, r8, r6; add r9, r9, r6}
@@ -711,6 +751,10 @@ divide_by_four:
     FIR_POINT_PAIR(5, 5)
     FIR_POINT_PAIR(6, 6)
     FIR_POINT_PAIR(7, 7)
+    FIR_POINT_PAIR(8, 8)
+    FIR_POINT_PAIR(9, 9)
+    FIR_POINT_PAIR(10, 10)
+    FIR_POINT_PAIR(11, 11)
     // store channel 0
     stw r0, r10[S_OUTPUT_STORAGE_0]
 
@@ -728,6 +772,10 @@ divide_by_four:
     FIR_POINT_PAIR(5, 5)
     FIR_POINT_PAIR(6, 6)
     FIR_POINT_PAIR(7, 7)
+    FIR_POINT_PAIR(8, 8)
+    FIR_POINT_PAIR(9, 9)
+    FIR_POINT_PAIR(10, 10)
+    FIR_POINT_PAIR(11, 11)
     // advance pointers to the second half
     ldc r6, SECOND_STAGE_RIGHT_OFFSET_BYTES
     {add r8, r8, r6; add r9, r9, r6}
@@ -739,6 +787,10 @@ divide_by_four:
     FIR_POINT_PAIR(5, 5)
     FIR_POINT_PAIR(6, 6)
     FIR_POINT_PAIR(7, 7)
+    FIR_POINT_PAIR(8, 8)
+    FIR_POINT_PAIR(9, 9)
+    FIR_POINT_PAIR(10, 10)
+    FIR_POINT_PAIR(11, 11)
     // Store channel 1 output
     stw r0, r10[S_OUTPUT_STORAGE_1]
     //
