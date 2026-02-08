@@ -134,6 +134,7 @@ g_third_stage_fir_disabled
 
 
 
+
 Flow
 ----
 See `main.xc` function `main()` calls for code entry point.
@@ -301,3 +302,124 @@ BoardRev = 0xE (Infineon IM72D128)
 ![Infineon IM72D128](infineon.png)
 
 
+Debugging and Processor Headroom Measurement
+============================================
+
+1) build the application:
+```
+xmake -clean && xmake
+```
+2) run using gdb:
+```
+xgdb bin/SST-XMOS-001_v2.9.2.xe
+```
+3) Bootstrap gdb:
+```
+continue
+run
+```
+4) Let it run long enough to initialize everything. Break with ^C and inspect threads:
+```
+Thread 2.1 received signal SIGINT, Interrupt.
+[Switching to tile[1] core[0]]
+deliver (divide=0, curSamFreq=0, c_out=<optimized out>, c_spd_out=<optimized out>, c_pdm_pcm=<optimized out>, c_adc=<optimized out>) at ../src/audio.xc:89
+89                              c_pdm_pcm <: 1;
+(gdb) info threads
+  Id   Target Id            Frame
+  1.1  tile[0] core[0] (hw) mic_array_get_next_time_domain_frame (c_from_decimator=..., buffer=@0x7fe84: 2, dc=..., audio=<optimized out>)
+    at /home/rcalhoun/xmos_usb_mems_interface/01Firmware/PDM_USB/lib_mic_array/src/decimator_interface.xc:103
+  1.2  tile[0] core[1] (hw) 0x0004122c in XMOS_DFU_RevertFactory (c_user_cmd=<optimized out>)
+    at /home/rcalhoun/xmos_usb_mems_interface/01Firmware/PDM_USB/module_dfu/src/dfu.xc:309
+  1.3  tile[0] core[2] (hw) 0x00044452 in ?? ()
+  1.4  tile[0] core[3] (hw) mic_array_decimate_to_pcm_2ch ()
+    at /home/rcalhoun/xmos_usb_mems_interface/01Firmware/PDM_USB/lib_mic_array/src/decimate_to_pcm_4ch.S:520
+  1.5  tile[0] core[4] (hw) mic_array_decimate_to_pcm_2ch ()
+    at /home/rcalhoun/xmos_usb_mems_interface/01Firmware/PDM_USB/lib_mic_array/src/decimate_to_pcm_4ch.S:518
+  1.6  tile[0] core[5] (hw) mic_array_decimate_to_pcm_2ch ()
+    at /home/rcalhoun/xmos_usb_mems_interface/01Firmware/PDM_USB/lib_mic_array/src/decimate_to_pcm_4ch.S:520
+  1.7  tile[0] core[6] (hw) mic_array_decimate_to_pcm_2ch ()
+    at /home/rcalhoun/xmos_usb_mems_interface/01Firmware/PDM_USB/lib_mic_array/src/decimate_to_pcm_4ch.S:518
+  1.8  tile[0] core[7] (hw) pdm_rx_asm () at /home/rcalhoun/xmos_usb_mems_interface/01Firmware/PDM_USB/lib_mic_array/src/pdm_rx.S:171
+* 2.1  tile[1] core[0] (hw) deliver (divide=0, curSamFreq=0, c_out=<optimized out>, c_spd_out=<optimized out>, c_pdm_pcm=<optimized out>, c_adc=<optimized out>)
+    at ../src/audio.xc:89
+  2.2  tile[1] core[1] (hw) 0x00041c58 in decouple (c_mix_out=2147681026) at ../src/usb_buffer/decouple.xc:461
+  2.3  tile[1] core[2] (hw) buffer (c_aud_out=<optimized out>, c_aud_in=2147683330, c_sof=2147681794, c_aud_ctl=2147684098, p_off_mclk=<optimized out>)
+    at ../src/usb_buffer/usb_buffer.xc:275
+  2.4  tile[1] core[3] (hw) XUD_GetSetupData () at /home/rcalhoun/xmos_usb_mems_interface/01Firmware/PDM_USB/module_xud/src/XUD_EpFuncs.S:41
+  2.5  tile[1] core[4] (hw) 0x00045176 in XUD_TokenRx_Pid ()
+```
+5) Switch one of the (four) `mic_array_decimate_to_pcm_2ch ()` threads.
+```
+thread 1.4
+```
+Read the value at `S_DEBUG_MAX_CYCLES_OFFSET`. In the current code this is at word 154 above the stack pointer or address sp + 154 * 4 = sp + 616. You can extract the defines and expose them to xgdb with something like this:
+```
+# Re-compute stack layout like the preprocess. You'll need to update this if you 
+# change the stack layout.
+
+# Define main constants (in words)
+set $S_SECOND_STAGE_SIZE = 8
+set $SECOND_STAGE_TAPS = 32
+
+# Recreate the math from decimate_to_pcm_4ch.S configuration
+set $SECOND_STAGE_HISTORY_SIZE = (($SECOND_STAGE_TAPS + 3) / 4) * 4
+set $THIRD_STAGE_COEF_COUNT = 32
+
+# Calculate Stack Structure Sizes (in words)
+set $S_STORAGE_SIZE = 12
+set $DC_ELIMINATE_STACK_SIZE = 12
+set $S_SECOND_STAGE_DATA_SIZE = $SECOND_STAGE_HISTORY_SIZE * 2 * 2
+set $S_THIRD_STAGE_DATA_SIZE = $THIRD_STAGE_COEF_COUNT * 2 * 2
+set $S_THIRD_STAGE_SIZE = 8
+
+# Calculate Offsets (in words)
+# S_SECOND_STAGE = S_STORAGE + S_DC_ELIMINATE + S_SECOND_STAGE_DATA
+set $OFFSET_S_SECOND_STAGE = $S_STORAGE_SIZE + $DC_ELIMINATE_STACK_SIZE + $S_SECOND_STAGE_DATA_SIZE
+
+# The specific variable you want (Offset 2 inside S_SECOND_STAGE)
+set $S_DEBUG_MAX_CYCLES_OFFSET = $OFFSET_S_SECOND_STAGE + 2
+
+# Define a helper command for your documentation
+define log_cycles
+    # Convert word offset to byte offset (*4)
+    print *(unsigned*)($sp + ($S_DEBUG_MAX_CYCLES_OFFSET * 4))
+end
+```
+then load it as a script in gdb:
+
+```
+(gdb) thread 1.4
+[Switching to thread 1.4 (tile[0] core[3])]
+#0  post_process ()
+    at /home/rcalhoun/xmos_usb_mems_interface/01Firmware/PDM_USB/lib_mic_array/src/decimate_to_pcm_4ch.S:698
+698         {in r3, res[r6]; ldc r0, 0}
+(gdb) source debug_offsets.gdb 
+(gdb) log_cycles
+$1 = 164
+```
+
+The "Max Cycle Count" tracker updates a variable on the stack (sp[S_DEBUG_MAX_CYCLES]) whenever a new maximum is observed for the critical processing block (4 samples).
+
+Location: The code measures the block containing third_stage, post_process, and divide_by_four (lines ~840 in the original file).
+
+* Measurement: Uses the gettime instruction (100 MHz reference clock).
+* Storage: The max value is stored at stack offset `sp[S_DEBUG_MAX_CYCLES]`
+
+How to Monitor
+--------------
+* Build and Run your code with the xTag attached.
+* Pause the execution after it has run for a few seconds.
+* Inspect Memory relative to the Stack Pointer (sp).
+* Print the value located at `sp[S_DEBUG_MAX_CYCLES]`:
+
+```
+print *(unsigned*)($sp + ($S_DEBUG_MAX_CYCLES_OFFSET * 4))
+```
+
+Breaking the code breaks the real-time acquisition, so after reading the result just exit gdb.
+
+"Target Limit: At 384 kHz, you have ~260 cycles per sample (4-sample block period = 1040 cycles).
+Estimated Usage: My static analysis predicts ~550 cycles for a 4-sample block.
+If you see values approaching 1000 cycles, you are close to the limit."
+
+So the value of 164 is very good.

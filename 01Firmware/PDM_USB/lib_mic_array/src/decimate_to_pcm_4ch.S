@@ -98,6 +98,8 @@
 #define S_SECOND_STAGE			(S_SECOND_STAGE_DATA + S_SECOND_STAGE_DATA_SIZE)
 #define S_SECOND_STAGE_PHASE		0
 #define S_SECOND_STAGE_PHASE_COUNT	1
+#define S_DEBUG_MAX_CYCLES          2
+#define S_CYCLE_START               3
 #define S_SECOND_STAGE_SIZE		8
 
 //
@@ -568,12 +570,39 @@ fir_loop_type1:
 
     INPUT_TO_OFFSET(3)
     INPUT_TO_OFFSET(2)
+
+    // Profile third_stage
+    gettime r11
+    ldaw r10, sp[S_SECOND_STAGE]
+    stw r11, r10[S_CYCLE_START]
     bl third_stage
+    gettime r11
+    ldaw r10, sp[S_SECOND_STAGE]
+    ldw r9, r10[S_CYCLE_START]
+    sub r11, r11, r9
+    // Store temporarily in S_DEBUG_MAX_CYCLES (we will accumulate)
+    stw r11, r10[S_DEBUG_MAX_CYCLES]
+
     INPUT_TO_OFFSET(1)
     bl post_process
     INPUT_TO_OFFSET(0)
+
+    // Profile divide_by_four and accumulate
+    gettime r11
+    ldaw r10, sp[S_SECOND_STAGE]
+    stw r11, r10[S_CYCLE_START]
     ldaw r7, dp[0]
     bl divide_by_four
+    gettime r11
+    ldaw r10, sp[S_SECOND_STAGE]
+    ldw r9, r10[S_CYCLE_START]
+    sub r11, r11, r9
+    // Add third_stage time
+    ldw r9, r10[S_DEBUG_MAX_CYCLES]
+    add r11, r11, r9
+    stw r11, r10[S_DEBUG_MAX_CYCLES]
+
+skip_update:
     bu fir_loop_type1
 
     .cc_bottom mic_array_decimate_to_pcm_2ch.function
