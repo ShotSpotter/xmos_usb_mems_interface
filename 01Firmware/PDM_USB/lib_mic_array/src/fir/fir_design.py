@@ -48,12 +48,13 @@ FIRST_STAGE_CONFIG = {
 # Second stage: 384 kHz -> 96 kHz (decimation by 4)
 # Generate filters for different microphone types with different cutoff frequencies
 # Type I filters: odd number of taps, non-zero at Nyquist, output all coefficients
+# Stop band is cutoff + transition width
 SECOND_STAGE_CONFIG = {
-    'num_taps': 31,
-    'stop_atten_db': -65.0,
-    'transition_width_khz': 4.0,
-    'filters_khz': [48.0, 44.0, 36.0, 30.0, 24.0],  # Cutoff frequencies (>=28 kHz)
-    'use_kaiser': [True, False, False, False, False], # list aligned  with above
+    'num_taps': 35,
+    'stop_atten_db': -30.0,
+    'transition_width_khz': 15.0,
+    'filters_khz': [32.0, 28.0, 24.0, 20.0, 16.0, 12.0],  # Cutoff frequencies (end of pass band)
+    'use_kaiser': [False, False, False, False, False, False], # list aligned  with above
 }
 
 # Third stage: 48 kHz -> 12 kHz (decimation by 4)

@@ -361,16 +361,16 @@ configure:
     eq r9, r8, r9
     bt r9, config_second_stage_0x0C
     // Default case
-    ldaw r11, cp[g_second_stage_fir31_36kHz] // default like IM72D128
+    ldaw r11, cp[g_second_stage_fir35_24kHz] // default like IM72D128
     bu config_second_stage_done
 config_second_stage_0x0F: // VM3000
-    ldaw r11, cp[g_second_stage_fir31_24kHz]
+    ldaw r11, cp[g_second_stage_fir35_12kHz]
     bu config_second_stage_done
 config_second_stage_0x0E: // IM72D128
-    ldaw r11, cp[g_second_stage_fir31_36kHz]
+    ldaw r11, cp[g_second_stage_fir35_24kHz]
     bu config_second_stage_done
 config_second_stage_0x0C: // EM215
-    ldaw r11, cp[g_second_stage_fir31_48kHz]
+    ldaw r11, cp[g_second_stage_fir35_32kHz]
     bu config_second_stage_done
 config_second_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
