@@ -65,7 +65,7 @@ FIRST_STAGE_CONFIG = {
 # Type I filters: odd number of taps, non-zero at Nyquist, output all coefficients
 # Stop band is cutoff + transition width
 
-second_stage_taps = 31
+second_stage_taps = 47
 min_atten = -30.0
 
 SECOND_STAGE_FILTERS = [
@@ -75,14 +75,14 @@ SECOND_STAGE_FILTERS = [
 # Third stage: 48 kHz -> 12 kHz (decimation by 4)
 # Windowed FIR filters
 
-third_stage_taps = 31
+third_stage_taps = 47
 
 THIRD_STAGE_FILTERS = [
     FilterSpec(num_taps=third_stage_taps, cutoff_khz=40.0, transition_khz = 8.0, min_attenuation = min_atten),
     FilterSpec(num_taps=third_stage_taps, cutoff_khz=24.0, transition_khz = 12.0, min_attenuation = min_atten),
     FilterSpec(num_taps=third_stage_taps, cutoff_khz=16.0, transition_khz = 12.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=12.0, transition_khz = 16.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz= 8.0, transition_khz = 16.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, cutoff_khz=12.0, transition_khz = 18.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, cutoff_khz= 8.0, transition_khz = 18.0, min_attenuation = min_atten),
 ]
 
 # ============================================================================
@@ -299,7 +299,6 @@ def generate_filter_coefficients(stage_sample_rate: float, filterSpec : FilterSp
         print(f"  Warning: stop band attenuation {stop_band_atten} for {filterSpec.cutoff_khz} is less than target {filterSpec.min_attenuation}")
 
     coefs = h
-
     # Check if filter generation succeeded
     if coefs is None:
         raise ValueError(f"Failed to generate {filterSpec.num_taps}-tap filter for {filterSpec.cutoff_khz} kHz cutoff. "
