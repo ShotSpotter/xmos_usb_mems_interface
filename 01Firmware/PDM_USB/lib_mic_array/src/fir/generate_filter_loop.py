@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-stage2_taps = 32
-stage3_taps = 32
+stage2_taps = 48
+stage3_taps = 48
 
 
-reps = 16
+reps = 24
 
 for n in range(reps):
     stage2_start = ((stage2_taps - 1) - (4 * n))
