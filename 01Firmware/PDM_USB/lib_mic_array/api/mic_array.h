@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include "fir_coefs.h"
+#include "fir_coefs_cascade.h"
 #include "mic_array_frame.h"
 
 #ifndef MIC_ARRAY_HIRES_MAX_DELAY

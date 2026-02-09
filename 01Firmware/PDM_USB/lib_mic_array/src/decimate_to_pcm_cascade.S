@@ -2,7 +2,7 @@
 // Additional code by Richard Boulderstone and
 // Robert B. Calhoun is Copyright (c) 2024-2025 SoundThinking Inc.
 //
-// Assembly-language implementation of mic_array_decimate_to_pcm_2ch(),
+// Assembly-language implementation of decimate_to_pcm_cascade(),
 // based on XMOS reference code. The reference code used FIR filters of
 // inadequate size because of compute limitation. In this version, we run
 // one decimator for every two channels instead of one decimator for
@@ -37,13 +37,18 @@
 #define SECOND_STAGE_TAPS 32                                                                        // Number of coefficient/taps in the whole (symmetric) filter. In words.
 #define SECOND_STAGE_HISTORY_SIZE              (((SECOND_STAGE_TAPS + 3) / 4) * 4)                  // Enforce SECOND_STAGE_HISTORY_SIZE >= SECOND_STAGE_TAPS and is a multiple of 4. In words.
 #define SECOND_STAGE_BUFFER_SIZE               (SECOND_STAGE_HISTORY_SIZE * 2)                      // We need 2x SECOND_STAGE_HISTORY_SIZE for the circular buffer. In words.
+#define SECOND_STAGE_ALL_CHANNELS_SIZE         (SECOND_STAGE_BUFFER_SIZE * 2)                       // Total size of second stage storage. In words.
 #define SECOND_STAGE_BUFFER_SIZE_BYTES         (SECOND_STAGE_BUFFER_SIZE  * 4)                      // Buffer size per channel. In bytes.
 #define SECOND_STAGE_LEFT_OFFSET_BYTES         (0)                                                  // offset of the left pointer (r7), in bytes. (not used, it is zero)
-#define SECOND_STAGE_RIGHT_OFFSET_BYTES        ((SECOND_STAGE_TAPS / 2) * 4)                        // offset of the right pointer (r8), in bytes.
+#define SECOND_STAGE_MIDPOINT_BYTES        ((SECOND_STAGE_TAPS / 2) * 4)                        // offset of the right pointer (r8), in bytes.
 
-#define THIRD_STAGE_COEF_COUNT         	32
-#define THIRD_STAGE_BUFFER_SIZE        	(THIRD_STAGE_COEF_COUNT * 2)
-#define THIRD_STAGE_HALF_FILTER_OFFSET 	(THIRD_STAGE_COEF_COUNT * 2)
+#define THIRD_STAGE_TAPS 32                                                               // Number of coefficient/taps in the whole (symmetric) filter. In words.
+#define THIRD_STAGE_HISTORY_SIZE              (((THIRD_STAGE_TAPS + 3) / 4) * 4)          // Enforce THIRD_STAGE_HISTORY_SIZE >= THIRD_STAGE_TAPS and is a multiple of 4. In words.
+#define THIRD_STAGE_BUFFER_SIZE               (THIRD_STAGE_HISTORY_SIZE * 2)              // We need 2x THIRD_STAGE_HISTORY_SIZE for the circular buffer. In words.
+#define THIRD_STAGE_ALL_CHANNELS_SIZE         (THIRD_STAGE_BUFFER_SIZE * 2)               // Total size of third stage storage. In words.
+#define THIRD_STAGE_BUFFER_SIZE_BYTES         (THIRD_STAGE_BUFFER_SIZE  * 4)              // Buffer size per channel. In bytes.
+#define THIRD_STAGE_LEFT_OFFSET_BYTES         (0)                                         // offset of the left pointer (r7), in bytes. (not used, it is zero)
+#define THIRD_STAGE_MIDPOINT_BYTES        ((THIRD_STAGE_TAPS / 2) * 4)                // offset of the right pointer (r8), in bytes.
 
 //
 // Stack layout
@@ -86,32 +91,41 @@
 
 #define DC_ELIMINATE_STACK_SIZE         12
 
+// place second and third stage buffers directly next to each other so we can reference them via dp[u16]
 //
-// S_SECOND_STAGE_DATA - Contains history of received from first fir filter so that second stage filter can be calculated
+// S_SECOND_STAGE_DATA - circular buffer 2 x filter size of data received from input
 //
-#define S_SECOND_STAGE_DATA             (S_DC_ELIMINATE + DC_ELIMINATE_STACK_SIZE)
-#define S_SECOND_STAGE_DATA_SIZE        (SECOND_STAGE_HISTORY_SIZE * 2 * 2)        // word count 48 poles * 2 blocks * 2 channels
+#define S_SECOND_STAGE_DATA             (S_DC_ELIMINATE + DC_ELIMINATE_STACK_SIZE) // <---- this is dp[0]!!
+#define S_SECOND_STAGE_DATA_SIZE        (SECOND_STAGE_ALL_CHANNELS_SIZE)        // num taps * 2 copies * 2 channels. In words.
+
+// S_THIRD_STAGE_DATA -  circular buffer 2 x filter size of data received from second sage
+#define S_THIRD_STAGE_DATA              (S_SECOND_STAGE_DATA + S_SECOND_STAGE_DATA_SIZE)
+#define S_THIRD_STAGE_DATA_SIZE         (THIRD_STAGE_ALL_CHANNELS_SIZE)        // num taps * 2 copies * 2 channels. In words.
+
+// We set dp[0] to the address of the start of the second stage data. dp[u16] loads index in WORDS
+// relative that. These four offsets are "relative words from start of second stage data"
+#define DP_STAGE_2_CH0             (0)
+#define DP_STAGE_2_CH1             (0 + SECOND_STAGE_BUFFER_SIZE)
+#define DP_STAGE_3_CH0             (SECOND_STAGE_ALL_CHANNELS_SIZE)
+#define DP_STAGE_3_CH1             (SECOND_STAGE_ALL_CHANNELS_SIZE + THIRD_STAGE_BUFFER_SIZE)
+
+
 
 //
 // S_SECOND_STAGE - Control variables for second stage fir filter
 //
-#define S_SECOND_STAGE			(S_SECOND_STAGE_DATA + S_SECOND_STAGE_DATA_SIZE)
+#define S_SECOND_STAGE			   (S_THIRD_STAGE_DATA + S_THIRD_STAGE_DATA_SIZE)
 #define S_SECOND_STAGE_PHASE		0
 #define S_SECOND_STAGE_PHASE_COUNT	1
 #define S_DEBUG_MAX_CYCLES          2
 #define S_CYCLE_START               3
 #define S_SECOND_STAGE_SIZE		8
 
-//
-// S_THIRD_STAGE_DATA - Contains history of received from first fir filter so that second stage filter can be calculated
-//
-#define S_THIRD_STAGE_DATA             (S_SECOND_STAGE + S_SECOND_STAGE_SIZE)
-#define S_THIRD_STAGE_DATA_SIZE        (THIRD_STAGE_COEF_COUNT * 2 * 2)        // word count 32 poles * 2 blocks * 2 channels
 
 //
 // S_THIRD_STAGE - Control variables for second stage fir filter
 //
-#define S_THIRD_STAGE			(S_THIRD_STAGE_DATA + S_THIRD_STAGE_DATA_SIZE)
+#define S_THIRD_STAGE			(S_SECOND_STAGE + S_SECOND_STAGE_SIZE)
 #define S_THIRD_STAGE_INDEX		0
 #define S_THIRD_STAGE_SIZE		8
 
@@ -121,17 +135,18 @@
 #define S_OUTPUT_STORAGE                (S_THIRD_STAGE + S_THIRD_STAGE_SIZE)
 //
 // Add storage fields for output of second stage fir filter
-// - stored in function divide_by_four
+// - stored in function second_to_third
 // - retrieved in output_phase
 //
-#define S_OUTPUT_STORAGE_0            	0
-#define S_OUTPUT_STORAGE_1            	1
-#define S_OUTPUT_0			2
-#define S_D_OUTPUT_0			1
-#define S_D_OUTPUT_1			2
-#define S_D_OUTPUT_2			3
-#define S_D_OUTPUT_3			4
-#define S_D_OUTPUT_4			5
+#define S_OUTPUT_SECOND_TO_THIRD_01     0  // when used with ldd
+#define S_OUTPUT_SECOND_TO_THIRD_0      0
+#define S_OUTPUT_SECOND_TO_THIRD_1      1
+
+#define S_OUTPUT_THIRD_TO_CALLER_01     2  // when used with ldd
+#define S_OUTPUT_THIRD_TO_CALLER_0      2
+#define S_OUTPUT_THIRD_TO_CALLER_1      3
+
+
 #define S_OUTPUT_STORAGE_SIZE           16
 
 //
@@ -163,7 +178,7 @@
 
 //This inputs from the channel to the pdm interface and saves it twice in the
 //second stage FIR at offset OFFSET and OFFSET + SECOND_STAGE_HISTORY_SIZE
-#define INPUT_TO_OFFSET(OFFSET)\
+#define INPUT_TO_SECOND_STAGE(OFFSET)\
     ldw r1, sp[S_C_INPUT];\
     in r0, res[r1];\
     {stw r0, dp[0*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
@@ -171,6 +186,17 @@
     {in r0, res[r1]};\
     {stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
     {stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_HISTORY_SIZE + OFFSET]};
+
+// input in r0, store in third stage buffer
+#define SECOND_STAGE_TO_THIRD_STAGE_CH0(OFFSET)\
+    {stw r0, dp[DP_STAGE_3_CH0 + OFFSET]};\
+    {stw r0, dp[DP_STAGE_3_CH0 + THIRD_STAGE_HISTORY_SIZE + OFFSET]};
+
+// input in r0, store in third stage buffer
+#define SECOND_STAGE_TO_THIRD_STAGE_CH1(OFFSET)\
+    {stw r0, dp[DP_STAGE_3_CH1 + OFFSET]};\
+    {stw r0, dp[DP_STAGE_3_CH1 + THIRD_STAGE_HISTORY_SIZE + OFFSET]};
+
 
 #define SAVE_SAMPLES_NORMAL(POINTER)\
     {ldc r5, 1<<(MIC_ARRAY_MAX_FRAME_SIZE_LOG2)};\
@@ -188,41 +214,23 @@
 // r0, r1: accumulators
 // r2, r3: coefficients
 // r4, r5: data
-// r8: data pointer
-// r9: coefficient pointer
+// r6: coefficient pointer
+// r7: data pointer
 #define FIR_POINT_PAIR(FILTER_INDEX, DATA_INDEX) \
-    ldd r3, r2, r9[FILTER_INDEX]; \
-    ldd r5, r4, r8[DATA_INDEX]; \
+    ldd r3, r2, r6[FILTER_INDEX]; \
+    ldd r5, r4, r7[DATA_INDEX]; \
     maccs r0, r1, r4, r2; \
     maccs r0, r1, r5, r3;
 
-// MAC two pairs of data using using indexed double word load
-// with symmetric coefficients, for a total of 4 MACs in 7 cycles
-// assembly: ldd e, d, b[i]
-// d <- mem[b+i×Bpw×2], i in (0.11)
-// e <- mem[b+i×Bpw×2+Bpw]
-// r0, r1: accumulators
-// r2, r3: coefficients
-// r4, r5: data
-// r7, r8: left, right data pointers
-// r11: coefficient pointer
-#define FIR_POINT_QUAD(FILTER_INDEX, DATA_INDEX_1, DATA_INDEX_2) \
-    ldd r3, r2, r11[FILTER_INDEX]; \
-    ldd r5, r4, r7[DATA_INDEX_1]; \
-    maccs r0, r1, r4, r2; \
-    maccs r0, r1, r5, r3; \
-    ldd r5, r4, r8[DATA_INDEX_2]; \
-    maccs r0, r1, r4, r3; \
-    maccs r0, r1, r5, r2;
+// With half-band kernels, every other coefficient is zero.
+// Continue to use ldd to maintain consistent stride 2 * index
+// but throw away the second value
+#define FIR_POINT_PAIR_RIGHT_ZERO(FILTER_INDEX, DATA_INDEX) \
+    ldd r3, r2, r6[FILTER_INDEX]; \
+    ldd r5, r4, r7[DATA_INDEX]; \
+    maccs r0, r1, r4, r2;
+    // r3 is 0.0 => skip "maccs r0, r1, r5, r3;"
 
-#define FIR_POINT_WORD() \
-    ldw r4, r11[r2]; \
-    ldw r5, r7[r2]; \
-    maccs r0, r1, r5, r4; \
-    ldw r5, r7[r3]; \
-    maccs r0, r1, r5, r4; \
-    add r2, r2, 1; \
-    sub r3, r3, 1;
 
 #define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
     ldd r6, r5, r4[PREV_Y];\
@@ -244,17 +252,99 @@
     std r6, r5, r4[PREV_Y];\
     lextract REGISTER, r6, r5, r10, 32
 
-    .globl    mic_array_decimate_to_pcm_2ch
+
+// FILTER_GENERIC: Convolve length 32 coefficients with length 32 data.
+// Dispense with any fancy symmetry tricks and just blast through the
+// coefficient and data arrays two at a time. Odd kernels must be zero padded.
+//
+// We can only use immediate mode index (0.11) so shift the pointer half-way
+// through by SECOND_STAGE_MIDPOINT_BYTES. This implement only supports 32.
+// r0, r1 : FIR_POINT_PAIR accumulators
+// r2, r3 : FIR_POINT_PAIR coefficients
+// r4, r5 : FIR_POINT_PAIR data
+// r6     : INPUT coefficient pointer
+// r7     : INPUT data pointer
+// r8     : local variable
+// r9, r10, r11 unused
+// algorithm:
+// - Initialize the accumulators
+// - MAC the first half of the arrays
+// - shift the pointers forward by HALF_LENGTH_BYTES
+// - MAC the second half of the arrays
+// - Output is in (r0, r1) with r0 MSB
+#define FILTER_GENERIC(HALF_LENGTH_BYTES) \
+    {ldc r0, 0; ldc r1, 0}; \
+    FIR_POINT_PAIR(0, 0); \
+    FIR_POINT_PAIR(1, 1); \
+    FIR_POINT_PAIR(2, 2); \
+    FIR_POINT_PAIR(3, 3); \
+    FIR_POINT_PAIR(4, 4); \
+    FIR_POINT_PAIR(5, 5); \
+    FIR_POINT_PAIR(6, 6); \
+    FIR_POINT_PAIR(7, 7); \
+    ldc r8, HALF_LENGTH_BYTES ;\
+    {add r6, r6, r8; add r7, r7, r8;}; \
+    FIR_POINT_PAIR(0, 0); \
+    FIR_POINT_PAIR(1, 1); \
+    FIR_POINT_PAIR(2, 2); \
+    FIR_POINT_PAIR(3, 3); \
+    FIR_POINT_PAIR(4, 4); \
+    FIR_POINT_PAIR(5, 5); \
+    FIR_POINT_PAIR(6, 6); \
+    FIR_POINT_PAIR(7, 7)
+
+// FILTER_HALFBAND: Convolve length 32 coefficients with length 32 data,
+// but take advantage of the fact that every other coefficient is zero
+// (except the center) on a half-band filter. Odd kernels must be zero padded.
+// We can only use immediate mode index (0.11) so shift the pointer half-way
+// through by HALF_LENGTH_BYTES. This implement only supports 32.
+// r0, r1 : FIR_POINT_PAIR accumulators
+// r2, r3 : FIR_POINT_PAIR coefficients
+// r4, r5 : FIR_POINT_PAIR data
+// r6     : INPUT coefficient pointer
+// r7     : INPUT data pointer
+// r8     : local variable
+// r9, r10, r11 unused
+// algorithm:
+// - Initialize the accumulators
+// - MAC the first half of the arrays
+// - shift the pointers forward by HALF_LENGTH_BYTES
+// - MAC the second half of the arrays
+// - Output is in (r0, r1) with r0 MSB
+#define FILTER_HALFBAND(HALF_LENGTH_BYTES) \
+    {ldc r0, 0; ldc r1, 0}; \
+    FIR_POINT_PAIR_RIGHT_ZERO(0, 0); \
+    FIR_POINT_PAIR_RIGHT_ZERO(1, 1); \
+    FIR_POINT_PAIR_RIGHT_ZERO(2, 2); \
+    FIR_POINT_PAIR_RIGHT_ZERO(3, 3); \
+    FIR_POINT_PAIR_RIGHT_ZERO(4, 4); \
+    FIR_POINT_PAIR_RIGHT_ZERO(5, 5); \
+    FIR_POINT_PAIR_RIGHT_ZERO(6, 6); \
+    FIR_POINT_PAIR(7, 7); \
+    ldc r8, HALF_LENGTH_BYTES ;\
+    {add r6, r6, r8; add r7, r7, r8;}; \
+    FIR_POINT_PAIR_RIGHT_ZERO(0, 0); \
+    FIR_POINT_PAIR_RIGHT_ZERO(1, 1); \
+    FIR_POINT_PAIR_RIGHT_ZERO(2, 2); \
+    FIR_POINT_PAIR_RIGHT_ZERO(3, 3); \
+    FIR_POINT_PAIR_RIGHT_ZERO(4, 4); \
+    FIR_POINT_PAIR_RIGHT_ZERO(5, 5); \
+    FIR_POINT_PAIR_RIGHT_ZERO(6, 6); \
+    FIR_POINT_PAIR_RIGHT_ZERO(7, 7)
+
+
+
+    .globl    decimate_to_pcm_cascade
     .align    8
-    .type    mic_array_decimate_to_pcm_2ch,@function
-    .cc_top mic_array_decimate_to_pcm_2ch.function
-mic_array_decimate_to_pcm_2ch:
+    .type    decimate_to_pcm_cascade,@function
+    .cc_top decimate_to_pcm_cascade.function
+decimate_to_pcm_cascade:
     .cfi_startproc
     .issue_mode dual
 
     DUALENTSP_lu6 STACKWORDS
 
-// For clarity, read the three arguments passed to mic_array_decimate_to_pcm_2ch()
+// For clarity, read the three arguments passed to decimate_to_pcm_cascade()
 // off the stack in one place. However, as r3 will be overwritten before it can be
 // used, we will have to re-read boardrev in lines 576 and 682
     ldaw r11, sp[S_STORAGE]
@@ -289,37 +379,37 @@ configure:
     //
     ldaw r0, sp[S_SECOND_STAGE_DATA]
     ldc r1, S_SECOND_STAGE_DATA_SIZE
-    bl zero_data_structure
+    bl zero_data_structures_cascade
     //
     // Zero second stage
     //
     ldaw r0, sp[S_SECOND_STAGE]
     ldc r1, S_SECOND_STAGE_SIZE
-    bl zero_data_structure
+    bl zero_data_structures_cascade
     //
     // Zero third stage data
     //
     ldaw r0, sp[S_THIRD_STAGE_DATA]
     ldc r1, S_THIRD_STAGE_DATA_SIZE
-    bl zero_data_structure
+    bl zero_data_structures_cascade
     //
     // Zero third stage
     //
     ldaw r0, sp[S_THIRD_STAGE]
     ldc r1, S_THIRD_STAGE_SIZE
-    bl zero_data_structure
+    bl zero_data_structures_cascade
     //
     // Zero output storage
     //
     ldaw r0, sp[S_OUTPUT_STORAGE]
     ldc r1, S_OUTPUT_STORAGE_SIZE
-    bl zero_data_structure
+    bl zero_data_structures_cascade
     //
     // Zero dc eliminate area
     //
     ldaw r0, sp[S_DC_ELIMINATE]
     ldc r1, DC_ELIMINATE_STACK_SIZE
-    bl zero_data_structure
+    bl zero_data_structures_cascade
     //
     // Set configuration values
     //
@@ -353,6 +443,8 @@ configure:
     ldw r8, r4[S_BOARDREV]
 
     // Select second stage filter based on boardrev (4-bit fuse value 0-15)
+    // 2026-FEB-08: All filters currently use the same second stage, but leave
+    // the jump table in place for now
     ldc r9, 0x0F
     eq r9, r8, r9
     bt r9, config_second_stage_0x0F
@@ -363,16 +455,16 @@ configure:
     eq r9, r8, r9
     bt r9, config_second_stage_0x0C
     // Default case
-    ldaw r11, cp[g_second_stage_fir35_24kHz] // default like IM72D128
+    ldaw r11, cp[g_second_to_third_fir31_48kHz] // default like IM72D128
     bu config_second_stage_done
 config_second_stage_0x0F: // VM3000
-    ldaw r11, cp[g_second_stage_fir35_12kHz]
+    ldaw r11, cp[g_second_to_third_fir31_48kHz]
     bu config_second_stage_done
 config_second_stage_0x0E: // IM72D128
-    ldaw r11, cp[g_second_stage_fir35_24kHz]
+    ldaw r11, cp[g_second_to_third_fir31_48kHz]
     bu config_second_stage_done
 config_second_stage_0x0C: // EM215
-    ldaw r11, cp[g_second_stage_fir35_32kHz]
+    ldaw r11, cp[g_second_to_third_fir31_48kHz]
     bu config_second_stage_done
 config_second_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
@@ -389,16 +481,16 @@ config_second_stage_done:
     eq r9, r8, r9
     bt r9, config_third_stage_0x0C
     // Default case
-    ldaw r11, cp[g_third_stage_fir_24kHz]  // default like IM72D128
+    ldaw r11, cp[g_third_to_output_fir31_24kHz]  // default like IM72D128
     bu config_third_stage_done
 config_third_stage_0x0F:
-    ldaw r11, cp[g_third_stage_fir_8kHz]   // VM3000
+    ldaw r11, cp[g_third_to_output_fir31_8kHz]   // VM3000
     bu config_third_stage_done
 config_third_stage_0x0E:
-    ldaw r11, cp[g_third_stage_fir_24kHz]  // IM72D128
+    ldaw r11, cp[g_third_to_output_fir31_24kHz]  // IM72D128
     bu config_third_stage_done
 config_third_stage_0x0C:
-    ldaw r11, cp[g_third_stage_fir_disabled] // EM215
+    ldaw r11, cp[g_third_to_output_fir31_40kHz] // EM215
     bu config_third_stage_done
 config_third_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
@@ -460,170 +552,96 @@ confirm_init_complete:
 
     // while (1) process
 
+// ===============================================================
+// MAIN WHILE(1) LOOP
+// ===============================================================
+//
+// This is unrolled for performance. the pattern repeat period is
+// on based on 4 input samples -> 1 output sample. The code interleaves
+// reads and computation to avoid falling behind on the input but the
+// basic algorithm is:
+// - read two inputs and store in stage 2 buffers
+// - apply stage 2 filter and store the 2:1 decimated result in stage 3 buffers
+// - read two inputs and store in stage 2 buffers
+// - apply stage 2 filter and store the 2:1 decimated result in stage 3 buffers
+// - apply stage 3 filter and store 2:1 decimated output in the output
+// - The code interleaves data reads with computation to avoid falling behind.
+// - Apply stage 3 is logically after stage 2, but we are on circle so is is called first.
+
+// r0, r1 : FIR_POINT_PAIR/FIR_POINT_PAIR_RIGHT_ZERO accumulators
+// r2, r3 : FIR_POINT_PAIR/FIR_POINT_PAIR_RIGHT_ZERO coefficients
+// r4, r5 : FIR_POINT_PAIR/FIR_POINT_PAIR_RIGHT_ZERO data
+// r6     : FIR_POINT_PAIR/FIR_POINT_PAIR_RIGHT_ZERO coefficient pointer
+// r7     : FIR_POINT_PAIR/FIR_POINT_PAIR_RIGHT_ZERO data pointer
+// r8     : local variable
+// r9     : sp[S_SETTINGS_OFFSET], used to load coefficients
+// r10    : use to store
+// Note: dp was set above to the start of the second stage circular buffer
+// "Set the dp to point to the data area for the second stage FIR"
+// ldaw dp, sp[S_SECOND_STAGE_DATA]
+
+// set r9 with setting offset and never change it
+
 fir_loop_type1:
-#if SECOND_STAGE_TAPS > 44
-    INPUT_TO_OFFSET(47)
-    INPUT_TO_OFFSET(46)
-    bl third_stage
-    INPUT_TO_OFFSET(45)
-    bl post_process
-    INPUT_TO_OFFSET(44)
-    ldaw r7, dp[44]
-    bl divide_by_four
-#endif
+    INPUT_TO_SECOND_STAGE(31)                     // input data
+    ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
+    ldw r6, r9[S_THIRD_STAGE_FILTER_PTR];         // third stage coefficients
+    ldaw r7, dp[0 + DP_STAGE_3_CH0];              // third stage data, channel 0
+    FILTER_GENERIC(THIRD_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    ldaw r10, sp[S_OUTPUT_STORAGE];               // set ouput pointer
+    stw r0, r10[S_OUTPUT_THIRD_TO_CALLER_0];      // output channel 0
+    ldw r6, r9[S_THIRD_STAGE_FILTER_PTR];         // third stage coefficients
+    ldaw r7, dp[0 + DP_STAGE_3_CH1];              // third stage data, channel 1
+    FILTER_GENERIC(THIRD_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    stw r0, r10[S_OUTPUT_THIRD_TO_CALLER_1];      // output channel 1
 
-#if SECOND_STAGE_TAPS > 40
-    INPUT_TO_OFFSET(43)
-    INPUT_TO_OFFSET(42)
-    bl third_stage
-    INPUT_TO_OFFSET(41)
-    bl post_process
-    INPUT_TO_OFFSET(40)
-    ldaw r7, dp[40]
-    bl divide_by_four
-#endif
+    INPUT_TO_SECOND_STAGE(30)                      // input data
+    ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
+    ldaw r7, dp[30 + DP_STAGE_2_CH0];              // second stage data, channel 0
+    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    SECOND_STAGE_TO_THIRD_STAGE_CH0(31)            // output channel 0
+    ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
+    ldaw r7, dp[30 + DP_STAGE_2_CH1];               // second stage data, channel 1
+    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    SECOND_STAGE_TO_THIRD_STAGE_CH1(31)            // output channel 0
 
-#if SECOND_STAGE_TAPS > 36
-    INPUT_TO_OFFSET(39)
-    INPUT_TO_OFFSET(38)
-    bl third_stage
-    INPUT_TO_OFFSET(37)
-    bl post_process
-    INPUT_TO_OFFSET(36)
-    ldaw r7, dp[36]
-    bl divide_by_four
-#endif
+    INPUT_TO_SECOND_STAGE(29)
+    bl post_process_cascade                         // this trashes r0 r1 r3 r4 r8 r9 r10 r11
 
-#if SECOND_STAGE_TAPS > 32
-    INPUT_TO_OFFSET(35)
-    INPUT_TO_OFFSET(34)
-    bl third_stage
-    INPUT_TO_OFFSET(33)
-    bl post_process
-    INPUT_TO_OFFSET(32)
-    ldaw r7, dp[32]
-    bl divide_by_four
-#endif
+    INPUT_TO_SECOND_STAGE(28)
+    ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
+    ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
+    ldaw r7, dp[28 + DP_STAGE_2_CH0];               // second stage data, channel 0
+    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    SECOND_STAGE_TO_THIRD_STAGE_CH0(30)             // output channel 0
+    ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
+    ldaw r7, dp[28 + DP_STAGE_2_CH1];                // second stage data, channel 1
+    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    SECOND_STAGE_TO_THIRD_STAGE_CH1(30)             // output channel 0
 
-    INPUT_TO_OFFSET(31)
-    INPUT_TO_OFFSET(30)
-    bl third_stage
-    INPUT_TO_OFFSET(29)
-    bl post_process
-    INPUT_TO_OFFSET(28)
-    ldaw r7, dp[28]
-    bl divide_by_four
+    // REPEAT WITH MANUAL INDEX ADVANCEMENT 7 MORE TIMES
 
-    INPUT_TO_OFFSET(27)
-    INPUT_TO_OFFSET(26)
-    bl third_stage
-    INPUT_TO_OFFSET(25)
-    bl post_process
-    INPUT_TO_OFFSET(24)
-    ldaw r7, dp[24]
-    bl divide_by_four
-
-    INPUT_TO_OFFSET(23)
-    INPUT_TO_OFFSET(22)
-    bl third_stage
-    INPUT_TO_OFFSET(21)
-    bl post_process
-    INPUT_TO_OFFSET(20)
-    ldaw r7, dp[20]
-    bl divide_by_four
-
-    INPUT_TO_OFFSET(19)
-    INPUT_TO_OFFSET(18)
-    bl third_stage
-    INPUT_TO_OFFSET(17)
-    bl post_process
-    INPUT_TO_OFFSET(16)
-    ldaw r7, dp[16]
-    bl divide_by_four
-
-    INPUT_TO_OFFSET(15)
-    INPUT_TO_OFFSET(14)
-    bl third_stage
-    INPUT_TO_OFFSET(13)
-    bl post_process
-    INPUT_TO_OFFSET(12)
-    ldaw r7, dp[12]
-    bl divide_by_four
-
-    INPUT_TO_OFFSET(11)
-    INPUT_TO_OFFSET(10)
-    bl third_stage
-    INPUT_TO_OFFSET(9)
-    bl post_process
-    INPUT_TO_OFFSET(8)
-    ldaw r7, dp[8]
-    bl divide_by_four
-
-    INPUT_TO_OFFSET(7)
-    INPUT_TO_OFFSET(6)
-    bl third_stage
-    INPUT_TO_OFFSET(5)
-    bl post_process
-    INPUT_TO_OFFSET(4)
-    ldaw r7, dp[4]
-    bl divide_by_four
-
-    INPUT_TO_OFFSET(3)
-    INPUT_TO_OFFSET(2)
-
-    // Profile third_stage
-    gettime r11
-    ldaw r10, sp[S_SECOND_STAGE]
-    stw r11, r10[S_CYCLE_START]
-    bl third_stage
-    gettime r11
-    ldaw r10, sp[S_SECOND_STAGE]
-    ldw r9, r10[S_CYCLE_START]
-    sub r11, r11, r9
-    // Store temporarily in S_DEBUG_MAX_CYCLES (we will accumulate)
-    stw r11, r10[S_DEBUG_MAX_CYCLES]
-
-    INPUT_TO_OFFSET(1)
-    bl post_process
-    INPUT_TO_OFFSET(0)
-
-    // Profile divide_by_four and accumulate
-    gettime r11
-    ldaw r10, sp[S_SECOND_STAGE]
-    stw r11, r10[S_CYCLE_START]
-    ldaw r7, dp[0]
-    bl divide_by_four
-    gettime r11
-    ldaw r10, sp[S_SECOND_STAGE]
-    ldw r9, r10[S_CYCLE_START]
-    sub r11, r11, r9
-    // Add third_stage time
-    ldw r9, r10[S_DEBUG_MAX_CYCLES]
-    add r11, r11, r9
-    stw r11, r10[S_DEBUG_MAX_CYCLES]
-
-skip_update:
     bu fir_loop_type1
 
-    .cc_bottom mic_array_decimate_to_pcm_2ch.function
-    .set    mic_array_decimate_to_pcm_2ch.nstackwords, STACKWORDS
-    .globl  mic_array_decimate_to_pcm_2ch.nstackwords
-    .set    mic_array_decimate_to_pcm_2ch.maxcores,1
-    .globl  mic_array_decimate_to_pcm_2ch.maxcores
-    .set    mic_array_decimate_to_pcm_2ch.maxtimers,0
-    .globl  mic_array_decimate_to_pcm_2ch.maxtimers
-    .set    mic_array_decimate_to_pcm_2ch.maxchanends,0
-    .globl  mic_array_decimate_to_pcm_2ch.maxchanends
+    .cc_bottom decimate_to_pcm_cascade.function
+    .set    decimate_to_pcm_cascade.nstackwords, STACKWORDS
+    .globl  decimate_to_pcm_cascade.nstackwords
+    .set    decimate_to_pcm_cascade.maxcores,1
+    .globl  decimate_to_pcm_cascade.maxcores
+    .set    decimate_to_pcm_cascade.maxtimers,0
+    .globl  decimate_to_pcm_cascade.maxtimers
+    .set    decimate_to_pcm_cascade.maxchanends,0
+    .globl  decimate_to_pcm_cascade.maxchanends
 
-.Lmic_array_decimate_to_pcm_2ch_tmp:
-    .size    mic_array_decimate_to_pcm_2ch, .Lmic_array_decimate_to_pcm_2ch_tmp-mic_array_decimate_to_pcm_2ch
+.Ldecimate_to_pcm_cascade_tmp:
+    .size    decimate_to_pcm_cascade, .Ldecimate_to_pcm_cascade_tmp-decimate_to_pcm_cascade
     .cfi_endproc
 
-.globl    post_process
+.globl    post_process_cascade
 .align    8
-.type    post_process,@function
-.cc_top post_process.function
-post_process:
+.type    post_process_cascade,@function
+.cc_top post_process_cascade.function
+post_process_cascade:
     .cfi_startproc
     .issue_mode dual
 
@@ -643,8 +661,8 @@ output_phase:
 
     ldaw r4, sp[S_OUTPUT_STORAGE];
     //
-    ldw r0, r4[S_OUTPUT_STORAGE_0];
-    ldw r1, r4[S_OUTPUT_STORAGE_1];
+    ldw r0, r4[S_OUTPUT_THIRD_TO_CALLER_0];
+    ldw r1, r4[S_OUTPUT_THIRD_TO_CALLER_1];
 
     //
     // DC offset removal
@@ -714,294 +732,30 @@ do_the_rest:
 
     retsp 0
 
-.cc_bottom post_process.function
-    .set    post_process.nstackwords, 0
-    .globl    post_process.nstackwords
-    .set    post_process.maxcores,1
-    .globl    post_process.maxcores
-    .set    post_process.maxtimers,0
-    .globl    post_process.maxtimers
-    .set    post_process.maxchanends,0
-    .globl    post_process.maxchanends
-.Lpost_process_tmp:
-    .size    post_process, .Lpost_process_tmp-post_process
-    .cfi_endproc
-
-.globl    divide_by_four
-.align    8
-.type    divide_by_four,@function
-.cc_top divide_by_four.function
-divide_by_four:
-    .cfi_startproc
-    .issue_mode dual
-
-    // r0, r1 : FIR_POINT_PAIR accumulators
-    // r2, r3 : FIR_POINT_PAIR coefficients
-    // r4, r5 : FIR_POINT_PAIR data
-    // r6     : local used for moving pointers
-    // r7     : fixed INPUT data pointer
-    // r8     : working data pointer
-    // r9     : working coefficient pointer
-    // r10    : output storage pointer
-    // r11    : fixed coefficient pointer
-
-    ldaw r10, sp[S_OUTPUT_STORAGE]             // set output pointer
-    ldaw r4, sp[S_SETTINGS_OFFSET]
-    ldw r11, r4[S_SECOND_STAGE_FILTER_PTR]     // set coefficients pointer
-
-    // This instruction changes sp so cannot reference sp directly for the remainder of this function
-    dualentsp 1
-
-    // dispense with any fancy symmetry tricks and just blast through
-    // the data and coefficients two at a time. We can only use immediate mode index (0.11)
-    // so shift the pointer half-way through by SECOND_STAGE_RIGHT_OFFSET_BYTES.
-
-
-    // FIRST CHANNEL
-
-    //Initialize the accumulators
-    {ldc r0, 0; ldc r1, 0}
-    // set up our working pointers
-    {add r8, r7, 0; add r9, r11, 0}
-    FIR_POINT_PAIR(0, 0)
-    FIR_POINT_PAIR(1, 1)
-    FIR_POINT_PAIR(2, 2)
-    FIR_POINT_PAIR(3, 3)
-    FIR_POINT_PAIR(4, 4)
-    FIR_POINT_PAIR(5, 5)
-    FIR_POINT_PAIR(6, 6)
-    FIR_POINT_PAIR(7, 7)
-#if SECOND_STAGE_TAPS > 32
-    FIR_POINT_PAIR(8, 8)
-#endif
-#if SECOND_STAGE_TAPS > 36
-    FIR_POINT_PAIR(9, 9)
-#endif
-#if SECOND_STAGE_TAPS > 40
-    FIR_POINT_PAIR(10, 10)
-#endif
-#if SECOND_STAGE_TAPS > 44
-    FIR_POINT_PAIR(11, 11)
-#endif
-    // advance pointers to the second half
-    ldc r6, SECOND_STAGE_RIGHT_OFFSET_BYTES
-    {add r8, r8, r6; add r9, r9, r6}
-    FIR_POINT_PAIR(0, 0)
-    FIR_POINT_PAIR(1, 1)
-    FIR_POINT_PAIR(2, 2)
-    FIR_POINT_PAIR(3, 3)
-    FIR_POINT_PAIR(4, 4)
-    FIR_POINT_PAIR(5, 5)
-    FIR_POINT_PAIR(6, 6)
-    FIR_POINT_PAIR(7, 7)
-#if SECOND_STAGE_TAPS > 32
-    FIR_POINT_PAIR(8, 8)
-#endif
-#if SECOND_STAGE_TAPS > 36
-    FIR_POINT_PAIR(9, 9)
-#endif
-#if SECOND_STAGE_TAPS > 40
-    FIR_POINT_PAIR(10, 10)
-#endif
-#if SECOND_STAGE_TAPS > 44
-    FIR_POINT_PAIR(11, 11)
-#endif
-    // store channel 0
-    stw r0, r10[S_OUTPUT_STORAGE_0]
-
-    // SECOND CHANNEL
-
-    {ldc r0, 0; ldc r1, 0} //Initialize the accumulators
-    // advance to channel 1, reset the coefficients
-    ldc r6, SECOND_STAGE_BUFFER_SIZE_BYTES
-    {add r8, r7, r6; add r9, r11, 0}
-    FIR_POINT_PAIR(0, 0)
-    FIR_POINT_PAIR(1, 1)
-    FIR_POINT_PAIR(2, 2)
-    FIR_POINT_PAIR(3, 3)
-    FIR_POINT_PAIR(4, 4)
-    FIR_POINT_PAIR(5, 5)
-    FIR_POINT_PAIR(6, 6)
-    FIR_POINT_PAIR(7, 7)
-#if SECOND_STAGE_TAPS > 32
-    FIR_POINT_PAIR(8, 8)
-#endif
-#if SECOND_STAGE_TAPS > 36
-    FIR_POINT_PAIR(9, 9)
-#endif
-#if SECOND_STAGE_TAPS > 40
-    FIR_POINT_PAIR(10, 10)
-#endif
-#if SECOND_STAGE_TAPS > 44
-    FIR_POINT_PAIR(11, 11)
-#endif
-    // advance pointers to the second half
-    ldc r6, SECOND_STAGE_RIGHT_OFFSET_BYTES
-    {add r8, r8, r6; add r9, r9, r6}
-    FIR_POINT_PAIR(0, 0)
-    FIR_POINT_PAIR(1, 1)
-    FIR_POINT_PAIR(2, 2)
-    FIR_POINT_PAIR(3, 3)
-    FIR_POINT_PAIR(4, 4)
-    FIR_POINT_PAIR(5, 5)
-    FIR_POINT_PAIR(6, 6)
-    FIR_POINT_PAIR(7, 7)
-#if SECOND_STAGE_TAPS > 32
-    FIR_POINT_PAIR(8, 8)
-#endif
-#if SECOND_STAGE_TAPS > 36
-    FIR_POINT_PAIR(9, 9)
-#endif
-#if SECOND_STAGE_TAPS > 40
-    FIR_POINT_PAIR(10, 10)
-#endif
-#if SECOND_STAGE_TAPS > 44
-    FIR_POINT_PAIR(11, 11)
-#endif
-    // Store channel 1 output
-    stw r0, r10[S_OUTPUT_STORAGE_1]
-    //
-    retsp 1
-    .cc_bottom divide_by_four.function
-    .set    divide_by_four.nstackwords,1
-    .globl    divide_by_four.nstackwords
-    .set    divide_by_four.maxcores,1
-    .globl    divide_by_four.maxcores
-    .set    divide_by_four.maxtimers,0
-    .globl    divide_by_four.maxtimers
-    .set    divide_by_four.maxchanends,0
-    .globl    divide_by_four.maxchanends
-.Ldivide_by_four_type_tmp:
-    .size    divide_by_four, .Ldivide_by_four_type_tmp-divide_by_four
+.cc_bottom post_process_cascade.function
+    .set    post_process_cascade.nstackwords, 0
+    .globl    post_process_cascade.nstackwords
+    .set    post_process_cascade.maxcores,1
+    .globl    post_process_cascade.maxcores
+    .set    post_process_cascade.maxtimers,0
+    .globl    post_process_cascade.maxtimers
+    .set    post_process_cascade.maxchanends,0
+    .globl    post_process_cascade.maxchanends
+.Lpost_process_cascade_tmp:
+    .size    post_process_cascade, .Lpost_process_cascade_tmp-post_process_cascade
     .cfi_endproc
 
 
-.globl    third_stage
-.align    8
-.type    third_stage,@function
-.cc_top third_stage.function
-third_stage:
-    .cfi_startproc
-    .issue_mode dual
-    //
-    // Check if third stage is disabled
-    //
-    ldaw r4, sp[S_SETTINGS_OFFSET]
-    ldw r5, r4[S_THIRD_STAGE_FILTER_PTR]
-    ldaw r11, cp[g_third_stage_fir_disabled]
-    eq r4, r5, r11
-    bt r4, third_stage_disabled
-    //
-    // Load current values from output stage 2
-    //
-    ldaw r10, sp[S_OUTPUT_STORAGE]
-    ldw r0, r10[S_OUTPUT_STORAGE_0]
-    ldw r1, r10[S_OUTPUT_STORAGE_1]
-    //
-    // Store latest values in third stage buffer - reverse order
-    //
-    ldaw r11, sp[S_THIRD_STAGE]
-    //
-    // Compute and store new third stage index
-    //
-    ldw r2, r11[S_THIRD_STAGE_INDEX]
-    sub r2, r2, 1
-    ldc r3, (THIRD_STAGE_COEF_COUNT - 1)
-    and r2, r2, r3
-    stw r2, r11[S_THIRD_STAGE_INDEX]
-    //
-    // Store latest value for channel 0
-    //
-    ldaw r11, sp[S_THIRD_STAGE_DATA]
-    stw r0, r11[r2]			// Store latest channel 0 value
-    ldaw r7, r11[r2]			// Initial pointer to data in r7
-    ldc r3, THIRD_STAGE_COEF_COUNT
-    add r2, r2, r3			// Index second buffer
-    stw r0, r11[r2]			// Store latest channel 0 value
-    //
-    // Store latest value for channel 1
-    //
-    add r2, r2, r3			// Index to channel 1 first buffer
-    stw r1, r11[r2]			// Store latest channel 1 value
-    add r2, r2, r3			// Index to second buffer
-    stw r1, r11[r2]			// Store latest channel 1 value
-    //
-    // Now apply filter to data in third stage buffer at r7
-    //
-    // Load pre-selected third stage fir filter coefficients pointer
-    //
-    ldaw r4, sp[S_SETTINGS_OFFSET]
-    ldw r11, r4[S_THIRD_STAGE_FILTER_PTR]
-    //
-    // Value to increment data pointer for next channel (bytes)
-    //
-    ldc r6, THIRD_STAGE_BUFFER_SIZE
-    shl r6, r6, 2
-
-    ldc r2, 0				// filter index and first half data index
-    ldc r3, THIRD_STAGE_COEF_COUNT	// second half data index
-    sub r3, r3, 1
-    ldc r8, THIRD_STAGE_COEF_COUNT
-    shr r8, r8, 1			// iteration count
-    {ldc r0, 0; ldc r1, 0}		// accumulated sum
-third_stage_loop1:
-    FIR_POINT_WORD()
-    sub r8, r8, 1
-    bt r8, third_stage_loop1
-    //
-    // Store channel 0 output (overwrite second stage output value)
-    //
-    stw r0, r10[S_OUTPUT_STORAGE_0]
-    //
-    add r7, r7, r6		// r7 = data pointer, r6 = bytes to next channel's data
-
-    ldc r2, 0				// filter index and first half data index
-    ldc r3, THIRD_STAGE_COEF_COUNT	// second half data index
-    sub r3, r3, 1
-    ldc r8, THIRD_STAGE_COEF_COUNT
-    shr r8, r8, 1			// iteration count
-    {ldc r0, 0; ldc r1, 0}		// accumulated sum
-third_stage_loop2:
-    FIR_POINT_WORD()
-    sub r8, r8, 1
-    bt r8, third_stage_loop2
-    //
-    // Store channel 1 output (overwrite second stage output value)
-    //
-    stw r0, r10[S_OUTPUT_STORAGE_1]
-    //
-    retsp 0
-
-third_stage_disabled:
-    //
-    // Third stage is disabled - return immediately without processing
-    // This preserves the second stage output values unchanged
-    //
-    retsp 0
-
-    .cc_bottom third_stage.function
-    .set    third_stage.nstackwords,0
-    .globl    third_stage.nstackwords
-    .set    third_stage.maxcores,1
-    .globl    third_stage.maxcores
-    .set    third_stage.maxtimers,0
-    .globl    third_stage.maxtimers
-    .set    third_stage.maxchanends,0
-    .globl    third_stage.maxchanends
-.Lthird_stage_tmp:
-    .size    third_stage, .Lthird_stage_tmp-third_stage
-    .cfi_endproc
-
-    .globl    zero_data_structure
+    .globl    zero_data_structures_cascade
     .align    8
-    .type     zero_data_structure,@function
-    .cc_top   zero_data_structure.function
+    .type     zero_data_structures_cascade,@function
+    .cc_top   zero_data_structures_cascade.function
 
 //
 // r0 - Address to be zeroed
 // r1 - Words to zero
 //
-zero_data_structure:
+zero_data_structures_cascade:
     .cfi_startproc
 
     ldc r2, 0                 // Zero register
@@ -1013,5 +767,5 @@ zero_loop:
     bf r4, zero_loop
 
     retsp 0
-    .cc_bottom zero_data_structure.function
+    .cc_bottom zero_data_structures_cascade.function
     .cfi_endproc
