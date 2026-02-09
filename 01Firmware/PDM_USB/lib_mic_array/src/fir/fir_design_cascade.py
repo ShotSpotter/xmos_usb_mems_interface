@@ -79,10 +79,10 @@ third_stage_taps = 31
 
 THIRD_STAGE_FILTERS = [
     FilterSpec(num_taps=third_stage_taps, cutoff_khz=40.0, transition_khz = 8.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=24.0, transition_khz = 8.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=16.0, transition_khz = 8.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=12.0, transition_khz = 8.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz= 8.0, transition_khz = 8.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, cutoff_khz=24.0, transition_khz = 12.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, cutoff_khz=16.0, transition_khz = 12.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, cutoff_khz=12.0, transition_khz = 16.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, cutoff_khz= 8.0, transition_khz = 16.0, min_attenuation = min_atten),
 ]
 
 # ============================================================================
@@ -266,7 +266,7 @@ def generate_first_stage_coefficients():
 
 def generate_filter_coefficients(stage_sample_rate: float, filterSpec : FilterSpec):
     """
-    Generate second stage Type I filter for given cutoff frequency.
+    Generate second/third stage Type I filter for given cutoff frequency.
 
     Second stage decimates 384 kHz to 96 kHz (4:1 decimation).
     Type I: 31 taps (odd), non-zero at Nyquist.
@@ -296,7 +296,7 @@ def generate_filter_coefficients(stage_sample_rate: float, filterSpec : FilterSp
     [stop_band_atten, _, _] = measure_stopband_and_ripple(bands, a, H)
 
     if stop_band_atten > filterSpec.min_attenuation:
-        print(f"Stop band attenuation {stop_band_atten} > {filterSpec.min_attenuation}")        
+        print(f"  Warning: stop band attenuation {stop_band_atten} for {filterSpec.cutoff_khz} is less than target {filterSpec.min_attenuation}")
 
     coefs = h
 
@@ -308,60 +308,13 @@ def generate_filter_coefficients(stage_sample_rate: float, filterSpec : FilterSp
     # Normalize to prevent overflow
     coefs /= sum(abs(coefs))
 
-    # Generate name based on normalized passband frequency
-    normalized_freq = passband * 384  # Convert to kHz equivalent
-    name = f"{int(round(normalized_freq))}kHz"
-
-    return {
-        'coefs': coefs,
-        'name': name
-    }
-
-
-def generate_third_stage_coefficients(stage_sample_rate: float, filterSpec : FilterSpec):
-    """
-    Generate third stage filter using windowed design.
-
-    Third stage decimates 48 kHz to 12 kHz (4:1 decimation).
-    Uses Hamming window for simple, effective design.
-
-    Args:
-        cutoff_khz: Cutoff frequency in kHz
-
-    Returns:
-        dict with keys:
-            'coefs': Filter coefficients (symmetric, only first half stored)
-            'name': Filter name (e.g., '24kHz')
-    """
-
-    N = filterSpec.num_taps
-    Fs = stage_sample_rate
-    fc = filterSpec.cutoff_khz
-
-    # Generate windowed sinc filter
-    coefs = np.zeros(N)
-    for n in range(N):
-        m = n - ((N - 1) / 2)
-        gamma = (2.0 * math.pi * fc) / Fs
-
-        # Sinc function
-        h = math.sin(m * gamma) / (m * math.pi) if m != 0 else gamma / math.pi
-
-        # Hamming window
-        n_w = n - (N / 2)
-        h_w = 0.54 + 0.46 * math.cos((math.pi * (2.0 * n_w + 1)) / (N - 1.0))
-
-        coefs[n] = h * h_w
-
-    # Normalize to prevent overflow
-    coefs /= sum(abs(coefs))
-
     name = f"{int(round(filterSpec.cutoff_khz))}kHz"
 
     return {
         'coefs': coefs,
         'name': name
     }
+
 
 
 # ============================================================================
@@ -399,8 +352,8 @@ def write_first_stage(header, body, coef_data):
     header.write("\n")
 
 
-def write_second_stage(header, body, coef_data):
-    """Write second stage Type I filter coefficients to files."""
+def write_stage(stagename, header, body, coef_data):
+    """Write [stagename] stage Type I filter coefficients to files."""
     coefs = coef_data['coefs']
     name = coef_data['name']
     # actual number of taps e.g. "31"
@@ -414,12 +367,12 @@ def write_second_stage(header, body, coef_data):
     num_output_coefs = coefs.shape[0]
 
     dc_gain = coefs.sum()
-    body.write(f"const float g_second_stage_fir{num_taps}_{name}_gain = {dc_gain};\n\n")
+    body.write(f"const float g_{stagename}_stage_fir{num_taps}_{name}_gain = {dc_gain};\n\n")
 
-    body.write(f"const int g_second_stage_fir{num_taps}_{name}_gain_scaling_factor = {int(1.0/dc_gain)};\n\n")
+    body.write(f"const int g_{stagename}_stage_fir{num_taps}_{name}_gain_scaling_factor = {int(1.0/dc_gain)};\n\n")
 
-    header.write(f"extern const int g_second_stage_fir{num_taps}_{name}[{num_output_coefs}];\n")
-    body.write(f"const int g_second_stage_fir{num_taps}_{name}[{num_output_coefs}] = {{\n    ")
+    header.write(f"extern const int g_{stagename}_stage_fir{num_taps}_{name}[{num_output_coefs}];\n")
+    body.write(f"const int g_{stagename}_stage_fir{num_taps}_{name}[{num_output_coefs}] = {{\n    ")
 
     # Write all coefficients
     for i in range(num_output_coefs):
@@ -430,9 +383,9 @@ def write_second_stage(header, body, coef_data):
     body.write("};\n\n")
 
     # Write debug coefficients (full precision decimal, including padding)
-    header.write(f"extern const int g_second_stage_fir{num_taps}_{name}_debug[{num_output_coefs}];\n")
+    header.write(f"extern const int g_{stagename}_stage_fir{num_taps}_{name}_debug[{num_output_coefs}];\n")
     header.write("\n")
-    body.write(f"const int g_second_stage_fir{num_taps}_{name}_debug[{num_output_coefs}] = {{\n    ")
+    body.write(f"const int g_{stagename}_stage_fir{num_taps}_{name}_debug[{num_output_coefs}] = {{\n    ")
 
     for i, coef in enumerate(coefs):
         decimalized_coef = int(float(INT32_MAX) * coef)
@@ -440,25 +393,6 @@ def write_second_stage(header, body, coef_data):
         body.write(break_every_8(i))
 
     body.write("};\n\n")
-
-
-def write_third_stage(header, body, coef_data):
-    """Write third stage filter coefficients to files."""
-    coefs = coef_data['coefs']
-    name = coef_data['name']
-
-    # Only output first half of coefficients (symmetric filter)
-    num_output_coefs = len(coefs) // 2
-
-    header.write(f"extern const int g_third_stage_fir_{name}[{num_output_coefs}];\n")
-    body.write(f"const int g_third_stage_fir_{name}[{num_output_coefs}] = {{\n    ")
-
-    for i in range(num_output_coefs):
-        d_int = np.int32(coefs[i] * float(INT32_MAX) * 2.0)
-        body.write(f"0x{ctypes.c_uint(d_int).value:08x},")
-        body.write(break_every_8(i))
-    body.write("};\n\n")
-
 
 def write_constants(header, body):
     """Write constant definitions and disabled filter."""
@@ -468,21 +402,6 @@ def write_constants(header, body):
     body.write("// CRC polynominal to use, bogus data to checksum\n")
     body.write("const int g_crc_constants[2] = {0xEDB88320, 0xFFFFFFFF};\n")
     body.write("\n")
-
-    # Disabled third stage filter (all zeros)
-    num_taps = THIRD_STAGE_FILTERS[0].num_taps
-    num_output_coefs = num_taps // 2
-    name = 'g_third_stage_fir_disabled'
-
-    body.write("// Fake filter used to disable third stage entirely.\n")
-    header.write(f"extern const int {name}[{num_output_coefs}];\n")
-    body.write(f"const int {name}[{num_output_coefs}] = {{\n    ")
-
-    for i in range(num_output_coefs):
-        body.write("0x00000000,")
-        body.write(break_every_8(i))
-    body.write("};\n\n")
-
 
 # ============================================================================
 # MAIN
@@ -516,21 +435,21 @@ def main():
     for filter_spec in SECOND_STAGE_FILTERS:
         print(f"  {filter_spec.cutoff_khz} kHz cutoff")
         second_stage_data = generate_filter_coefficients(PDM_SAMPLE_RATE_KHZ / 8.0, filter_spec)
-        write_second_stage(header, body, second_stage_data)
-
-    # Write constants and disabled filter
-    write_constants(header, body)
+        write_stage("second", header, body, second_stage_data)
 
     # Generate and write third stage filters
     print("\nGenerating third stage filters...")
     for filter_spec in THIRD_STAGE_FILTERS:
         print(f"  {filter_spec.cutoff_khz} kHz cutoff")
         third_stage_data = generate_filter_coefficients(PDM_SAMPLE_RATE_KHZ / (8.0 * 2.0), filter_spec)
-        write_third_stage(header, body, third_stage_data)
+        write_stage("third", header, body, third_stage_data)
 
     # Write third stage define at the end
     num_taps = THIRD_STAGE_FILTERS[0].num_taps
     header.write(f"#define THIRD_STAGE_COEFS_PER_STAGE ({num_taps})\n")
+
+    # Write constants
+    write_constants(header, body)
 
     # Close files
     header.close()
