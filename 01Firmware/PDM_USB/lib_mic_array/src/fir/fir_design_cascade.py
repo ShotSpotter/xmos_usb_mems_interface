@@ -411,8 +411,8 @@ def main():
     """Generate all filter coefficients and write to output files."""
 
     # Open output files
-    header = open("fir_coefs.h", 'w', newline='')
-    body = open("fir_coefs.xc", 'w', newline='')
+    header = open("fir_coefs_cascade.h", 'w', newline='')
+    body = open("fir_coefs_cascade.xc", 'w', newline='')
 
     # Write copyright headers
     year = datetime.datetime.now().year
