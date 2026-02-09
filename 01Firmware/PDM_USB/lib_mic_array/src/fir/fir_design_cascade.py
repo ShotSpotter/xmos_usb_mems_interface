@@ -41,7 +41,6 @@ class FilterSpec:
     cutoff_khz: float
     transition_khz: float
     min_attenuation: float
-    use_kaiser: bool = False
 
 
 
@@ -66,31 +65,24 @@ FIRST_STAGE_CONFIG = {
 # Type I filters: odd number of taps, non-zero at Nyquist, output all coefficients
 # Stop band is cutoff + transition width
 
-second_stage_taps = 35
+second_stage_taps = 31
 min_atten = -30.0
 
 SECOND_STAGE_FILTERS = [
-    FilterSpec(num_taps=second_stage_taps, cutoff_khz=32.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=second_stage_taps, cutoff_khz=28.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=second_stage_taps, cutoff_khz=24.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=second_stage_taps, cutoff_khz=20.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=second_stage_taps, cutoff_khz=16.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=second_stage_taps, cutoff_khz=12.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
+    FilterSpec(num_taps=second_stage_taps, cutoff_khz=48.0, transition_khz = 96.0, min_attenuation = min_atten),
 ]
 
 # Third stage: 48 kHz -> 12 kHz (decimation by 4)
 # Windowed FIR filters
 
-third_stage_taps = 32
+third_stage_taps = 31
 
 THIRD_STAGE_FILTERS = [
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=47.999, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False, ),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=40.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=32.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=24.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=16.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=12.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz= 8.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
+    FilterSpec(num_taps=third_stage_taps, cutoff_khz=40.0, transition_khz = 8.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, cutoff_khz=24.0, transition_khz = 8.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, cutoff_khz=16.0, transition_khz = 8.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, cutoff_khz=12.0, transition_khz = 8.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, cutoff_khz= 8.0, transition_khz = 8.0, min_attenuation = min_atten),
 ]
 
 # ============================================================================
@@ -272,7 +264,7 @@ def generate_first_stage_coefficients():
     }
 
 
-def generate_second_stage_coefficients(stage_sample_rate: float, filterSpec : FilterSpec):
+def generate_filter_coefficients(stage_sample_rate: float, filterSpec : FilterSpec):
     """
     Generate second stage Type I filter for given cutoff frequency.
 
@@ -292,36 +284,26 @@ def generate_second_stage_coefficients(stage_sample_rate: float, filterSpec : Fi
     passband = filterSpec.cutoff_khz / stage_sample_rate
     transition_width = filterSpec.transition_khz / stage_sample_rate
 
-    # Use Kaiser window for maximum bandwidth filter (47.999 kHz)
-    if filterSpec.use_kaiser:
-        # Kaiser window design for maximum bandwidth
-        # With more taps, we can achieve sharper transition
-        nyquist = stage_sample_rate / 2.0
-        cutoff_normalized = filterSpec.cutoff_khz / nyquist
+    stopband = passband + transition_width
 
-        # Design Kaiser window FIR
-        # Increase beta for sharper transition
-        beta = 12.0  # Sharper transition, better stopband attenuation
-        coefs = signal.firwin(filterSpec.num_taps, cutoff_normalized, window=('kaiser', beta))
-    else:
-        # Two-band Remez design: simple passband and stopband
-        # Stopband starts at passband + transition width
-        stopband = passband + transition_width
+    a = [1, 0]  # Passband gain = 1, Stopband gain = 0
+    w = [1, 1]  # Equal weighting for passband and stopband
+    bands = [0, passband,
+                stopband, 0.5]
 
-        a = [1, 0]  # Passband gain = 1, Stopband gain = 0
-        w = [1, 1]  # Equal weighting for passband and stopband
-        bands = [0, passband,
-                 stopband, 0.5]
+    h = signal.remez(filterSpec.num_taps, bands, a, weight=w)
+    (_, H) = signal.freqz(h, worN=2048)
+    [stop_band_atten, _, _] = measure_stopband_and_ripple(bands, a, H)
 
-        _, coefs = generate_stage_remez(
-            filterSpec.num_taps, bands, a, w,
-            stopband_attenuation=filterSpec.min_attenuation
-        )
+    if stop_band_atten > filterSpec.min_attenuation:
+        print(f"Stop band attenuation {stop_band_atten} > {filterSpec.min_attenuation}")        
 
-        # Check if filter generation succeeded
-        if coefs is None:
-            raise ValueError(f"Failed to generate {filterSpec.num_taps}-tap filter for {filterSpec.cutoff_khz} kHz cutoff. "
-                           f"Try adjusting transition width, number of taps, or cutoff frequency.")
+    coefs = h
+
+    # Check if filter generation succeeded
+    if coefs is None:
+        raise ValueError(f"Failed to generate {filterSpec.num_taps}-tap filter for {filterSpec.cutoff_khz} kHz cutoff. "
+                        f"Try adjusting transition width, number of taps, or cutoff frequency.")
 
     # Normalize to prevent overflow
     coefs /= sum(abs(coefs))
@@ -533,7 +515,7 @@ def main():
     print("\nGenerating second stage filters...")
     for filter_spec in SECOND_STAGE_FILTERS:
         print(f"  {filter_spec.cutoff_khz} kHz cutoff")
-        second_stage_data = generate_second_stage_coefficients(PDM_SAMPLE_RATE_KHZ / 8.0, filter_spec)
+        second_stage_data = generate_filter_coefficients(PDM_SAMPLE_RATE_KHZ / 8.0, filter_spec)
         write_second_stage(header, body, second_stage_data)
 
     # Write constants and disabled filter
@@ -543,7 +525,7 @@ def main():
     print("\nGenerating third stage filters...")
     for filter_spec in THIRD_STAGE_FILTERS:
         print(f"  {filter_spec.cutoff_khz} kHz cutoff")
-        third_stage_data = generate_third_stage_coefficients(PDM_SAMPLE_RATE_KHZ / (8.0 * 4.0), filter_spec)
+        third_stage_data = generate_filter_coefficients(PDM_SAMPLE_RATE_KHZ / (8.0 * 2.0), filter_spec)
         write_third_stage(header, body, third_stage_data)
 
     # Write third stage define at the end
