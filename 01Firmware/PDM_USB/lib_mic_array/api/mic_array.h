@@ -141,6 +141,12 @@ void mic_array_decimate_to_pcm_2ch(
         streaming chanend c_from_pdm_interface,
         streaming chanend c_frame_output, mic_array_internal_audio_channels * channels, unsigned boardrev);
 
+void decimate_to_pcm_cascade(
+        streaming chanend c_from_pdm_interface,
+        streaming chanend c_frame_output, mic_array_internal_audio_channels * channels, unsigned boardrev);
+
+
+
 /** Far end channel connector.
  *
  *  This function allowed a connection to be established between a signal producer and the microphone
