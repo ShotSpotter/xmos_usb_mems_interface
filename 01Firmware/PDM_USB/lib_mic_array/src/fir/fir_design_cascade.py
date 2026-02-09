@@ -367,12 +367,12 @@ def write_stage(stagename, header, body, coef_data):
     num_output_coefs = coefs.shape[0]
 
     dc_gain = coefs.sum()
-    body.write(f"const float g_{stagename}_stage_fir{num_taps}_{name}_gain = {dc_gain};\n\n")
+    body.write(f"const float g_{stagename}_fir{num_taps}_{name}_gain = {dc_gain};\n\n")
 
-    body.write(f"const int g_{stagename}_stage_fir{num_taps}_{name}_gain_scaling_factor = {int(1.0/dc_gain)};\n\n")
+    body.write(f"const int g_{stagename}_fir{num_taps}_{name}_gain_scaling_factor = {int(1.0/dc_gain)};\n\n")
 
-    header.write(f"extern const int g_{stagename}_stage_fir{num_taps}_{name}[{num_output_coefs}];\n")
-    body.write(f"const int g_{stagename}_stage_fir{num_taps}_{name}[{num_output_coefs}] = {{\n    ")
+    header.write(f"extern const int g_{stagename}_fir{num_taps}_{name}[{num_output_coefs}];\n")
+    body.write(f"const int g_{stagename}_fir{num_taps}_{name}[{num_output_coefs}] = {{\n    ")
 
     # Write all coefficients
     for i in range(num_output_coefs):
@@ -383,9 +383,9 @@ def write_stage(stagename, header, body, coef_data):
     body.write("};\n\n")
 
     # Write debug coefficients (full precision decimal, including padding)
-    header.write(f"extern const int g_{stagename}_stage_fir{num_taps}_{name}_debug[{num_output_coefs}];\n")
+    header.write(f"extern const int g_{stagename}_fir{num_taps}_{name}_debug[{num_output_coefs}];\n")
     header.write("\n")
-    body.write(f"const int g_{stagename}_stage_fir{num_taps}_{name}_debug[{num_output_coefs}] = {{\n    ")
+    body.write(f"const int g_{stagename}_fir{num_taps}_{name}_debug[{num_output_coefs}] = {{\n    ")
 
     for i, coef in enumerate(coefs):
         decimalized_coef = int(float(INT32_MAX) * coef)
@@ -417,39 +417,47 @@ def main():
     # Write copyright headers
     year = datetime.datetime.now().year
     header.write(f"// Copyright (c) {year}, XMOS Ltd, All rights reserved\n")
+    header.write(f"// Copyright (c) {year}, SoundThinking Inc.\n")
     body.write(f"// Copyright (c) {year}, XMOS Ltd, All rights reserved\n")
+    body.write(f"// Copyright (c) {year}, SoundThinking Inc.\n")
 
-    # Generate and write first stage
-    print("Generating first stage filter...")
-    first_stage_data = generate_first_stage_coefficients()
-    write_first_stage(header, body, first_stage_data)
+    # Avoid conflicts with the old code
+    print_first_stage = False
+    if print_first_stage:
+        # Generate and write first stage
+        print("Generating first stage filter...")
+        first_stage_data = generate_first_stage_coefficients()
+        write_first_stage(header, body, first_stage_data)
 
-    # Print summary matching original script format
-    if first_stage_data['total_abs_sum'] > INT32_MAX:
-        print("WARNING: error in first stage too large")
-    else:
-        print(f"Max output of first stage: {first_stage_data['total_abs_sum']}")
+        # Print summary matching original script format
+        if first_stage_data['total_abs_sum'] > INT32_MAX:
+            print("WARNING: error in first stage too large")
+        else:
+            print(f"Max output of first stage: {first_stage_data['total_abs_sum']}")
 
     # Generate and write second stage filters
     print("\nGenerating second stage filters...")
     for filter_spec in SECOND_STAGE_FILTERS:
         print(f"  {filter_spec.cutoff_khz} kHz cutoff")
         second_stage_data = generate_filter_coefficients(PDM_SAMPLE_RATE_KHZ / 8.0, filter_spec)
-        write_stage("second", header, body, second_stage_data)
+        write_stage("second_to_third", header, body, second_stage_data)
 
     # Generate and write third stage filters
     print("\nGenerating third stage filters...")
     for filter_spec in THIRD_STAGE_FILTERS:
         print(f"  {filter_spec.cutoff_khz} kHz cutoff")
         third_stage_data = generate_filter_coefficients(PDM_SAMPLE_RATE_KHZ / (8.0 * 2.0), filter_spec)
-        write_stage("third", header, body, third_stage_data)
+        write_stage("third_to_output", header, body, third_stage_data)
 
-    # Write third stage define at the end
-    num_taps = THIRD_STAGE_FILTERS[0].num_taps
-    header.write(f"#define THIRD_STAGE_COEFS_PER_STAGE ({num_taps})\n")
+    if print_first_stage:
+        # Write third stage define at the end
+        num_taps = THIRD_STAGE_FILTERS[0].num_taps
+        header.write(f"#define THIRD_STAGE_COEFS_PER_STAGE ({num_taps})\n")
 
-    # Write constants
-    write_constants(header, body)
+
+    if print_first_stage:
+        # Write constants
+        write_constants(header, body)
 
     # Close files
     header.close()
