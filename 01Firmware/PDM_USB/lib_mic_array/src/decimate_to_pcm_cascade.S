@@ -1,14 +1,30 @@
 // Copyright (c) 2015-2016, XMOS Ltd, All rights reserved
 // Additional code by Richard Boulderstone and
 // Robert B. Calhoun is Copyright (c) 2024-2025 SoundThinking Inc.
+// Code not written by XMOS is released under the MIT License.
 //
 // Assembly-language implementation of decimate_to_pcm_cascade(),
 // based on XMOS reference code. The reference code used FIR filters of
-// inadequate size because of compute limitation. In this version, we run
+// inadequate size because of compute limitations and has an error in
+// the DC offset calcuation. In this version, we run
 // one decimator for every two channels instead of one decimator for
 // every four channels, removing the compute limtation but limiting
 // the total number of channels supported by a two-tile XMOS chip to 8.
+// This provides sufficient MIPS for Type 1 and Type 2 filter with up to 48 taps.
 //
+// In thsi file, two 48-tap filters are set up as a cascade:
+// - 384 kHz input -> second stage buffers -> second stage filter -> 2:1 decimation
+// - second stage buffers -> second stage filter + 2:1 decimation
+// - second stage filter + 2:1 decimation -> third stage buffer
+// - third stage buffer -> third stage filter + 2:1 decimation
+// - third stage filter + 2:1 decimation to output.
+// The main processing code is unrolled to conserve registers and
+// improve performance. To regenerate the components, see helper
+// script lib_mic_array/src/fir/generate_filter_loop.py.
+//
+// See decimate_to_pcm_2cs.S for a simpler version of this code that
+// still supports Type I and Type II FIR filters but does not use a cascaded design.
+
 // The filters used are defined by at runtime by hardware fuses that
 // are passed into this code via the boardrev argument. Hardware uses
 // 4-bit fuses (0-15). Currently, three boardrev values are defined:
@@ -16,6 +32,9 @@
 // 0x0E (14) 7-mic board with Infineon IM72D128 digital microphone (resonance ~37 kHz  => 24 kHz cutoff)
 // 0x0D (13) unused
 // 0x0C (12) 8-mic board with Primo EM215 analog mic + PDM ADC     (want as high as we can => 43.999 kHz cutoff)
+
+// If runtime filter selection is not required, the jump tables can
+// be removed.
 
 .section    .dp.data,"awd",@progbits
 .text
@@ -32,22 +51,18 @@
 
 // We implement Type 1 (odd # of tap) filters with a final zero pad, so they also
 // have an "even" number of taps from the software perspective. Use "32" for 31 taps + pad.
-// Supported tap sizes: 32, 36, 40, 44, 48
+// Supportable tap sizes as 32, 36, 40, 44, 48, but right now the code is set up for 47 + 1 pad = 48.
 
 #define SECOND_STAGE_TAPS 48                                                                        // Number of coefficient/taps in the whole (symmetric) filter. In words.
 #define SECOND_STAGE_HISTORY_SIZE              (((SECOND_STAGE_TAPS + 3) / 4) * 4)                  // Enforce SECOND_STAGE_HISTORY_SIZE >= SECOND_STAGE_TAPS and is a multiple of 4. In words.
 #define SECOND_STAGE_BUFFER_SIZE               (SECOND_STAGE_HISTORY_SIZE * 2)                      // We need 2x SECOND_STAGE_HISTORY_SIZE for the circular buffer. In words.
 #define SECOND_STAGE_ALL_CHANNELS_SIZE         (SECOND_STAGE_BUFFER_SIZE * 2)                       // Total size of second stage storage. In words.
-#define SECOND_STAGE_BUFFER_SIZE_BYTES         (SECOND_STAGE_BUFFER_SIZE  * 4)                      // Buffer size per channel. In bytes.
-#define SECOND_STAGE_LEFT_OFFSET_BYTES         (0)                                                  // offset of the left pointer (r7), in bytes. (not used, it is zero)
 #define SECOND_STAGE_MIDPOINT_BYTES        ((SECOND_STAGE_TAPS / 2) * 4)                        // offset of the right pointer (r8), in bytes.
 
 #define THIRD_STAGE_TAPS 48                                                               // Number of coefficient/taps in the whole (symmetric) filter. In words.
 #define THIRD_STAGE_HISTORY_SIZE              (((THIRD_STAGE_TAPS + 3) / 4) * 4)          // Enforce THIRD_STAGE_HISTORY_SIZE >= THIRD_STAGE_TAPS and is a multiple of 4. In words.
 #define THIRD_STAGE_BUFFER_SIZE               (THIRD_STAGE_HISTORY_SIZE * 2)              // We need 2x THIRD_STAGE_HISTORY_SIZE for the circular buffer. In words.
 #define THIRD_STAGE_ALL_CHANNELS_SIZE         (THIRD_STAGE_BUFFER_SIZE * 2)               // Total size of third stage storage. In words.
-#define THIRD_STAGE_BUFFER_SIZE_BYTES         (THIRD_STAGE_BUFFER_SIZE  * 4)              // Buffer size per channel. In bytes.
-#define THIRD_STAGE_LEFT_OFFSET_BYTES         (0)                                         // offset of the left pointer (r7), in bytes. (not used, it is zero)
 #define THIRD_STAGE_MIDPOINT_BYTES        ((THIRD_STAGE_TAPS / 2) * 4)                // offset of the right pointer (r8), in bytes.
 
 //
@@ -253,12 +268,14 @@
     lextract REGISTER, r6, r5, r10, 32
 
 
-// FILTER_GENERIC: Convolve length 32 coefficients with length 32 data.
+// FILTER_GENERIC: Convolve length 48 coefficients with length 48 data.
 // Dispense with any fancy symmetry tricks and just blast through the
 // coefficient and data arrays two at a time. Odd kernels must be zero padded.
 //
 // We can only use immediate mode index (0.11) so shift the pointer half-way
-// through by SECOND_STAGE_MIDPOINT_BYTES. This implement only supports 32.
+// through by SECOND_STAGE_MIDPOINT_BYTES. Kernel length 48 is the longest
+// kernel that can be implemnted using this approach. Shorter kernels can
+// be supported by deleting code.
 // r0, r1 : FIR_POINT_PAIR accumulators
 // r2, r3 : FIR_POINT_PAIR coefficients
 // r4, r5 : FIR_POINT_PAIR data
@@ -301,11 +318,14 @@
     FIR_POINT_PAIR(10, 10); \
     FIR_POINT_PAIR(11, 11)
 
-// FILTER_HALFBAND: Convolve length 32 coefficients with length 32 data,
+// FILTER_HALFBAND: Convolve length 48 coefficients with length 48 data,
 // but take advantage of the fact that every other coefficient is zero
 // (except the center) on a half-band filter. Odd kernels must be zero padded.
+//
 // We can only use immediate mode index (0.11) so shift the pointer half-way
-// through by HALF_LENGTH_BYTES. This implement only supports 32.
+// through by SECOND_STAGE_MIDPOINT_BYTES. Kernel length 48 is the longest
+// kernel that can be implemnted using this approach. Shorter kernels can
+// be supported by deleting code.
 // r0, r1 : FIR_POINT_PAIR accumulators
 // r2, r3 : FIR_POINT_PAIR coefficients
 // r4, r5 : FIR_POINT_PAIR data
