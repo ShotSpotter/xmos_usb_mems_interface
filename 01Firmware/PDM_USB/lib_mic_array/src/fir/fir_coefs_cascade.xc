@@ -1,23 +1,23 @@
 // Copyright (c) 2026, XMOS Ltd, All rights reserved
 // Copyright (c) 2026, SoundThinking Inc.
-const float g_second_to_third_fir47_48kHz_gain = 0.6747967578753934;
+const float g_second_to_third_fir47_48kHz_gain = 0.674796756980065;
 
 const int g_second_to_third_fir47_48kHz_gain_scaling_factor = 1;
 
 const int g_second_to_third_fir47_48kHz[48] = {
     0xfffffdce, 0x00000000, 0x00001ca9, 0x00000000, 0xffff3c5d, 0x00000000, 0x00039b9f, 0x00000000,
-    0xfff2d0f4, 0x00000000, 0x0027a9b1, 0x00000000, 0xff99ab61, 0x00000000, 0x00e9d536, 0xffffffff,
-    0xfe173c2b, 0x00000001, 0x03d175bc, 0xffffffff, 0xf7f4fcba, 0x00000001, 0x1b19530f, 0x2b2fdebb,
-    0x1b19530f, 0x00000001, 0xf7f4fcba, 0xffffffff, 0x03d175bc, 0x00000001, 0xfe173c2b, 0xffffffff,
+    0xfff2d0f4, 0x00000000, 0x0027a9b1, 0x00000000, 0xff99ab61, 0x00000000, 0x00e9d536, 0x00000000,
+    0xfe173c2b, 0x00000000, 0x03d175bc, 0x00000000, 0xf7f4fcba, 0x00000000, 0x1b19530f, 0x2b2fdebb,
+    0x1b19530f, 0x00000000, 0xf7f4fcba, 0x00000000, 0x03d175bc, 0x00000000, 0xfe173c2b, 0x00000000,
     0x00e9d536, 0x00000000, 0xff99ab61, 0x00000000, 0x0027a9b1, 0x00000000, 0xfff2d0f4, 0x00000000,
     0x00039b9f, 0x00000000, 0xffff3c5d, 0x00000000, 0x00001ca9, 0x00000000, 0xfffffdce, 0x00000000,
     };
 
 const int g_second_to_third_fir47_48kHz_debug[48] = {
           -562,          0,       7337,          0,     -50083,          0,     236447,          0,
-       -864012,          0,    2599345,          0,   -6706335,          0,   15324470,         -1,
-     -32031701,          1,   64058812,         -1, -134939462,          1,  454644495,  724557499,
-     454644495,          1, -134939462,         -1,   64058812,          1,  -32031701,         -1,
+       -864012,          0,    2599345,          0,   -6706335,          0,   15324470,          0,
+     -32031701,          0,   64058812,          0, -134939462,          0,  454644495,  724557499,
+     454644495,          0, -134939462,          0,   64058812,          0,  -32031701,          0,
       15324470,          0,   -6706335,          0,    2599345,          0,    -864012,          0,
         236447,          0,     -50083,          0,       7337,          0,       -562,          0,
     };

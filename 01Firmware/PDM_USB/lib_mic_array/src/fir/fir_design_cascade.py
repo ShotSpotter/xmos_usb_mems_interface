@@ -307,6 +307,10 @@ def generate_filter_coefficients(stage_sample_rate: float, filterSpec : FilterSp
     # Normalize to prevent overflow
     coefs /= sum(abs(coefs))
 
+    # Squish near-zero values (numerical noise from Remez) to exactly zero
+    # This makes the half-band structure visible in the generated files
+    coefs[np.abs(coefs) < 1.0e-8] = 0.0
+
     name = f"{int(round(filterSpec.cutoff_khz))}kHz"
 
     return {
