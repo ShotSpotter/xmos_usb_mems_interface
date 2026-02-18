@@ -7,17 +7,14 @@ the required libraries and removes unrelated hardware. We have made the followin
 
 * Remove support for dynamically setting the clock as SST-XMOS-001 hw has fixed 24.576 MHz clock.
 * Increase the output sampling rate from 48 kHz to 96 kHz.
-* Use one decimator instance (see `decimate_to_pcm4ch.S`) for every two mics instead of one for every four to remove
-  a computation performance limitation with that prevented the use of longer FIR filters. Note this reduces
-  the total mic capacity of the board to 8 channels.
-* The four buttons/switches on the reference schematic have been repurposed as board revision fuses, allowing 16
-  board variants. Three variants are currently defined:
+* Use one decimator instance (see `decimate_to_pcm4ch.S`) for every two mics instead of one for every four. This removes a computatal performance limitation with that prevented the use of longer FIR filters. Note this reduces the total mic capacity of the board to 8 channels.
+* The four buttons/switches on the reference schematic have been repurposed as board revision fuses, allowing 16 board variants. Three variants are currently defined:
 
-| Fuse | Microphone        | Sensitivity | AOP        | Resonance freq | Cutoff freq | gain |
-|------|-------------------|--------------------------|----------------|-------------|------|
-|  0xF | Vesper VM3000     | -26 dBFS    | 122 dB SPL | ~12.5 kHz      |   8 kHz     | 1    |
-|  0xE | Infineon IM72D128 | -36 dBFS    | 130 dB SPL | ~37.0 kHz      |  24 kHz     | 3    |
-|  0xC | Primo EM215       | -67 dBFS    | 150 dB SPL | > 40 kHz       |  43.99 kHz  | 1*   |
+| Fuse | Microphone        | Sensitivity | AOP        | Resonance | Pass freq | Stop freq | filter attenuation (DC)    | digital gain |
+|------|-------------------|-------------|------------|-----------|-----------|-----------|----------------------------|--------------|
+|  0xF | Vesper VM3000     | -26 dBFS    | 122 dB SPL | ~12.5 kHz |  12.0 kHz | 24.0 kHz  | 0.6747 * 0.6642 = -6.97 dB |  1  |
+|  0xE | Infineon IM72D128 | -36 dBFS    | 130 dB SPL | ~37.0 kHz |  12.0 kHz | 24.0 kHz  | 0.6747 * 0.6642 = -6.97 dB |  3  |
+|  0xC | Primo EM215       | -67 dBFS    | 150 dB SPL | > 40 kHz  |  40.0 kHz | 48.0 kHz  | 0.6747 * 0.5137 = -9.20 dB |  1  |
 
 Sensitivity is relative to 1 kHz 94 dB SPL unless otherwise noted.
 
@@ -29,114 +26,110 @@ EM215 has additional analog hardware (an ADC) so there is not a straightforward 
 compared chirp data and found Vespers to by 24 dB lower sensitivity than VM3000, hence the gain value of
 10^(24/20) = 15.84.
 
-First stage: PDM to PCM converter and decimator
-Input: 3072 kHz
-Output: 384 kHz
-Taps: 48 (fixed)
+### Filter implementation.
 
-Second stage:
-Input: 384 kHz
-Output: 96 kHz
-Tags: 32 (implemented as symmetric 16)
+The first stage is substantially identical to XMOS reference implementation. The second and third stages are a complete rewrite. We implement the second and third stages as a cascade: 2:1 decimation in second stage followed by 2:1 decimation in the third stage. See `decimate_to_pcm_cascade.S`. (The prior (non-cascade) code is present in decimate_to_pcm.S. We continue to maintain it, but it is not linked in the final binary.)
 
-Third stage:
-Input: 96 kHz
-Output: 96 kHz
-Taps: 32 (implemented as symmetric 16)
+#### First stage:
+PDM to PCM converter, low-pass anti-aliasing filter and 4:1 decimator, implemented with lookup tables.
+* Input: 3072 kHz
+* Output: 384 kHz
+* Taps: 48 (fixed)
+
+#### Second stage
+This is a Type I (odd) half-band filter. Every other coefficient is zero, except for the center coefficient. filter is implemented double-word load (`ldd`) instructions that walk over all 48 coefficients (47 taps plus a pad zero).
+* low-pass anti-aliasing filter and 2:1 decimation
+* Input: 384 kHz
+* Output: 192 kHz
+* Taps: 47 (48 coefficients with pad word)
+
+#### Third stage
+This is a Type I (odd) filter. Unlike the second stage filter, it does not have any special properties. This filter is also implemented double-word load (`ldd`) instructions that walk over all 48 coefficients (47 taps plus a pad zero).
+* low-pass anti-aliasing filter and 2:1 decimation
+* Input: 192 kHz
+* Output: 96 kHz
+* Taps: 47 (48 coefficients with pad word)
 
 
-For high-frequency signals, use a second stage filter of 43.999 khz
-and remove the third stage entirely.
+To regenerate filters, run `fir_design_cascade.py`, which will update `fir_coefs_cascade.xc`. If filter cutoffs frequencies changed, update filter names in `decimate_to_pcm_cascade.S`.
 
-GROUP DELAY ANALYSIS FOR BULLET N-WAVE DETECTION
-======================================================================
+The main filtering loop is requires high performance. It makes heavy use of the XMOS architecture `ldd`
+command, which does a single-cycle double-word load based on an immediate offset to an address in a register.
+The immediate offset must be in range 0..11, so `ldd` can support loading up to 24 words following the
+register address. The current code `ldd`s and `maccs` 24 coefficients, then shifts the register and does the
+other 24 coefficients. (We have odd number of coefficients because Type I filters
+have better properties overall; the last) word is a zero pad.) The necessary circular buffer is implemented
+by writing every input data point twice and then walking backards through the left-hand side of the array.
+
+Actual layout in memory looks like this (simplified 8 tap version):
+
+```
+H G F E D C B A H G F E D C B A h g f e d c b a h g f e d c b a
+```
+
+where upper case letters are used for channel 0 and lower case letters for channel 1. The FIR starts
+at the midpoint - 2 and moves backwards:
+
+| call       | data              |
+|------------|-------------------|
+| First call | `B A H G F E D C` |
+| Second call| `D C B A H G F E` |
+| Third call | `F E D C B A H G` |
+
+etc., eventually wrapping back to the first call position. Because of the heavy use of `ldd` instructions
+with immediate mode:
+```
+lddi d, e, b, i
+d <- mem[b+i×Bpw×2]
+e <- mem[b+i×Bpw×2+Bpw]
+```
+what would normally be implemented with a double-loop is implemented as 24 near-copies of a 4-block sequence inside `while (1){}` loop `fir_loop_type1`:
+
+* block 1: read data from 1st stage; apply stage 3 filter (2:1 decimate)
+* block 2: read data from 1st stage; apply stage 2 filter (2:1 decimate)
+* block 3: read data from 1st stage; output stage 3 data to caller
+* block 4: read data from 1st stage; apply stage 2 filter (2:1 decimate)
+
+Admittedly, it looks pretty horrible, but doing it this way is both fast requires only a small number of registers. The code is programmatically-generated; see `generate_filter_loop.py`.
+
+## Extension to 192 kHz
+There is probably sufficient MIPS remaining to output at 192 kHz. The main challenge is that third stage could not longer use `ldd`, since `ldd` requires double-word load and the third stage would no longer implement a 2:1 decimation. The word-equivalent instruction `ldw` also only accepts (0.11) immediates, so the third stage filter would either need to drop to 24 taps or switch to a different (and less performant) approach, such as using `ldw dp[u16]` for data and `ldw cp[u16]` for the coefficients.
+
+### Filter delay computation
 
 STAGE 1: PDM Decimation Filter
-  Taps: 48
-  Filter type: Symmetric FIR (linear phase)
-  Group delay (samples): 23.5
-  Group delay (time): 0.008 ms
-  After decimation ÷8: equivalent to 0.061 ms at 384 kHz
+*  Taps: 48
+*  Filter type: Symmetric Type II FIR (linear phase)
+*  Group delay (samples): 23.5
+*  Group delay (time): 0.008 ms
+*  After decimation ÷8: equivalent to 0.061 ms at 384 kHz
 
-STAGE 2: Anti-Aliasing Filter (43.9999 kHz)
-  Taps: 32
-  Filter type: Symmetric FIR (linear phase)
-  Group delay (samples): 15.5
-  Group delay (time): 0.040 ms
-  After decimation ÷4: equivalent to 0.161 ms at 96 kHz
+STAGE 2: Half-band Anti-Aliasing Filter (48-96 kHz)
+*  Taps: 47/48
+*  Filter type: Symmetric Type I FIR (linear phase)
+*  Group delay (samples): (N−1)/2 samples @ 384 kHz
+*  Group delay (time): 0.0612 ms
 
-STAGE 3: Cleanup Filter (47.9999 kHz) - OPTIONAL
-  Taps: 32
-  Filter type: Windowed FIR (linear phase)
-  Group delay (samples): 15.5
-  Group delay (time): 0.161 ms
+STAGE 3: Arbitrary filter - OPTIONAL
+*  Taps: 47/48
+*  Filter type: Symmetric Type I FIR (linear phase)
+*  Group delay (samples): (N−1)/2 samples @ 192 kHz
+*  Group delay (time): 0.1224 ms
 
-TOTAL GROUP DELAY:
-----------------------------------------------------------------------
-  Without Stage 3: 0.223 ms
-  With Stage 3:    0.384 ms
-  Stage 3 adds:    0.161 ms (72.5% increase)
+### Overall delay
 
-BULLET N-WAVE CHARACTERISTICS:
-----------------------------------------------------------------------
-  Typical N-wave rise time: 50-200 microseconds
-  Critical frequencies: 5-20 kHz (fundamental waveform)
-  Harmonics extend to: 40+ kHz
+| Stage  |      delay |
+|--------|------------|
+| Stage 1| 0.008 msec |
+| Stage 2| 0.0612 msec|
+| Stage 3| 0.1224 msec|
+| Total  | 0.1916 msec|
 
-Phase Delay at Key Frequencies (with Stage 3):
-     5.0 kHz: 0.1615 ms,   290.6°
-    10.0 kHz: 0.1615 ms,   581.2°
-    15.0 kHz: 0.1615 ms,   871.9°
-    20.0 kHz: 0.1615 ms,  1162.5°
-    25.0 kHz: 0.1615 ms,  1453.1°
-    30.0 kHz: 0.1615 ms,  1743.8°
-    35.0 kHz: 0.1615 ms,  2034.4°
-    40.0 kHz: 0.1615 ms,  2325.0°
-    44.0 kHz: 0.1615 ms,  2557.5°
-
-IMPACT ASSESSMENT:
-======================================================================
-
-LINEAR PHASE FIR:
-  * Constant group delay across all frequencies
-  * No phase distortion - all frequency components delayed equally
-  * Preserves waveform features
-
-Stage 3 Trade-off:
-  Adds: 0.161 ms additional delay
-  Benefit: Cleaner 44-48 kHz band of unfiltered PDM noise
-  Risk: Additional 0.161 ms could affect time-of-arrival accuracy
-
-RECOMMENDATION:
-  For high-frequency (near-Nyquist) signals:
-  → SKIP Stage 3 to minimize group delay
-  → Stage 2 (43.9999 kHz) provides all necessary anti-aliasing
-  → Saves 0.161 ms = 161 microseconds
-
-Setting Filters
---------------
-The size of the filter coefficients is trivial, so all filter coefficients are
-compiled in. Different harware boards and use cases need different filters; to
-change filters, modify the switch statement that starts around line 317 in
-`01Firmware/PDM_USB/lib_mic_array/src/decimate_to_pcm_4ch.S`. This is the
-block starting with:
-```
-// Select second stage filter based on boardrev (4-bit fuse value 0-15)
-```
-The switch statement for the third stage filter starts with line
-```
-// Select third stage filter (r8 still contains boardrev, 4-bit value 0-15)
-```
-To disable the third stage filter entirely, select filter:
-```
-g_third_stage_fir_disabled
-```
+Applications where absolute timestamp is important should compensate for the filter delay.
 
 
+### Code Flow
 
-
-Flow
-----
 See `main.xc` function `main()` calls for code entry point.
 
 In XC, parallel threads are launched with a `par{}` block. Communication between
@@ -167,7 +160,19 @@ xmake
 xrun --io  bin/SST-XMOS-001_v2.8.0.xe
 ```
 
-Factory image:
+Debugger:
+
+```
+xmake clean
+xmake
+xgdb bin/SST-XMOS-001_v2.8.0.xe
+connect
+run
+```
+
+I never got xscope to work.
+
+### Flashing the factory image
 
 This is done on a host machine that has XMOS Tools installed.
 
@@ -423,3 +428,14 @@ Estimated Usage: My static analysis predicts ~550 cycles for a 4-sample block.
 If you see values approaching 1000 cycles, you are close to the limit."
 
 So the value of 164 is very good.
+
+Useful `xgdb` commands:
+=======================
+* show running threads: `info threads`
+* switch to thread: `thread <thread-number>`
+* change tile: `tile 0`
+* show registers: `info registers`
+* break at an address (current tile): `break *0x000420c0`
+* examine memory around address loaded in `r7`: `x/16xw $r7`
+* step: `stepi`
+* disassemble some code around `pc`: `disassemble $pc-32, $pc+32`
