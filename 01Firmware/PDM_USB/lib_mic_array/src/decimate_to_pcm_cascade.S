@@ -517,13 +517,13 @@ config_second_stage_done:
     eq r9, r8, r9
     bt r9, config_third_stage_0x0C
     // Default case
-    ldaw r11, cp[g_third_to_output_fir47_24kHz]  // default like IM72D128
+    ldaw r11, cp[g_third_to_output_fir47_12kHz]  // default like IM72D128
     bu config_third_stage_done
 config_third_stage_0x0F:
     ldaw r11, cp[g_third_to_output_fir47_8kHz]   // VM3000
     bu config_third_stage_done
 config_third_stage_0x0E:
-    ldaw r11, cp[g_third_to_output_fir47_24kHz]  // IM72D128
+    ldaw r11, cp[g_third_to_output_fir47_12kHz]  // IM72D128
     bu config_third_stage_done
 config_third_stage_0x0C:
     ldaw r11, cp[g_third_to_output_fir47_40kHz] // EM215

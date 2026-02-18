@@ -81,8 +81,8 @@ THIRD_STAGE_FILTERS = [
     FilterSpec(num_taps=third_stage_taps, cutoff_khz=40.0, transition_khz = 8.0, min_attenuation = min_atten),
     FilterSpec(num_taps=third_stage_taps, cutoff_khz=24.0, transition_khz = 12.0, min_attenuation = min_atten),
     FilterSpec(num_taps=third_stage_taps, cutoff_khz=16.0, transition_khz = 12.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=12.0, transition_khz = 18.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz= 8.0, transition_khz = 18.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, cutoff_khz=12.0, transition_khz = 12.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, cutoff_khz= 8.0, transition_khz = 8.0, min_attenuation = min_atten),
 ]
 
 # ============================================================================

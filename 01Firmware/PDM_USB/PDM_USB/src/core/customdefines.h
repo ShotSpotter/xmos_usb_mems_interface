@@ -97,9 +97,9 @@
 
 // #define BCD_DEVICE              0x0001
 
-#define BCD_DEVICE_J            2
-#define BCD_DEVICE_M            9
-#define BCD_DEVICE_N            2
+#define BCD_DEVICE_J            3
+#define BCD_DEVICE_M            0
+#define BCD_DEVICE_N            0
 
 #define AUDIO_CLASS             2
 #define AUDIO_CLASS_FALLBACK    0
