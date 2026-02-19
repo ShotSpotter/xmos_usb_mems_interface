@@ -219,6 +219,8 @@ xflash --factory-version 15.2 --upgrade 1 bin/SST-XMOS-001_v2.8.1.xe -o SST-XMOS
 ```
 xflash --factory-version 15.3 --upgrade 1 bin/SST-XMOS-001_v2.9.1.xe -o SST-XMOS-001_v2.9.1.xflash_15.3.bin
 xflash --factory-version 14.4 --upgrade 1 bin/SST-XMOS-001_v2.9.1.xe -o SST-XMOS-001_v2.9.1.xflash_14.4.bin
+xflash --factory-version 15.3 --upgrade 6 bin/SST-XMOS-001_v3.0.1.xe -o SST-XMOS-001_v3.0.1.xflash_15.3.bin
+xflash --factory-version 14.4 --upgrade 6 bin/SST-XMOS-001_v3.0.1.xe -o SST-XMOS-001_v3.0.1.xflash_14.4.bin
 ```
 
 
