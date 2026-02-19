@@ -202,8 +202,10 @@
     {stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + OFFSET]};\
     {stw r0, dp[1*SECOND_STAGE_BUFFER_SIZE + SECOND_STAGE_HISTORY_SIZE + OFFSET]};
 
-// input in r0, store in third stage buffer
+// input from second stage is in r0.
+// apply a factor of 2 digital gain and store in third stage buffer
 #define SECOND_STAGE_TO_THIRD_STAGE_CH0(OFFSET)\
+    shl r0, r0, 1;\
     {stw r0, dp[DP_STAGE_3_CH0 + OFFSET]};\
     {stw r0, dp[DP_STAGE_3_CH0 + THIRD_STAGE_HISTORY_SIZE + OFFSET]};
 
@@ -520,7 +522,7 @@ config_second_stage_done:
     ldaw r11, cp[g_third_to_output_fir47_12kHz]  // default like IM72D128
     bu config_third_stage_done
 config_third_stage_0x0F:
-    ldaw r11, cp[g_third_to_output_fir47_8kHz]   // VM3000
+    ldaw r11, cp[g_third_to_output_fir47_12kHz]   // VM3000
     bu config_third_stage_done
 config_third_stage_0x0E:
     ldaw r11, cp[g_third_to_output_fir47_12kHz]  // IM72D128
