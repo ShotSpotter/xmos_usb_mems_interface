@@ -14,7 +14,6 @@ BUILD_FLAGS = \
 	-DQUAD_SPI_FLASH=1 \
 	-DUSB_TILE=tile[1] \
 	-DXUD_SERIES_SUPPORT=4 \
-	-DDEBUG \
 	-fcomment-asm \
 	-g \
 	-lquadflash \
