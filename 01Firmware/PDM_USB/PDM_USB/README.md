@@ -298,15 +298,12 @@ Analyzing Results
 =================
 When `OUTPUT_RANDOM` defined in `pdm_rx.S`, uniform random noise is injected into channel 7. This is a good way to verify that the filter and gain settings for each board are as desired.
 
-Examples:
+Red plot shows the old code with the defective DC baseline restore, and the new code. Vesper and Infineon use the same filter, so they appear on top of each other.
 
 BoardRev = 0xF (Vesper VM3000)
 ----------------
-![VM3000](./vm3000.png)
+![FreqResponse](./freqresponse.png)
 
-BoardRev = 0xE (Infineon IM72D128)
-----------------------------------
-![Infineon IM72D128](infineon.png)
 
 
 Debugging and Processor Headroom Measurement
