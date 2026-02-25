@@ -12,6 +12,9 @@
 #include "devicedefines.h"
 #include "commands.h"
 #include "xc_ptr.h"
+#ifdef DEBUG
+#include <stdio.h>
+#endif
 
 #define CS_XU_MIXSEL (0x06)
 
@@ -233,11 +236,15 @@ int AudioClassRequests_2(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket_t &sp, c
 								if ((result = XUD_GetBuffer(ep0_out, (buffer, unsigned char[]), datalength)) != XUD_RES_OKAY)
 									return result;
 								if (datalength == 4) {
+									/* We use fixed 24.576 MHz hardware clock that undergoes 8:1 decimation
+									 * in an XMOS core. There no PLL stabilize. We also don't support
+									 * sample rates other than 48kHz or 96kHz, and as we don't use 48 kHz in SensApp
+									 * we can lock the sample rate at DEFAULT_FREQ (96000 Hz) at avoid any handshake delay here. */
+									int allowSampleRateChange = 0;  // DISABLE SAMPLE RATE CHANGE
 									/* Re-construct Sample Freq */
-//									int newSampleRate = buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24);
 									unsigned int newSampleRate = buffer[0];
 									/* Instruct audio thread to change sample freq (if change required) */
-									if (newSampleRate != g_curSamFreq) {
+									if (allowSampleRateChange && (newSampleRate != g_curSamFreq)) {
 										int newMasterClock;
 										g_curSamFreq = newSampleRate;
 										outuint(c_audioControl, SET_SAMPLE_FREQ);
@@ -246,7 +253,13 @@ int AudioClassRequests_2(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket_t &sp, c
 										chkct(c_audioControl, XS1_CT_END);
 									}
 									/* Allow time for our feedback to stabilise */
-									FeedbackStabilityDelay();
+									if (allowSampleRateChange) {
+										FeedbackStabilityDelay();
+									} else {
+										#ifdef DEBUG
+										printf("Ignoring request to change sample rate from %d to %d\n", g_curSamFreq, newSampleRate);
+										#endif
+									}
 								}
 								/* Send 0 Length as status stage */
 								XUD_DoSetRequestStatus(ep0_in);
