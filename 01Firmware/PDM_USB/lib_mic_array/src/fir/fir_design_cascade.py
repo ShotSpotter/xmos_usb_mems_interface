@@ -8,8 +8,8 @@ Clean filter coefficient generator for XMOS microphone array decimation filters.
 
 This script generates three stages of FIR filters:
 1. First stage: PDM to 384 kHz (8:1 decimation) using lookup tables
-2. Second stage: 384 kHz to 96 kHz (4:1 decimation) using Type I FIR
-3. Third stage: 96 kHz to 24 kHz (4:1 decimation) using symmetric FIR (not used in current application)
+2. Second stage: 384 kHz to 192 kHz (2:1 decimation) using Type I FIR
+3. Third stage: 192 kHz to 96 kHz (2:1 decimation) using Type I FIR
 
 Key design principle: Separation of coefficient generation from file formatting.
 - Coefficient generation functions return data structures
@@ -38,7 +38,7 @@ INT64_MAX = np.int64(np.iinfo(np.int64).max)
 class FilterSpec:
     """Specification for a single filter variant."""
     num_taps: int
-    cutoff_khz: float
+    passband_khz: float
     transition_khz: float
     min_attenuation: float
 
@@ -60,29 +60,37 @@ FIRST_STAGE_CONFIG = {
     'use_low_ripple': False  # Set True for multi-null design
 }
 
-# Second stage: 384 kHz -> 96 kHz (decimation by 4)
-# Generate filters for different microphone types with different cutoff frequencies
-# Type I filters: odd number of taps, non-zero at Nyquist, output all coefficients
-# Stop band is cutoff + transition width
+# Second stage: 384 kHz -> 192 kHz (decimation by 2)
+# Generate a Type 1 FIR low pass filter designed to address these issues:
+# 1) avoid signal aliasing prior to a 2:1 downsample to 192 kHz
+# 2) maximize flatness of the frequency response at or below 48 kHz,
+#    the Nyquist frequency of the third stage output.
 
 second_stage_taps = 47
-min_atten = -30.0
+min_atten = -60.0
 
+# Stop band is passband_khz + transition_khz
 SECOND_STAGE_FILTERS = [
-    FilterSpec(num_taps=second_stage_taps, cutoff_khz=48.0, transition_khz = 96.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=second_stage_taps, passband_khz=48.0, transition_khz = 96.0, min_attenuation = min_atten),
 ]
 
-# Third stage: 48 kHz -> 12 kHz (decimation by 4)
-# Windowed FIR filters
+# Third stage: 192 kHz -> 96 kHz (decimation by 2)
+# Generate a Type 1 FIR low pass filter designed to address these issues:
+# 1) avoid signal aliasing prior to a 2:1 downsample to 96 kHz
+# 2) avoid non-linearity in the microphone response, especially
+#    with the Vesper VM3000, which has a resonance at ~12.5 kHz
+# Generate filters for different microphone types with different cutoff frequencies
 
 third_stage_taps = 47
+min_atten = -50.0
 
+# Stop band is passband_khz + transition_khz
 THIRD_STAGE_FILTERS = [
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=40.0, transition_khz = 8.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=24.0, transition_khz = 12.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=16.0, transition_khz = 12.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=12.0, transition_khz = 12.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz= 8.0, transition_khz = 8.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, passband_khz=40.0, transition_khz =  8.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, passband_khz=24.0, transition_khz = 12.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, passband_khz=16.0, transition_khz = 12.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, passband_khz=12.0, transition_khz = 12.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, passband_khz= 8.0, transition_khz =  8.0, min_attenuation = min_atten),
 ]
 
 # ============================================================================
@@ -266,22 +274,20 @@ def generate_first_stage_coefficients():
 
 def generate_filter_coefficients(stage_sample_rate: float, filterSpec : FilterSpec):
     """
-    Generate second/third stage Type I filter for given cutoff frequency.
-
-    Second stage decimates 384 kHz to 96 kHz (4:1 decimation).
-    Type I: 31 taps (odd), non-zero at Nyquist.
+    Generate second/third stage Type I filter for given filter specification
 
     Args:
-        cutoff_khz: Cutoff frequency in kHz
+        stage_sample_rate: input sample rate in kHz
+        filterSpec: filter specification
 
     Returns:
         dict with keys:
-            'coefs': Filter coefficients (all 31 taps)
+            'coefs': Filter coefficients (all taps, zero-padded if num coefs is odd)
             'name': Filter name (e.g., '36kHz')
     """
 
     # Normalize frequencies
-    passband = filterSpec.cutoff_khz / stage_sample_rate
+    passband = filterSpec.passband_khz / stage_sample_rate
     transition_width = filterSpec.transition_khz / stage_sample_rate
 
     stopband = passband + transition_width
@@ -296,22 +302,21 @@ def generate_filter_coefficients(stage_sample_rate: float, filterSpec : FilterSp
     [stop_band_atten, _, _] = measure_stopband_and_ripple(bands, a, H)
 
     if stop_band_atten > filterSpec.min_attenuation:
-        print(f"  Warning: stop band attenuation {stop_band_atten} for {filterSpec.cutoff_khz} is less than target {filterSpec.min_attenuation}")
+        print(f"  Warning: stop band attenuation {stop_band_atten} for {filterSpec.passband_khz} is less than target {filterSpec.min_attenuation}")
 
     coefs = h
     # Check if filter generation succeeded
     if coefs is None:
-        raise ValueError(f"Failed to generate {filterSpec.num_taps}-tap filter for {filterSpec.cutoff_khz} kHz cutoff. "
+        raise ValueError(f"Failed to generate {filterSpec.num_taps}-tap filter for {filterSpec.passband_khz} kHz cutoff. "
                         f"Try adjusting transition width, number of taps, or cutoff frequency.")
 
     # Normalize to prevent overflow
     coefs /= sum(abs(coefs))
 
     # Squish near-zero values (numerical noise from Remez) to exactly zero
-    # This makes the half-band structure visible in the generated files
     coefs[np.abs(coefs) < 1.0e-8] = 0.0
 
-    name = f"{int(round(filterSpec.cutoff_khz))}kHz"
+    name = f"{int(round(filterSpec.passband_khz))}kHz"
 
     return {
         'coefs': coefs,
@@ -359,7 +364,7 @@ def write_stage(stagename, header, body, coef_data):
     """Write [stagename] stage Type I filter coefficients to files."""
     coefs = coef_data['coefs']
     name = coef_data['name']
-    # actual number of taps e.g. "31"
+    # actual number of taps e.g. "47"
     num_taps = len(coefs)
 
     # Type I filters: Output all coefficients plus padding zero for alignment
@@ -441,14 +446,14 @@ def main():
     # Generate and write second stage filters
     print("\nGenerating second stage filters...")
     for filter_spec in SECOND_STAGE_FILTERS:
-        print(f"  {filter_spec.cutoff_khz} kHz cutoff")
+        print(f"  {filter_spec.passband_khz} kHz cutoff")
         second_stage_data = generate_filter_coefficients(PDM_SAMPLE_RATE_KHZ / 8.0, filter_spec)
         write_stage("second_to_third", header, body, second_stage_data)
 
     # Generate and write third stage filters
     print("\nGenerating third stage filters...")
     for filter_spec in THIRD_STAGE_FILTERS:
-        print(f"  {filter_spec.cutoff_khz} kHz cutoff")
+        print(f"  {filter_spec.passband_khz} kHz cutoff")
         third_stage_data = generate_filter_coefficients(PDM_SAMPLE_RATE_KHZ / (8.0 * 2.0), filter_spec)
         write_stage("third_to_output", header, body, third_stage_data)
 
