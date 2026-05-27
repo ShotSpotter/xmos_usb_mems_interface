@@ -74,7 +74,7 @@ min_atten = -60.0
 
 # Stop band is passband_khz + transition_khz
 SECOND_STAGE_FILTERS = [
-    FilterSpec(num_taps=second_stage_taps, passband_khz=48.0, transition_khz = 96.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=second_stage_taps, passband_khz=48.0, transition_khz = 48.0, min_attenuation = min_atten),
 ]
 
 # Third stage: 192 kHz -> 96 kHz (decimation by 2)
@@ -332,7 +332,7 @@ def generate_filter_coefficients(stage_sample_rate: float, filterSpec : FilterSp
 # PLOTTING FUNCTIONS
 # ============================================================================
 
-def plot_stage_filters(stagename, sample_rate_khz, filter_data_list, spec_list):
+def plot_stage_filters(stagename, sample_rate_khz, filter_data_list, spec_list, show_title=False):
     """
     Plot frequency responses for all filters in a stage and save to PDF.
 
@@ -342,50 +342,66 @@ def plot_stage_filters(stagename, sample_rate_khz, filter_data_list, spec_list):
         filter_data_list: List of dicts from generate_filter_coefficients
         spec_list: List of FilterSpec objects corresponding to filter_data_list
     """
-    fig, ax = plt.subplots(figsize=(12, 6))
+    # IEEE page-wide figure (7.16 in) with golden-ratio height
+    PHI = (1.0 + np.sqrt(5.0)) / 2.0
+    fig_width = 7.16          # inches — IEEE page width
+    fig_height = fig_width / PHI
+
+    FONT_SIZE_LABEL  = 10
+    FONT_SIZE_TICK   =  9
+    FONT_SIZE_LEGEND =  9
+    FONT_SIZE_TITLE  = 10
+    LINE_WIDTH_DATA  = 1.5
+    LINE_WIDTH_EDGE  = 1.0
+    LINE_WIDTH_NYQUIST = 1.5
+
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
     colors = [plt.cm.tab10(i) for i in range(len(filter_data_list))]
     worN = 8192
 
     for i, (fdata, spec) in enumerate(zip(filter_data_list, spec_list)):
         coefs = fdata['coefs']
-        name = fdata['name']
+        name = f"{fdata['name']} passband"
         color = colors[i]
 
         _, H = signal.freqz(coefs, worN=worN)
         freqs_khz = np.linspace(0, sample_rate_khz / 2.0, worN)
         mag_db = 20.0 * np.log10(np.maximum(np.abs(H), 1e-12))
 
-        ax.plot(freqs_khz, mag_db, color=color, label=name)
+        ax.plot(freqs_khz, mag_db, color=color, label=name, linewidth=LINE_WIDTH_DATA)
 
         stopband_khz = spec.passband_khz + spec.transition_khz
-        ax.axvline(spec.passband_khz, color=color, linestyle='--', linewidth=0.8, alpha=0.7)
-        ax.axvline(stopband_khz,      color=color, linestyle=':',  linewidth=0.8, alpha=0.7)
+        ax.axvline(spec.passband_khz, color=color, linestyle='--', linewidth=LINE_WIDTH_EDGE, alpha=0.7)
+        ax.axvline(stopband_khz,      color=color, linestyle=':',  linewidth=LINE_WIDTH_EDGE, alpha=0.7)
 
-    # Mark the output Nyquist: after 2:1 decimation, Nyquist = input_rate / 2
-    output_nyquist_khz = sample_rate_khz / 2.0
-    ax.axvline(output_nyquist_khz, color='red', linewidth=1.5, linestyle='-',
-               label=f'Output Nyquist ({output_nyquist_khz:.0f} kHz)')
 
-    ax.set_xlabel('Frequency (kHz)')
-    ax.set_ylabel('Magnitude (dB)')
-    ax.set_title(
-        f'{stagename} — Frequency Response\n'
-        f'Input: {sample_rate_khz:.0f} kHz  |  '
-        f'Dashed: passband edge  |  Dotted: stopband edge'
-    )
-    ax.set_xlim(0, sample_rate_khz / 2.0)
-    ax.set_ylim(-80, 5)
-    ax.xaxis.set_major_locator(plt.MultipleLocator(24))
-    ax.legend(loc='lower left')
+    ax.set_xlabel('Frequency (kHz)', fontsize=FONT_SIZE_LABEL)
+    ax.set_ylabel('Magnitude (dB)', fontsize=FONT_SIZE_LABEL)
+    ax.tick_params(axis='both', labelsize=FONT_SIZE_TICK)
+    if show_title:
+        ax.set_title(
+            f'{stagename} — Frequency Response\n'
+            f'Input: {sample_rate_khz:.0f} kHz  |  '
+            f'Dashed: passband edge  |  Dotted: stopband edge',
+            fontsize=FONT_SIZE_TITLE
+        )
+    ax.set_xlim(0, 0.3125 * sample_rate_khz)
+    ax.set_ylim(-70, 5)
+    if sample_rate_khz > 300:
+        ax.xaxis.set_major_locator(plt.MultipleLocator(12.0))
+    else:
+        ax.xaxis.set_major_locator(plt.MultipleLocator(4.0))
+    ax.legend(loc='lower left', fontsize=FONT_SIZE_LEGEND)
     ax.grid(True, alpha=0.3)
+    fig.tight_layout()
 
     filename = f'filter_response_{stagename}.pdf'
     try:
-        fig.savefig(filename, bbox_inches='tight')
+        fig.savefig(filename, bbox_inches='tight', dpi=300)
         print(f"  Saved plot: {filename}")
     except Exception:
         filename = f'filter_response_{stagename}.png'
-        fig.savefig(filename, bbox_inches='tight', dpi=150)
+        fig.savefig(filename, bbox_inches='tight', dpi=300)
         print(f"  Saved plot: {filename}")
     plt.close(fig)
 
