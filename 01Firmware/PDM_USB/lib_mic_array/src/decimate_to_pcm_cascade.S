@@ -621,6 +621,7 @@ confirm_init_complete:
 // set r9 with setting offset and never change it
 
 fir_loop_type1:
+// BEGIN_GENERATED_LOOP -- do not edit below; regenerate with generate_filter_loop.py
 
     INPUT_TO_SECOND_STAGE(47)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -637,11 +638,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(46)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[46 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(47)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[46 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(47)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(45)
@@ -651,13 +652,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[44 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(46)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[44 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(46)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(43)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -674,11 +674,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(42)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[42 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(45)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[42 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(45)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(41)
@@ -688,13 +688,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[40 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(44)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[40 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(44)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(39)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -711,11 +710,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(38)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[38 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(43)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[38 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(43)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(37)
@@ -725,13 +724,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[36 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(42)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[36 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(42)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(35)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -748,11 +746,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(34)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[34 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(41)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[34 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(41)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(33)
@@ -762,13 +760,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[32 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(40)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[32 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(40)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(31)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -785,11 +782,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(30)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[30 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(39)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[30 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(39)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(29)
@@ -799,13 +796,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[28 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(38)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[28 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(38)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(27)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -822,11 +818,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(26)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[26 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(37)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[26 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(37)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(25)
@@ -836,13 +832,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[24 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(36)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[24 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(36)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(23)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -859,11 +854,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(22)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[22 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(35)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[22 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(35)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(21)
@@ -873,13 +868,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[20 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(34)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[20 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(34)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(19)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -896,11 +890,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(18)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[18 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(33)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[18 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(33)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(17)
@@ -910,13 +904,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[16 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(32)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[16 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(32)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(15)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -933,11 +926,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(14)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[14 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(31)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[14 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(31)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(13)
@@ -947,13 +940,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[12 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(30)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[12 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(30)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(11)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -970,11 +962,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(10)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[10 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(29)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[10 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(29)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(9)
@@ -984,13 +976,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[8 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(28)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[8 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(28)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(7)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -1007,11 +998,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(6)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[6 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(27)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[6 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(27)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(5)
@@ -1021,13 +1012,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[4 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(26)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[4 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(26)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(3)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -1044,11 +1034,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(2)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[2 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(25)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[2 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(25)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(1)
@@ -1058,13 +1048,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[0 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(24)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[0 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(24)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(47)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -1081,11 +1070,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(46)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[46 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(23)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[46 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(23)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(45)
@@ -1095,13 +1084,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[44 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(22)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[44 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(22)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(43)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -1118,11 +1106,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(42)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[42 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(21)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[42 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(21)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(41)
@@ -1132,13 +1120,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[40 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(20)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[40 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(20)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(39)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -1155,11 +1142,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(38)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[38 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(19)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[38 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(19)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(37)
@@ -1169,13 +1156,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[36 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(18)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[36 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(18)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(35)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -1192,11 +1178,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(34)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[34 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(17)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[34 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(17)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(33)
@@ -1206,13 +1192,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[32 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(16)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[32 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(16)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(31)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -1229,11 +1214,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(30)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[30 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(15)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[30 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(15)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(29)
@@ -1243,13 +1228,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[28 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(14)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[28 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(14)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(27)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -1266,11 +1250,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(26)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[26 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(13)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[26 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(13)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(25)
@@ -1280,13 +1264,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[24 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(12)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[24 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(12)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(23)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -1303,11 +1286,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(22)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[22 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(11)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[22 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(11)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(21)
@@ -1317,13 +1300,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[20 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(10)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[20 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(10)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(19)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -1340,11 +1322,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(18)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[18 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(9)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[18 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(9)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(17)
@@ -1354,13 +1336,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[16 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(8)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[16 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(8)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(15)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -1377,11 +1358,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(14)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[14 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(7)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[14 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(7)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(13)
@@ -1391,13 +1372,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[12 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(6)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[12 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(6)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(11)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -1414,11 +1394,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(10)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[10 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(5)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[10 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(5)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(9)
@@ -1428,13 +1408,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[8 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(4)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[8 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(4)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(7)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -1451,11 +1430,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(6)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[6 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(3)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[6 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(3)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(5)
@@ -1465,13 +1444,12 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[4 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(2)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[4 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(2)             // output channel 0
-
 
     INPUT_TO_SECOND_STAGE(3)                     // input data
     ldaw r9, sp[S_SETTINGS_OFFSET];               // set settings pointer
@@ -1488,11 +1466,11 @@ fir_loop_type1:
     INPUT_TO_SECOND_STAGE(2)                      // input data
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];         // second stage coefficients
     ldaw r7, dp[2 + DP_STAGE_2_CH0];              // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(1)            // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR]          // second stage coefficients
     ldaw r7, dp[2 + DP_STAGE_2_CH1];               // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)   // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(1)            // output channel 0
 
     INPUT_TO_SECOND_STAGE(1)
@@ -1502,14 +1480,13 @@ fir_loop_type1:
     ldaw r9, sp[S_SETTINGS_OFFSET];                 // set settings pointer
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[0 + DP_STAGE_2_CH0];               // second stage data, channel 0
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 0
     SECOND_STAGE_TO_THIRD_STAGE_CH0(0)             // output channel 0
     ldw r6, r9[S_SECOND_STAGE_FILTER_PTR];          // second stage coefficients
     ldaw r7, dp[0 + DP_STAGE_2_CH1];                // second stage data, channel 1
-    FILTER_HALFBAND(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
+    FILTER_GENERIC(SECOND_STAGE_MIDPOINT_BYTES)    // filter channel 1
     SECOND_STAGE_TO_THIRD_STAGE_CH1(0)             // output channel 0
-
-
+// END_GENERATED_LOOP
     bu fir_loop_type1
 
     .cc_bottom decimate_to_pcm_cascade.function

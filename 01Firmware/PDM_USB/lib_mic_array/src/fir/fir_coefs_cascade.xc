@@ -1,28 +1,28 @@
 // Copyright (c) 2026, XMOS Ltd, All rights reserved
 // Copyright (c) 2026, SoundThinking Inc.
-const float g_second_to_third_fir47_48kHz_gain = 0.674796756980065;
+const float g_second_to_third_fir47_48kHz_gain = 0.6040334856701624;
 
 const int g_second_to_third_fir47_48kHz_gain_scaling_factor = 1;
 
 const int g_second_to_third_fir47_48kHz[48] = {
-    0xfffffdce, 0x00000000, 0x00001ca9, 0x00000000, 0xffff3c5d, 0x00000000, 0x00039b9f, 0x00000000,
-    0xfff2d0f4, 0x00000000, 0x0027a9b1, 0x00000000, 0xff99ab61, 0x00000000, 0x00e9d536, 0x00000000,
-    0xfe173c2b, 0x00000000, 0x03d175bc, 0x00000000, 0xf7f4fcba, 0x00000000, 0x1b19530f, 0x2b2fdebb,
-    0x1b19530f, 0x00000000, 0xf7f4fcba, 0x00000000, 0x03d175bc, 0x00000000, 0xfe173c2b, 0x00000000,
-    0x00e9d536, 0x00000000, 0xff99ab61, 0x00000000, 0x0027a9b1, 0x00000000, 0xfff2d0f4, 0x00000000,
-    0x00039b9f, 0x00000000, 0xffff3c5d, 0x00000000, 0x00001ca9, 0x00000000, 0xfffffdce, 0x00000000,
+    0x00010001, 0x000197d2, 0xfffe2797, 0xfff7ff27, 0xfffb204d, 0x000efbf8, 0x001d1dfc, 0xffff7fa0,
+    0xffc28cbe, 0xffbf4d94, 0x0030fb5d, 0x00a8a885, 0x00541a31, 0xff315c99, 0xfea519d2, 0x0001c962,
+    0x023ea687, 0x0234b948, 0xfe6e137c, 0xfa8a5319, 0xfd12c011, 0x087412c6, 0x1690aff3, 0x1cfbc47b,
+    0x1690aff3, 0x087412c6, 0xfd12c011, 0xfa8a5319, 0xfe6e137c, 0x0234b948, 0x023ea687, 0x0001c962,
+    0xfea519d2, 0xff315c99, 0x00541a31, 0x00a8a885, 0x0030fb5d, 0xffbf4d94, 0xffc28cbe, 0xffff7fa0,
+    0x001d1dfc, 0x000efbf8, 0xfffb204d, 0xfff7ff27, 0xfffe2797, 0x000197d2, 0x00010001, 0x00000000,
     };
 
 const int g_second_to_third_fir47_48kHz_debug[48] = {
-          -562,          0,       7337,          0,     -50083,          0,     236447,          0,
-       -864012,          0,    2599345,          0,   -6706335,          0,   15324470,          0,
-     -32031701,          0,   64058812,          0, -134939462,          0,  454644495,  724557499,
-     454644495,          0, -134939462,          0,   64058812,          0,  -32031701,          0,
-      15324470,          0,   -6706335,          0,    2599345,          0,    -864012,          0,
-        236447,          0,     -50083,          0,       7337,          0,       -562,          0,
+         65537,     104402,    -120937,    -524505,    -319411,     982008,    1908220,     -32864,
+      -4027202,   -4239980,    3210077,   11053189,    5511729,  -13542247,  -22734382,     117090,
+      37660295,   37009736,  -26340484,  -91598055,  -49102831,  141824710,  378580979,  486261883,
+     378580979,  141824710,  -49102831,  -91598055,  -26340484,   37009736,   37660295,     117090,
+     -22734382,  -13542247,    5511729,   11053189,    3210077,   -4239980,   -4027202,     -32864,
+       1908220,     982008,    -319411,    -524505,    -120937,     104402,      65537,          0,
     };
 
-const float g_third_to_output_fir47_40kHz_gain = 0.5137208404183797;
+const float g_third_to_output_fir47_40kHz_gain = 0.51372084041838;
 
 const int g_third_to_output_fir47_40kHz_gain_scaling_factor = 1;
 
@@ -44,7 +44,7 @@ const int g_third_to_output_fir47_40kHz_debug[48] = {
       -7195587,    7302020,    5566864,   -2521349,   -6445709,    2437262,    7152758,          0,
     };
 
-const float g_third_to_output_fir47_24kHz_gain = 0.5861794188371074;
+const float g_third_to_output_fir47_24kHz_gain = 0.5861794188371066;
 
 const int g_third_to_output_fir47_24kHz_gain_scaling_factor = 1;
 
@@ -66,7 +66,7 @@ const int g_third_to_output_fir47_24kHz_debug[48] = {
       -6262223,   -5440306,    -750937,    2771747,    2941920,    1234014,   -1298314,          0,
     };
 
-const float g_third_to_output_fir47_16kHz_gain = 0.6322645959564356;
+const float g_third_to_output_fir47_16kHz_gain = 0.6322645959564361;
 
 const int g_third_to_output_fir47_16kHz_gain_scaling_factor = 1;
 
@@ -88,7 +88,7 @@ const int g_third_to_output_fir47_16kHz_debug[48] = {
       -2259900,    2762684,    4743519,    3885225,    1734178,     -62303,   -1925426,          0,
     };
 
-const float g_third_to_output_fir47_12kHz_gain = 0.6641763834479035;
+const float g_third_to_output_fir47_12kHz_gain = 0.6641763834479025;
 
 const int g_third_to_output_fir47_12kHz_gain_scaling_factor = 1;
 
@@ -110,7 +110,7 @@ const int g_third_to_output_fir47_12kHz_debug[48] = {
       -5101850,   -6464576,   -5256369,   -2835634,    -540749,     801730,    2280298,          0,
     };
 
-const float g_third_to_output_fir47_8kHz_gain = 0.7107172953105094;
+const float g_third_to_output_fir47_8kHz_gain = 0.710717295310509;
 
 const int g_third_to_output_fir47_8kHz_gain_scaling_factor = 1;
 
