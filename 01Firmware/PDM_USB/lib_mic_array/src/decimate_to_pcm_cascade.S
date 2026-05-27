@@ -314,7 +314,7 @@
     FIR_POINT_PAIR(4, 4); \
     FIR_POINT_PAIR(5, 5); \
     FIR_POINT_PAIR(6, 6); \
-    FIR_POINT_PAIR(7, 7);
+    FIR_POINT_PAIR(7, 7); \
     FIR_POINT_PAIR(8, 8); \
     FIR_POINT_PAIR(9, 9); \
     FIR_POINT_PAIR(10, 10); \
