@@ -22,6 +22,9 @@ import ctypes
 import numpy as np
 from scipy import signal
 from dataclasses import dataclass
+import matplotlib
+matplotlib.use('Agg')  # Non-interactive backend; renders to file without requiring a display
+import matplotlib.pyplot as plt
 
 # ============================================================================
 # CONSTANTS
@@ -326,6 +329,68 @@ def generate_filter_coefficients(stage_sample_rate: float, filterSpec : FilterSp
 
 
 # ============================================================================
+# PLOTTING FUNCTIONS
+# ============================================================================
+
+def plot_stage_filters(stagename, sample_rate_khz, filter_data_list, spec_list):
+    """
+    Plot frequency responses for all filters in a stage and save to PDF.
+
+    Args:
+        stagename: Name of the stage (e.g., 'second_to_third')
+        sample_rate_khz: Input sample rate in kHz
+        filter_data_list: List of dicts from generate_filter_coefficients
+        spec_list: List of FilterSpec objects corresponding to filter_data_list
+    """
+    fig, ax = plt.subplots(figsize=(12, 6))
+    colors = [plt.cm.tab10(i) for i in range(len(filter_data_list))]
+    worN = 8192
+
+    for i, (fdata, spec) in enumerate(zip(filter_data_list, spec_list)):
+        coefs = fdata['coefs']
+        name = fdata['name']
+        color = colors[i]
+
+        _, H = signal.freqz(coefs, worN=worN)
+        freqs_khz = np.linspace(0, sample_rate_khz / 2.0, worN)
+        mag_db = 20.0 * np.log10(np.maximum(np.abs(H), 1e-12))
+
+        ax.plot(freqs_khz, mag_db, color=color, label=name)
+
+        stopband_khz = spec.passband_khz + spec.transition_khz
+        ax.axvline(spec.passband_khz, color=color, linestyle='--', linewidth=0.8, alpha=0.7)
+        ax.axvline(stopband_khz,      color=color, linestyle=':',  linewidth=0.8, alpha=0.7)
+
+    # Mark the output Nyquist: after 2:1 decimation, Nyquist = input_rate / 2
+    output_nyquist_khz = sample_rate_khz / 2.0
+    ax.axvline(output_nyquist_khz, color='red', linewidth=1.5, linestyle='-',
+               label=f'Output Nyquist ({output_nyquist_khz:.0f} kHz)')
+
+    ax.set_xlabel('Frequency (kHz)')
+    ax.set_ylabel('Magnitude (dB)')
+    ax.set_title(
+        f'{stagename} — Frequency Response\n'
+        f'Input: {sample_rate_khz:.0f} kHz  |  '
+        f'Dashed: passband edge  |  Dotted: stopband edge'
+    )
+    ax.set_xlim(0, sample_rate_khz / 2.0)
+    ax.set_ylim(-80, 5)
+    ax.xaxis.set_major_locator(plt.MultipleLocator(24))
+    ax.legend(loc='lower left')
+    ax.grid(True, alpha=0.3)
+
+    filename = f'filter_response_{stagename}.pdf'
+    try:
+        fig.savefig(filename, bbox_inches='tight')
+        print(f"  Saved plot: {filename}")
+    except Exception:
+        filename = f'filter_response_{stagename}.png'
+        fig.savefig(filename, bbox_inches='tight', dpi=150)
+        print(f"  Saved plot: {filename}")
+    plt.close(fig)
+
+
+# ============================================================================
 # FILE WRITING FUNCTIONS
 # ============================================================================
 
@@ -445,17 +510,25 @@ def main():
 
     # Generate and write second stage filters
     print("\nGenerating second stage filters...")
+    second_stage_results = []
+    second_stage_rate = PDM_SAMPLE_RATE_KHZ / 8.0
     for filter_spec in SECOND_STAGE_FILTERS:
-        print(f"  {filter_spec.passband_khz} kHz cutoff")
-        second_stage_data = generate_filter_coefficients(PDM_SAMPLE_RATE_KHZ / 8.0, filter_spec)
+        print(f"  {filter_spec.passband_khz} kHz passband")
+        second_stage_data = generate_filter_coefficients(second_stage_rate, filter_spec)
+        second_stage_results.append(second_stage_data)
         write_stage("second_to_third", header, body, second_stage_data)
+    plot_stage_filters("second_to_third", second_stage_rate, second_stage_results, SECOND_STAGE_FILTERS)
 
     # Generate and write third stage filters
     print("\nGenerating third stage filters...")
+    third_stage_results = []
+    third_stage_rate = PDM_SAMPLE_RATE_KHZ / (8.0 * 2.0)
     for filter_spec in THIRD_STAGE_FILTERS:
-        print(f"  {filter_spec.passband_khz} kHz cutoff")
-        third_stage_data = generate_filter_coefficients(PDM_SAMPLE_RATE_KHZ / (8.0 * 2.0), filter_spec)
+        print(f"  {filter_spec.passband_khz} kHz passband")
+        third_stage_data = generate_filter_coefficients(third_stage_rate, filter_spec)
+        third_stage_results.append(third_stage_data)
         write_stage("third_to_output", header, body, third_stage_data)
+    plot_stage_filters("third_to_output", third_stage_rate, third_stage_results, THIRD_STAGE_FILTERS)
 
     if print_first_stage:
         # Write third stage define at the end
