@@ -85,7 +85,7 @@ SECOND_STAGE_FILTERS = [
 # Generate filters for different microphone types with different cutoff frequencies
 
 third_stage_taps = 47
-min_atten = -50.0
+min_atten = -40.0
 
 # Stop band is passband_khz + transition_khz
 THIRD_STAGE_FILTERS = [
@@ -93,6 +93,7 @@ THIRD_STAGE_FILTERS = [
     FilterSpec(num_taps=third_stage_taps, passband_khz=24.0, transition_khz = 12.0, min_attenuation = min_atten),
     FilterSpec(num_taps=third_stage_taps, passband_khz=16.0, transition_khz = 12.0, min_attenuation = min_atten),
     FilterSpec(num_taps=third_stage_taps, passband_khz=12.0, transition_khz = 12.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, passband_khz=10.0, transition_khz = 10.0, min_attenuation = min_atten),
     FilterSpec(num_taps=third_stage_taps, passband_khz= 8.0, transition_khz =  8.0, min_attenuation = min_atten),
 ]
 

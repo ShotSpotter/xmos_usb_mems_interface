@@ -522,7 +522,7 @@ config_second_stage_done:
     ldaw r11, cp[g_third_to_output_fir47_12kHz]  // default like IM72D128
     bu config_third_stage_done
 config_third_stage_0x0F:
-    ldaw r11, cp[g_third_to_output_fir47_12kHz]   // VM3000
+    ldaw r11, cp[g_third_to_output_fir47_10kHz]   // VM3000
     bu config_third_stage_done
 config_third_stage_0x0E:
     ldaw r11, cp[g_third_to_output_fir47_12kHz]  // IM72D128
