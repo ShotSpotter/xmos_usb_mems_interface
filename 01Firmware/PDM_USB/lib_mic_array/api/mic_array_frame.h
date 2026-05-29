@@ -1,10 +1,27 @@
-// Copyright (c) 2015-2017, XMOS Ltd, All rights reserved
+// Copyright 2015-2021 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #ifndef MIC_ARRAY_FRAME_H_
 #define MIC_ARRAY_FRAME_H_
 
 #include <stdint.h>
 #include "mic_array_conf.h"
 #include "dsp_fft.h"
+
+#ifndef MIC_DUAL_ENABLED
+    #define MIC_DUAL_ENABLED (0)
+#endif
+
+// MIC_DUAL_FRAME_SIZE has no meaning if MIC_DUAL_ENABLED is false.
+// Only define MIC_DUAL_FRAME_SIZE to a default value if MIC_DUAL_ENABLED is true.
+#ifndef MIC_DUAL_FRAME_SIZE
+    #if defined(MIC_DUAL_ENABLED) && (MIC_DUAL_ENABLED != 0)
+        #define MIC_DUAL_FRAME_SIZE (1)
+    #endif
+#endif
+
+#ifndef MIC_ARRAY_FRAME_SIZE
+    #define MIC_ARRAY_FRAME_SIZE (1)
+#endif
 
 #ifndef MIC_ARRAY_WORD_LENGTH_SHORT
     #define MIC_ARRAY_WORD_LENGTH_SHORT 0
@@ -63,7 +80,7 @@ typedef struct {
 #else
     int32_t data[MIC_ARRAY_NUM_MICS][1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2];/**< Raw audio data*/
 #endif
-    mic_array_metadata_t metadata[(MIC_ARRAY_NUM_MICS+3)/2]; /**< Frame metadata*/
+    mic_array_metadata_t metadata[(MIC_ARRAY_NUM_MICS+3)/4]; /**< Frame metadata*/
 } mic_array_frame_time_domain;
 
 /** A frame of frequency domain audio in Cartesian coordinates.*/

@@ -1,31 +1,48 @@
-// Copyright (c) 2015-2017, XMOS Ltd, All rights reserved
+// Copyright 2015-2021 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #include "mic_array.h"
 #include <xs1.h>
 #include <string.h>
-#ifdef DEBUG
-#include <stdio.h>
-#endif
 
 #define XASSERT_UNIT DEBUG_MIC_ARRAY
+
+#define DEBUG_UNIT MIC_ARRAY
+#ifndef DEBUG_PRINT_ENABLE_MIC_ARRAY
+    #define DEBUG_PRINT_ENABLE_MIC_ARRAY 0
+#endif
+#include "debug_print.h"
 
 #if DEBUG_MIC_ARRAY
 #include "xassert.h"
 #endif
 
-void mic_array_init_far_end_channels(mic_array_internal_audio_channels ch[2],
-        streaming chanend ?a, streaming chanend ?b) {
+void mic_array_init_far_end_channels(mic_array_internal_audio_channels ch[4],
+        streaming chanend ?a, streaming chanend ?b,
+        streaming chanend ?c, streaming chanend ?d) {
     unsafe {
         ch[0] = isnull(a) ? 0 : (unsigned)a;
         ch[1] = isnull(b) ? 0 : (unsigned)b;
+        ch[2] = isnull(c) ? 0 : (unsigned)c;
+        ch[3] = isnull(d) ? 0 : (unsigned)d;
     }
 }
 
-int mic_array_send_sample( streaming chanend c_to_decimator, int sample){
+int mic_array_send_sample(streaming chanend c_to_decimator, int sample){
     select {
         case c_to_decimator :> int:{
             c_to_decimator <: sample;
             return 0;
         }
+        default:
+            return 1;
+    }
+}
+
+int mic_array_recv_samples(streaming chanend c_from_decimator, int &ch_a, int &ch_b) {
+    select {
+        case c_from_decimator :> ch_a:
+            c_from_decimator :> ch_b;
+            return 0;
         default:
             return 1;
     }
@@ -55,16 +72,16 @@ void mic_array_init_time_domain_frame(
 
    memset(audio, 0, sizeof(mic_array_frame_time_domain)*frames);
 
-#ifdef DEBUG
-   printf("decimator_count: %d, frames: %d\n", decimator_count, frames);
-#endif
-
    for(unsigned i=0;i<decimator_count;i++)
         c_from_decimator[i] <: frames;
    for(unsigned f=0;f<frames;f++){
         unsafe {
             for(unsigned i=0;i<decimator_count;i++){
-               c_from_decimator[i] <: (int32_t * unsafe)(audio[f].data[i * 2]);
+#if MIC_ARRAY_WORD_LENGTH_SHORT
+                c_from_decimator[i] <: (int16_t * unsafe)(audio[f].data[i*4]);
+#else
+               c_from_decimator[i] <: (int32_t * unsafe)(audio[f].data[i*4]);
+#endif
             }
             for(unsigned i=0;i<decimator_count;i++)
                c_from_decimator[i] <: (mic_array_metadata_t * unsafe)&audio[f].metadata[i];
@@ -107,7 +124,11 @@ mic_array_frame_time_domain * alias mic_array_get_next_time_domain_frame(
 
     unsafe {
          for(unsigned i=0;i<decimator_count;i++){
-            c_from_decimator[i] <: (int32_t * unsafe)(audio[buffer].data[i * 2]);
+#if MIC_ARRAY_WORD_LENGTH_SHORT
+            c_from_decimator[i] <: (int16_t * unsafe)(audio[buffer].data[i*4]);
+#else
+            c_from_decimator[i] <: (int32_t * unsafe)(audio[buffer].data[i*4]);
+#endif
          }
          for(unsigned i=0;i<decimator_count;i++)
             c_from_decimator[i] <: (mic_array_metadata_t * unsafe)&audio[buffer].metadata[i];
@@ -165,7 +186,7 @@ void mic_array_init_frequency_domain_frame(streaming chanend c_from_decimator[],
      for(unsigned f=0;f<frames;f++){
          unsafe {
              for(unsigned i=0;i<decimator_count;i++)
-                c_from_decimator[i] <: (mic_array_complex_t * unsafe)(f_fft_preprocessed[f].data[i]);
+                c_from_decimator[i] <: (mic_array_complex_t * unsafe)(f_fft_preprocessed[f].data[i*2]);
              for(unsigned i=0;i<decimator_count;i++)
                 c_from_decimator[i] <: (mic_array_metadata_t * unsafe)&f_fft_preprocessed[f].metadata[i];
          }
@@ -191,7 +212,7 @@ mic_array_frame_fft_preprocessed * alias mic_array_get_next_frequency_domain_fra
          soutct(c_from_decimator[i], EXCHANGE_BUFFERS);
      unsafe {
          for(unsigned i=0;i<decimator_count;i++)
-            c_from_decimator[i] <: (mic_array_complex_t * unsafe)(f_fft_preprocessed[buffer].data[i]);
+            c_from_decimator[i] <: (mic_array_complex_t * unsafe)(f_fft_preprocessed[buffer].data[i*2]);
          for(unsigned i=0;i<decimator_count;i++)
             c_from_decimator[i] <: (mic_array_metadata_t * unsafe)&f_fft_preprocessed[buffer].metadata[i];
      }

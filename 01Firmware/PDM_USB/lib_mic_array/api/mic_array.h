@@ -1,11 +1,12 @@
-// Copyright (c) 2015-2016, XMOS Ltd, All rights reserved
+// Copyright 2015-2021 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
+#if __XC__
 #ifndef MIC_ARRAY_H_
 #define MIC_ARRAY_H_
 
 #include <stdint.h>
 #include <limits.h>
 #include "fir_coefs.h"
-#include "fir_coefs_cascade.h"
 #include "mic_array_frame.h"
 
 #ifndef MIC_ARRAY_HIRES_MAX_DELAY
@@ -30,9 +31,13 @@
 void mic_array_pdm_rx(
         in buffered port:32 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
-        streaming chanend ?c_4x_pdm_mic_1,
-        streaming chanend ?c_4x_pdm_mic_2,
-        streaming chanend ?c_4x_pdm_mic_3);
+        streaming chanend ?c_4x_pdm_mic_1);
+
+void mic_dual_pdm_rx_decimate(
+        in buffered port:32 p_pdm_mics,
+        streaming chanend c_2x_pdm_mic,
+        streaming chanend c_ref_audio[]);
+
 
 /** High resolution delay component.
  *
@@ -81,7 +86,8 @@ typedef enum {
  */
 typedef struct {
 
-    unsigned frame_size_log2; /**< The output frame size log2, i.e. A frame will contain 2 to the power of frame_size_log2 samples of each channel. */
+    unsigned len; /**< If len is less than 16 then this sets the frame size to 2 to the power of len, i.e. A frame will contain 2 to the power of len samples of each channel.
+                                   If len is 16 or greater then the frame size is equal to len. */
 
     int apply_dc_offset_removal; /**< Remove the DC offset from the audio before the final decimation. Set to non-zero to enable. */
 
@@ -117,6 +123,11 @@ typedef struct {
 
     unsigned channel_count; /**< The count of enabled channels (0->4).  */
 
+
+    unsigned async_interface_enabled; /** If set to 1, this disables the mic_array_get_next_time_domain_frame interface
+                                        and enables the mic_array_recv_sample interface. **/
+
+
 } mic_array_decimator_config_t;
 
 typedef unsigned mic_array_internal_audio_channels;
@@ -135,17 +146,10 @@ typedef unsigned mic_array_internal_audio_channels;
  *                                   the client of this task and this task.
  *  \param channels                  A pointer to an array of mic_array_internal_audio_channels. This can be set to
  *                                   MIC_ARRAY_NO_INTERNAL_CHANS if none are requires.
- *  \param boardrev                  Board revision value (0x00-0xFF) passed to the assembly code.
  */
-void mic_array_decimate_to_pcm_2ch(
+void mic_array_decimate_to_pcm_4ch(
         streaming chanend c_from_pdm_interface,
-        streaming chanend c_frame_output, mic_array_internal_audio_channels * channels, unsigned boardrev);
-
-void decimate_to_pcm_cascade(
-        streaming chanend c_from_pdm_interface,
-        streaming chanend c_frame_output, mic_array_internal_audio_channels * channels, unsigned boardrev);
-
-
+        streaming chanend c_frame_output, mic_array_internal_audio_channels * channels);
 
 /** Far end channel connector.
  *
@@ -164,8 +168,9 @@ void decimate_to_pcm_cascade(
  *  \param ch3                       The channel used to send internal audio to mic_array
  *                                   channel 3.
  */
-void mic_array_init_far_end_channels(mic_array_internal_audio_channels internal_channels[2],
-        streaming chanend ?ch0, streaming chanend ?ch1);
+void mic_array_init_far_end_channels(mic_array_internal_audio_channels internal_channels[4],
+        streaming chanend ?ch0, streaming chanend ?ch1,
+        streaming chanend ?ch2, streaming chanend ?ch3);
 
 /** This sends an audio sample to a decimator.
  *
@@ -181,6 +186,23 @@ void mic_array_init_far_end_channels(mic_array_internal_audio_channels internal_
  *
  */
 int mic_array_send_sample( streaming chanend c_to_decimator, int sample);
+
+/** This receives a pair of audio samples from a decimator. async_interface_enabled
+ * must be set in the decimator config for this function to work as intended.
+ *
+ * If this function isn't called at least at the rate at which the decimator is outputting samples
+ * it will cause timing related errors.
+ *
+ *  \param c_from_decimator  The channel used to transfer audio sample between
+ *                           the decimator and the application.
+ *  \param ch_a              The first audio sample to be received.
+ *  \param ch_b              The second audio sample to be received.
+ *  \returns                 0 for success and 1 for failure. Failure may occur when the decimators
+ *                           are not yet running or when a new sample isn't ready.
+ *
+ */
+int mic_array_recv_samples(streaming chanend c_from_decimator, int &ch_a, int &ch_b);
+
 
 /** Four Channel Decimation initializer for raw audio frames.
  *
@@ -294,3 +316,4 @@ void mic_array_decimator_configure(
         mic_array_decimator_config_t dc[]);
 
 #endif /* MIC_ARRAY_H_ */
+#endif

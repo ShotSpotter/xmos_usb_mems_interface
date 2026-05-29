@@ -17,7 +17,7 @@
 #include "mic_array.h"
 #include "boardrev.h"
 
-#define MAX_DECIMATION_FACTOR 12
+#define MAX_DECIMATION_FACTOR 6
 
 // Defines for mic_array_decimator_conf_common_t
 #define DC_OFFSET_REMOVAL 		1
@@ -78,8 +78,6 @@ void pdm_process(streaming chanend c_ds_output[MIC_ARRAY_DECIMATORS], chanend c_
             mic_array_decimator_config_t dc[MIC_ARRAY_DECIMATORS] = {
                                                                 {&dcc, 0, {0, 0, 0, 0}, MIC_ARRAY_CHANS_PER_DECIMATOR}
                                                                ,{&dcc, 0, {0, 0, 0, 0}, MIC_ARRAY_CHANS_PER_DECIMATOR}
-                                                               ,{&dcc, 0, {0, 0, 0, 0}, MIC_ARRAY_CHANS_PER_DECIMATOR}
-                                                               ,{&dcc, 0, {0, 0, 0, 0}, MIC_ARRAY_CHANS_PER_DECIMATOR}
                                                                };
 
             mic_array_decimator_configure(c_ds_output, MIC_ARRAY_DECIMATORS, dc);
@@ -116,8 +114,8 @@ void pdm_process(streaming chanend c_ds_output[MIC_ARRAY_DECIMATORS], chanend c_
     }
 }
 
-#if MAX_FREQ > 96000
-#error MAX_FREQ > 96000 NOT CURRENTLY SUPPORTED
+#if MAX_FREQ > 48000
+#error MAX_FREQ > 48000 NOT SUPPORTED WITH LEGACY LIBRARY
 #endif
 
 void pcm_pdm_mic(chanend c_pcm_out, chanend c_boardrev_pcm)
@@ -128,8 +126,7 @@ void pcm_pdm_mic(chanend c_pcm_out, chanend c_boardrev_pcm)
     /* Initialize digital gain based on board revision */
     user_pdm_init(boardrev);
 
-    streaming chan c_pdm_mic_0_to_1, c_pdm_mic_2_to_3;
-    streaming chan c_pdm_mic_4_to_5, c_pdm_mic_6_to_7;
+    streaming chan c_pdm_mic_0_to_3, c_pdm_mic_4_to_7;
     streaming chan c_ds_output[MIC_ARRAY_DECIMATORS];
 
     /* Note, this divide should be based on master clock freq */
@@ -147,11 +144,9 @@ void pcm_pdm_mic(chanend c_pcm_out, chanend c_boardrev_pcm)
     par
     {
         // Mics 1 to 8
-        mic_array_pdm_rx(p_pdm_mics_0_to_7, c_pdm_mic_0_to_1, c_pdm_mic_2_to_3, c_pdm_mic_4_to_5, c_pdm_mic_6_to_7);
-        decimate_to_pcm_cascade(c_pdm_mic_0_to_1, c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS, boardrev);
-        decimate_to_pcm_cascade(c_pdm_mic_2_to_3, c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS, boardrev);
-        decimate_to_pcm_cascade(c_pdm_mic_4_to_5, c_ds_output[2], MIC_ARRAY_NO_INTERNAL_CHANS, boardrev);
-        decimate_to_pcm_cascade(c_pdm_mic_6_to_7, c_ds_output[3], MIC_ARRAY_NO_INTERNAL_CHANS, boardrev);
+        mic_array_pdm_rx(p_pdm_mics_0_to_7, c_pdm_mic_0_to_3, c_pdm_mic_4_to_7);
+        mic_array_decimate_to_pcm_4ch(c_pdm_mic_0_to_3, c_ds_output[0], MIC_ARRAY_NO_INTERNAL_CHANS);
+        mic_array_decimate_to_pcm_4ch(c_pdm_mic_4_to_7, c_ds_output[1], MIC_ARRAY_NO_INTERNAL_CHANS);
         // Process decimated data
         pdm_process(c_ds_output, c_pcm_out);
     }

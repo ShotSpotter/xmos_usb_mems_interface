@@ -1,5 +1,19 @@
-MODULE_XCC_XC_FLAGS = $(XCC_XC_FLAGS)
+VERSION = 4.6.0
 
-DEPENDENT_MODULES = lib_xassert(>=3.0.0) lib_logging(>=2.1.0) lib_dsp(>=3.0.0)
+DEPENDENT_MODULES = lib_xassert(>=3.0.0) \
+                    lib_logging(>=2.1.0) \
+                    lib_dsp(>=3.0.0)
 
-VERSION = 3.0.1
+MODULE_XCC_FLAGS = $(XCC_FLAGS)
+
+OPTIONAL_HEADERS +=
+
+EXPORT_INCLUDE_DIRS = api \
+                      src/fir
+
+EXCLUDE_FILES += make_mic_dual_stage_3_coefs.c
+
+INCLUDE_DIRS = $(EXPORT_INCLUDE_DIRS)
+
+SOURCE_DIRS = src \
+              src/fir
