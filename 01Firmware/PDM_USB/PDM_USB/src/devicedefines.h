@@ -130,17 +130,23 @@
 /**
  * @brief Device firmware version number in Binary Coded Decimal format: 0xJJMN where JJ: major, M: minor, N: sub-minor version number.
  */
+#ifndef BCD_DEVICE_J
 #define BCD_DEVICE_J             0
+#endif
 
 /**
  * @brief Device firmware version number in Binary Coded Decimal format: 0xJJMN where JJ: major, M: minor, N: sub-minor version number.
  */
+#ifndef BCD_DEVICE_M
 #define BCD_DEVICE_M             1
+#endif
 
 /**
  * @brief Device firmware version number in Binary Coded Decimal format: 0xJJMN where JJ: major, M: minor, N: sub-minor version number.
  */
+#ifndef BCD_DEVICE_N
 #define BCD_DEVICE_N             0
+#endif
 
 /**
  * @brief Device firmware version number in Binary Coded Decimal format: 0xJJMN where JJ: major, M: minor, N: sub-minor version number.
@@ -524,9 +530,9 @@
  *
  * Default: 0 (Disabled)
  */
-// TODO:Changed to self powered, was 0
+// Board SST_XMOS_001 is bus-powered
 #ifndef SELF_POWERED
-#define SELF_POWERED                (1)
+#define SELF_POWERED                (0)
 #endif
 
 /* Tidy-up historical ifndef usage */

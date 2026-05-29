@@ -8,12 +8,6 @@
 #define _CUSTOMDEFINES_H_
 #endif
 
-/* Prototype for our custom genclock() task */
-void genclock();
-
-#define USER_MAIN_CORES \
-            on tile[1] : genclock();
-
 /*
  * Device configuration option defines to override default defines found devicedefines.h
  *
@@ -29,7 +23,7 @@ void genclock();
 
 /* Enable PDM and PDM->PCM conversion code */
 /*** Number of PDM mics also needs to be adapted in "pdm_mics/mic_array_conf.h" ***/
-#define NUM_PDM_MICS       16
+#define NUM_PDM_MICS       8
 
 /* Defines relating to channel count and channel arrangement (Set to 0 for disable) */
 //:audio_defs
@@ -52,8 +46,9 @@ void genclock();
 #endif
 
 /* Master clock defines (in Hz) */
-#define MCLK_441           (256*44100)   /* 44.1, 88.2 etc */
-#define MCLK_48            (256*48000)   /* 48, 96 etc */
+#define MCLK_441           (512*44100)   /* 44.1, 88.2 etc */
+#define MCLK_48            (512*48000)   /* 48 kHz, 96 kHz etc with 24.576 MHz master clock */
+#define PDM_MIC_CLK         (64*48000)   /* input clock speed for PDM mic (3.072 MHz) */
 
 /* Maximum frequency device runs at */
 #ifndef MIN_FREQ
@@ -66,7 +61,7 @@ void genclock();
 
 /* Maximum frequency device runs at */
 #ifndef MAX_FREQ
-#define MAX_FREQ           (48000)
+#define MAX_FREQ           (96000)
 #endif
 
 /* Maximum frequency in full-speed mode */
@@ -78,13 +73,39 @@ void genclock();
 /***** Defines relating to USB descriptors etc *****/
 //:usb_defs
 #define VENDOR_ID          (0x20B1) /* XMOS VID */
-#define PID_AUDIO_2        (0x0008) 
-#define PID_AUDIO_1        (0x0009) 
-#define PRODUCT_STR_A2     "PDM Mic Converter UAC2.0"
-#define PRODUCT_STR_A1     "PDM Mic Converter UAC1.0"
+#define PID_AUDIO_2        (0x0008)
+#define PID_AUDIO_1        (0x0009)
+#define PRODUCT_STR_A2     "SST-XMOS-001 UAC2.0"
+#define PRODUCT_STR_A1     "SST-XMOS-001 UAC1.0"
 
-//#define PRODUCT_STR_A2     "XMOS Microphone Array UAC2.0"
-//#define PRODUCT_STR_A1     "XMOS Microphone Array UAC1.0"
-//:
+/* Avoid compiler warnings by defining vars that will be defaulted */
+
+#define DEFAULT_FREQ            (96000)
+#define SPDIF_TX_INDEX          (0)
+// DFU name will be "{VENDOR_STR} DFU"
+#define VENDOR_STR              "SST"
+
+// BCD_DEVICE is j.m.n version bitpacked into bytes 12 and 13 of the
+// USB descriptor as "bcdDevice". This is important for firmware upgrades.
+
+// warnings.h complains about BCD_DEVICE being undefined, but
+// code will overwrite with BCD_DEVICE_J, BCD_DEVICE_M, BCD_DEVICE_N
+
+// From src/devicedefines.h:
+// "User code should not modify [BCD_DEVICE] but should modify
+// BCD_DEVICE_J, BCD_DEVICE_M, BCD_DEVICE_N instead"
+
+// #define BCD_DEVICE              0x0001
+
+#define BCD_DEVICE_J            3
+#define BCD_DEVICE_M            0
+#define BCD_DEVICE_N            4
+
+#define AUDIO_CLASS             2
+#define AUDIO_CLASS_FALLBACK    0
+
+/* this is the default devicedefines.h but add here to be explicit */
+#define DFU (1)
+
 
 #endif

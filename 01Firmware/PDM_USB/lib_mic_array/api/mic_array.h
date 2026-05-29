@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include "fir_coefs.h"
+#include "fir_coefs_cascade.h"
 #include "mic_array_frame.h"
 
 #ifndef MIC_ARRAY_HIRES_MAX_DELAY
@@ -29,7 +30,9 @@
 void mic_array_pdm_rx(
         in buffered port:32 p_pdm_mics,
         streaming chanend c_4x_pdm_mic_0,
-        streaming chanend ?c_4x_pdm_mic_1);
+        streaming chanend ?c_4x_pdm_mic_1,
+        streaming chanend ?c_4x_pdm_mic_2,
+        streaming chanend ?c_4x_pdm_mic_3);
 
 /** High resolution delay component.
  *
@@ -132,10 +135,17 @@ typedef unsigned mic_array_internal_audio_channels;
  *                                   the client of this task and this task.
  *  \param channels                  A pointer to an array of mic_array_internal_audio_channels. This can be set to
  *                                   MIC_ARRAY_NO_INTERNAL_CHANS if none are requires.
+ *  \param boardrev                  Board revision value (0x00-0xFF) passed to the assembly code.
  */
-void mic_array_decimate_to_pcm_4ch(
+void mic_array_decimate_to_pcm_2ch(
         streaming chanend c_from_pdm_interface,
-        streaming chanend c_frame_output, mic_array_internal_audio_channels * channels);
+        streaming chanend c_frame_output, mic_array_internal_audio_channels * channels, unsigned boardrev);
+
+void decimate_to_pcm_cascade(
+        streaming chanend c_from_pdm_interface,
+        streaming chanend c_frame_output, mic_array_internal_audio_channels * channels, unsigned boardrev);
+
+
 
 /** Far end channel connector.
  *
@@ -154,9 +164,8 @@ void mic_array_decimate_to_pcm_4ch(
  *  \param ch3                       The channel used to send internal audio to mic_array
  *                                   channel 3.
  */
-void mic_array_init_far_end_channels(mic_array_internal_audio_channels internal_channels[4],
-        streaming chanend ?ch0, streaming chanend ?ch1,
-        streaming chanend ?ch2, streaming chanend ?ch3);
+void mic_array_init_far_end_channels(mic_array_internal_audio_channels internal_channels[2],
+        streaming chanend ?ch0, streaming chanend ?ch1);
 
 /** This sends an audio sample to a decimator.
  *

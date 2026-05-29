@@ -8,6 +8,10 @@
 #include <xs1.h>
 #include <xclib.h>
 #include <print.h>
+#ifdef DEBUG
+#include <stdio.h>
+#endif
+
 
 #include "xud.h"                 /* XMOS USB Device Layer defines and functions */
 
@@ -20,6 +24,7 @@
 #include "clocking.h"
 
 #include "pcm_pdm_mic.h"
+#include "boardrev.h"
 
 [[distributable]]
 void DFUHandler(server interface i_dfu i, chanend ?c_user_cmd);
@@ -27,6 +32,9 @@ void DFUHandler(server interface i_dfu i, chanend ?c_user_cmd);
 /* Audio I/O - Port declarations */
 on tile[AUDIO_IO_TILE] : port p_mclk_in                     = PORT_MCLK_IN;
 on tile[XUD_TILE] : in port p_for_mclk_count                = PORT_MCLK_COUNT;
+
+/* Board revision fuses -- Port declarations */
+on tile[PDM_TILE] : in port p_boardrev_fuses               = PORT_FUSES_A_TO_D;
 
 /* Clock blocks */
 on tile[AUDIO_IO_TILE] : clock    clk_audio_mclk            = CLKBLK_MCLK;       /* Master clock */
@@ -42,20 +50,21 @@ XUD_EpType epTypeTableOut[ENDPOINT_COUNT_OUT] = { XUD_EPTYPE_CTL | XUD_STATUS_EN
 XUD_EpType epTypeTableIn[ENDPOINT_COUNT_IN] = { XUD_EPTYPE_CTL | XUD_STATUS_ENABLE, XUD_EPTYPE_ISO};
 
 
-void thread_speed(){
+void thread_speed()
+{
     set_thread_fast_mode_off();
 }
 
 
 /* Core USB Audio functions - must be called on the Tile connected to the USB Phy */
-void usb_audio_core(chanend c_mix_out, chanend ?c_clk_int, chanend ?c_clk_ctl, client interface i_dfu ?dfuInterface){
+void usb_audio_core(chanend c_mix_out, chanend ?c_clk_int, chanend ?c_clk_ctl, chanend ?c_boardrev_xud, client interface i_dfu ?dfuInterface)
+{
     chan c_sof;
     chan c_xud_out[ENDPOINT_COUNT_OUT];              /* Endpoint channels for XUD */
     chan c_xud_in[ENDPOINT_COUNT_IN];
     chan c_aud_ctl;
 
 #define c_mix_ctl null
-
 #define c_EANativeTransport_ctrl null
 
     par
@@ -83,7 +92,7 @@ void usb_audio_core(chanend c_mix_out, chanend ?c_clk_int, chanend ?c_clk_ctl, c
         /* Endpoint 0 Core */
         {
             thread_speed();
-            Endpoint0( c_xud_out[0], c_xud_in[0], c_aud_ctl, c_mix_ctl, c_clk_ctl, c_EANativeTransport_ctrl, dfuInterface);
+            Endpoint0( c_xud_out[0], c_xud_in[0], c_aud_ctl, c_mix_ctl, c_clk_ctl, c_EANativeTransport_ctrl, c_boardrev_xud, dfuInterface);
         }
 
         /* Decoupling core */
@@ -92,10 +101,10 @@ void usb_audio_core(chanend c_mix_out, chanend ?c_clk_int, chanend ?c_clk_ctl, c
             decouple(c_mix_out);
         }
     }
-}
+} /* usb_audio_core */
 
 void usb_audio_io(chanend c_aud_in, chanend ?c_adc, chanend ?c_aud_cfg, streaming chanend ?c_spdif_rx, chanend ?c_adat_rx,
-                    chanend ?c_clk_ctl, chanend ?c_clk_int, server interface i_dfu dfuInterface, chanend c_pdm_pcm)
+                    chanend ?c_clk_ctl, chanend ?c_clk_int, chanend c_pdm_pcm)
 {
     #define c_dig_rx null
 
@@ -104,18 +113,47 @@ void usb_audio_io(chanend c_aud_in, chanend ?c_adc, chanend ?c_aud_cfg, streamin
         /* Audio I/O Core (pars additional S/PDIF TX Core) */
         {
             thread_speed();
-#define AUDIO_CHANNEL c_aud_in
-            audio(AUDIO_CHANNEL,c_aud_cfg, c_adc, dfuInterface, c_pdm_pcm);
+            audio(c_aud_in, c_aud_cfg, c_adc, c_pdm_pcm);
         }
     }
+} /* usb_audio_io */
+
+
+void boardrev_fuse_read(in port p_boardrev_fuses, chanend c_boardrev_xud, chanend c_boardrev_pdm)
+{
+#ifdef DEBUG
+    printf("boardrev_fuse_read start\n");
+#endif
+    int warmups = 1 << 20;
+    /*
+        We only read board fuses once and I'm worried about doing so at
+        startup, so read and throw away a few thousand times before
+        accepting a value.
+    */
+    for (int i=0; i < warmups; i++) {
+        p_boardrev_fuses :> void;
+    }
+    /* Send fuse value to XUD and PDM threads, which are waiting on the channel. */
+    int value;
+
+    p_boardrev_fuses :> value;
+#ifdef DEBUG
+    printf("boardrev_fuse_read value %d\n", value);
+#endif
+    c_boardrev_xud <: value;
+    c_boardrev_pdm <: value;
+#ifdef DEBUG
+    printf("boardrev_fuse_read quit\n");
+#endif
+    return;
+    /* thread exit */
 }
 
-#define USER_MAIN_DECLARATIONS
 
 
 /* Main for USB Audio Applications */
 int main(){
-    chan c_mix_out;
+
 #define c_adc null
 #define c_aud_cfg null
 #define c_spdif_rx null
@@ -124,24 +162,34 @@ int main(){
 #define c_clk_ctl null
 
     interface i_dfu dfuInterface;
-
+    chan c_mix_out;
     chan c_pdm_pcm;
+    chan c_boardrev_xud;
+    chan c_boardrev_pdm;
 
-    USER_MAIN_DECLARATIONS
 
     par
     {
         on tile[XUD_TILE]:
         par
         {
-            usb_audio_core(c_mix_out, c_clk_int, c_clk_ctl, dfuInterface);
+            usb_audio_core(c_mix_out, c_clk_int, c_clk_ctl, c_boardrev_xud, dfuInterface);
         }
 
-        on tile[AUDIO_IO_TILE]: usb_audio_io(c_mix_out, c_adc, c_aud_cfg, c_spdif_rx, c_adat_rx, c_clk_ctl, c_clk_int, dfuInterface, c_pdm_pcm);
+        on tile[AUDIO_IO_TILE]:
+        par
+        {
+            // uses par{2}
+            usb_audio_io(c_mix_out, c_adc, c_aud_cfg, c_spdif_rx, c_adat_rx, c_clk_ctl, c_clk_int, c_pdm_pcm);
+        }
 
-        on stdcore[PDM_TILE]: pcm_pdm_mic(c_pdm_pcm);
-        on tile[PDM_TILE]: generate_wordclock();
-        USER_MAIN_CORES
+        on tile[PDM_TILE]:
+        par
+        {
+            boardrev_fuse_read(p_boardrev_fuses, c_boardrev_xud, c_boardrev_pdm);
+            DFUHandler(dfuInterface, null);
+            pcm_pdm_mic(c_pdm_pcm, c_boardrev_pdm);
+        }
     }
 
     return 0;

@@ -1,25 +1,12 @@
 // Copyright (c) 2015-2016, XMOS Ltd, All rights reserved
 	.section	.dp.data,"awd",@progbits
 	.text
+        .extern		printf
 
 .xtacommand "analyse endpoints pdm_rx_4ch_loop_ep pdm_rx_4ch_loop_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
 .xtacommand "analyse endpoints pdm_rx_8ch_loop_ep pdm_rx_8ch_loop_ep","", __FILE__, __LINE__
 .xtacommand "set required - 2604 ns","", __FILE__, __LINE__
-
-#define temp_one 			 r0
-#define c_one                r1
-#define c_two                r2
-#define a                 	 r3
-#define b                 	 r4
-#define fir0                 r5
-#define fir1                 r6
-#define fir2                 r7
-#define temp_two             r8
-#define c			     	 r9
-#define p                 	 r10
-#define t                 	 r11
-#define temp_three           r11
 
 //This mapping accounts for the muddling of the unzips
 //(do not change).
@@ -60,175 +47,203 @@
 	#define MIC_ARRAY_CH7 PIN7
 #endif
 
-#define STACKWORDS 16
+#define S_IN_DATA			(0)
+#define S_IN_DATA_DW_0			(0)
+#define S_IN_DATA_DW_1			(1)
+#define S_IN_DATA_DW_2			(2)
+#define S_IN_DATA_DW_3			(3)
+#define S_IN_DATA_DW_4			(4)
+#define S_IN_DATA_DW_5			(5)
+#define S_IN_DATA_SIZE  		(12)
 
-#define FIR_BLOCK(P) \
-	{ld8u b, p[c]; add a, a, b};\
-	{ldw b, P[b];add c, c, 8};
+#define S_CONTROL_VARIABLES 		(S_IN_DATA_SIZE)
+#define S_IN_PORT			(0)
+#define S_IMPULSE_INDEX			(1)
+#define S_OUT_PORT_0			(2)
+#define S_OUT_PORT_1			(3)
+#define S_OUT_PORT_2			(4)
+#define S_OUT_PORT_3			(5)
+#define S_CONTROL_VARIABLES_SIZE 	(12)
+
+#define S_BUFFER			(S_CONTROL_VARIABLES + S_CONTROL_VARIABLES_SIZE)
+#define S_BUFFER_SIZE			(1 << 12)
+#define S_BUFFER_MASK			(S_BUFFER_SIZE - 1)
+#define S_IMPULSE_PERIOD		(65536)
+
+//#define OUTPUT_IMPULSE
+//#define OUTPUT_SAWTOOTH
+//#define OUTPUT_RANDOM
+
+#define STACKWORDS			(S_BUFFER + S_BUFFER_SIZE)
+
+#define FIR_BLOCK(COEF)\
+        {add r3, r3, r4; ld8u r4, r10[r9]};\
+        {ldw r4, COEF[r4];add r9, r9, 8};\
 
 #define FIR() \
-	{ld8u a, p[c]; ldc b, 0};\
-	{ldw a, fir0[a]; add c, c, 8};\
-	FIR_BLOCK(fir1)\
-	FIR_BLOCK(fir2)\
-	FIR_BLOCK(fir2)\
-	FIR_BLOCK(fir1)\
-	FIR_BLOCK(fir0)\
-	add a, a, b
+        {ldc r3, 0; ldc r4, 0};\
+        FIR_BLOCK(r5);\
+	FIR_BLOCK(r6);\
+	FIR_BLOCK(r7);\
+	FIR_BLOCK(r7);\
+	FIR_BLOCK(r6);\
+	FIR_BLOCK(r5);\
+        add r3, r3, r4
 
-#define OUTPUT(I, C)\
-	{out res[C], a; ldc c, I}
+	.cc_top pdm_rx_asm.function
+	.globl	pdm_rx_asm
+	.align	4
+	.type	pdm_rx_asm,@function
+pdm_rx_asm:
+        //r0 - in buffered port:32 p_pdm_mics,
+        //r1 - streaming chanend c,
+        //r2 - streaming chanend d,
+        //r3 - streaming chanend e,
+        //sp[1] - streaming chanend f,
 
-.globl	pdm_rx_asm_debug
-.align	8
-.type	pdm_rx_asm_debug,@function
-.cc_top pdm_rx_asm_debug.function
-pdm_rx_asm_debug:
-.cfi_startproc
-.issue_mode dual
-  bu pdm_rx_asm
-
-	.cc_bottom pdm_rx_asm_debug.function
-	.set	pdm_rx_asm_debug.nstackwords, 0 $M pdm_rx_asm.nstackwords
-	.globl	pdm_rx_asm_debug.nstackwords
-	.set	pdm_rx_asm_debug.maxcores, 1 $M pdm_rx_asm.maxcores
-	.globl	pdm_rx_asm_debug.maxcores
-	.set	pdm_rx_asm_debug.maxtimers,0
-	.globl	pdm_rx_asm_debug.maxtimers
-	.set	pdm_rx_asm_debug.maxchanends,0
-	.globl	pdm_rx_asm_debug.maxchanends
-.Lpdm_rx_asm_debug_tmp:
-	.size	pdm_rx_asm_debug, .Lpdm_rx_asm_debug_tmp-pdm_rx_asm_debug
-	.cfi_endproc
-
-.cc_top pdm_rx_asm.function
-.globl	pdm_rx_asm
-.align	4
-.type	pdm_rx_asm,@function
-pdm_rx_asm://(
-        //in buffered port:32 p_pdm_mics,
-        //streaming chanend c,
-        //streaming chanend ?d,
-
-.issue_mode dual
+	.issue_mode dual
 	DUALENTSP_lu6 STACKWORDS
 
-	stw r0, sp[15]
+        mov r4, r11
 
-#ifdef TEST_MODE
-	ldc t, 0
-#else
-	ldc t, 0x5555
-	shl t, t, 16; mov c, t
-	add t, t, c
-#endif
-	std t, t, sp[0]
-	std t, t, sp[1]
-	std t, t, sp[2]
-	std t, t, sp[3]
-	std t, t, sp[4]
-	std t, t, sp[5]
+        ldaw r11, sp[S_CONTROL_VARIABLES]
+	stw r0, r11[S_IN_PORT]
+        stw r1, r11[S_OUT_PORT_0]
+        stw r2, r11[S_OUT_PORT_1]
+        stw r3, r11[S_OUT_PORT_2]
+        stw r4, r11[S_OUT_PORT_3]
+	// initialize S_IMPULSE_INDEX
+	ldc r0, 0
+	stw r0, r11[S_IMPULSE_INDEX]
 
-	ldaw t, cp[g_first_stage_fir_0]
-	mov fir0, t
-	ldaw t, cp[g_first_stage_fir_1]
-	mov fir1, t
-	ldaw t, cp[g_first_stage_fir_2]
-	mov fir2, t
+	ldc r11, 0x5555
+	shl r11, r11, 16; mov r9, r11
+	add r11, r11, r9
+        ldaw r10, sp[S_IN_DATA]
+	std r11, r11, r10[S_IN_DATA_DW_0]
+	std r11, r11, r10[S_IN_DATA_DW_1]
+	std r11, r11, r10[S_IN_DATA_DW_2]
+	std r11, r11, r10[S_IN_DATA_DW_3]
+	std r11, r11, r10[S_IN_DATA_DW_4]
+	std r11, r11, r10[S_IN_DATA_DW_5]
 
-	ldaw p, sp[0]
+	ldaw r11, cp[g_first_stage_fir_0]
+        mov r5, r11
+	ldaw r11, cp[g_first_stage_fir_1]
+        mov r6, r11
+	ldaw r11, cp[g_first_stage_fir_2]
+        mov r7, r11
 
-	ldc c,  MIC_ARRAY_CH0
-	bt c_two, pdm_rx_8ch_loop
+	ldaw r10, sp[S_IN_DATA]
 
-	ldc c,  MIC_ARRAY_CH0
 	.align 8
-pdm_rx_4ch_loop:
 
-	ldw a, sp[15]
-	in b, res[a]
-	in a, res[a]
-	unzip a, b, 2
-	unzip a, b, 1
-	unzip a, b, 0
-	std a, b, p[0]
-
-	FIR();
-	OUTPUT( MIC_ARRAY_CH1, c_one)	//output c_one
-	FIR();
-	OUTPUT( MIC_ARRAY_CH2, c_one)	//output c_one
-	FIR();
-	{mov temp_one, a; ldc c, MIC_ARRAY_CH3}
-	FIR();
-	{out res[c_one], temp_one}
-	OUTPUT( MIC_ARRAY_CH0, c_one)	//output unused0 then this to c_one
-
-	ldd a, b, p[4]
-	std a, b, p[5]
-
-	ldd a, b, p[3]
-	std a, b, p[4]
-
-	ldd a, b, p[2]
-	{bitrev a, a; bitrev b, b}
-	{byterev a, a; byterev b, b}
-	std a, b, p[3]
-
-	ldd a, b, p[1]
-	std a, b, p[2]
-
-	ldd a, b, p[0]
-	std a, b, p[1]
-	bl pdm_rx_4ch_loop
-//2604ns per loop
-	.align 8
 pdm_rx_8ch_loop:
-//about 6 inst spare without optimisation
+	ldaw r11, sp[S_CONTROL_VARIABLES]
+	ldw r3, r11[S_IN_PORT]
+	in r4, res[r3]
+	in r3, res[r3]
+	unzip r3, r4, 2
+	unzip r3, r4, 1
+	unzip r3, r4, 0
+	std r3, r4, r10[0]
 
-	ldw a, sp[15]
-	in b, res[a]
-	in a, res[a]
-	unzip a, b, 2
-	unzip a, b, 1
-	unzip a, b, 0
-	std a, b, p[0]
+        //
+        // Map to output ports 0, 2, 0, 2, 1, 3, 1 so that microphone sequence becomes
+        // mic 0, 1, 2, 3, 4, 5, 6, 7 (as opposed to 0, 4, 1, 5, 2, 6, 3 as previously)
+        //
+	ldc r9, MIC_ARRAY_CH0
+	FIR();						// FIR filter result is in r3
+        ldw r1, r11[S_OUT_PORT_0]			// Get first output port
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH4}
+	FIR();						// FIR filter based on r9, result is in r3
+        ldw r1, r11[S_OUT_PORT_2]			// Get second output port
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH1}
+	FIR();
+        ldw r1, r11[S_OUT_PORT_0]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH5}
+	FIR();
+        ldw r1, r11[S_OUT_PORT_2]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH2}
+	FIR();
+        ldw r1, r11[S_OUT_PORT_1]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH6}
+	FIR();
+        ldw r1, r11[S_OUT_PORT_3]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH3}
+	FIR();
+        ldw r1, r11[S_OUT_PORT_1]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH7}
+        FIR();							// CH7 FIR filter result is in r3
 
-	FIR();
-	OUTPUT( MIC_ARRAY_CH4, c_one)	//output c_one
-	FIR();
-	OUTPUT( MIC_ARRAY_CH1, c_two)	//output c_two
-	FIR();
-	OUTPUT( MIC_ARRAY_CH5, c_one)	//output c_one
-	FIR();
-	OUTPUT( MIC_ARRAY_CH2, c_two)	//output c_two
-	FIR();
-	{mov temp_one, a; ldc c,  MIC_ARRAY_CH6}
-	FIR();
-	{mov temp_two, a; ldc c,  MIC_ARRAY_CH3}
-	FIR();
-	{mov temp_three, a; ldc c,  MIC_ARRAY_CH7}
-	FIR();
-	{out res[c_one], temp_one}
-	{out res[c_two], temp_two}
-	{out res[c_one], temp_three}
-	OUTPUT( MIC_ARRAY_CH0, c_two)
+// These options replace channel 8 with debug patterns
+// OUTPUT_RANDOM/OUTPUT_IMPULSE/OUTPUT_SAWTOOTH are mutually exclusive
 
-	ldd a, b, p[4]
-	std a, b, p[5]
+#ifdef OUTPUT_IMPULSE
+// Periodic impulse for filter frequency response analysis.
+// Output is the impulse response of stage 2 + stage 3 filters.
+// FFT the captured output to see the complete magnitude response.
 
-	ldd a, b, p[3]
-	std a, b, p[4]
+	ldw r4, r11[S_IMPULSE_INDEX]			// Load impulse counter
+	add r4, r4, 1					// Increment counter
+	ldc r3, S_IMPULSE_PERIOD-1			// Load period mask
+	and r4, r4, r3					// Wrap counter to [0, PERIOD-1]
+	stw r4, r11[S_IMPULSE_INDEX]			// Store updated counter
+	eq r3, r4, 0					// r3 = 1 if counter==0, else 0
+	neg r3, r3					// r3 = 0xFFFFFFFF if impulse, else 0
+	shr r3, r3, 1					// r3 = 0x7FFFFFFF if impulse, else 0
+#endif
 
-	ldd a, b, p[2]
-	{bitrev a, a; bitrev b, b}
-	{byterev a, a; byterev b, b}
-	std a, b, p[3]
+#ifdef OUTPUT_SAWTOOTH
+// Sawtooth wave for filter frequency response analysis.
+// Output is the sawtooth wave processed through stage 2 + stage 3 filters.
 
-	ldd a, b, p[1]
-	std a, b, p[2]
+	ldw r4, r11[S_IMPULSE_INDEX]			// Load impulse counter
+	ldc r3, 171					// Load increment value
+	add r4, r4, r3					// Increment counter by 171 for ~1 kHz
+	ldc r3, S_IMPULSE_PERIOD-1			// Load period mask
+	and r4, r4, r3					// Wrap counter to [0, PERIOD-1]
+	stw r4, r11[S_IMPULSE_INDEX]			// Store updated counter
+	shl r3, r4, 16					// r3 = counter << 16 (sawtooth output)
+#endif
 
-	ldd a, b, p[0]
-	std a, b, p[1]
+
+#ifdef OUTPUT_RANDOM
+// Enable white noise output to support analysis of 2nd stage filter frequency response.
+// We are not seeding this with the xmos hardware RNG so the output
+// is deterministic. See lib_random for how to seed with hardware.
+
+	ldaw r11, cp[g_crc_constants]			// load data to checksum (-1, per lib_random) into r1
+	ldw r1, r11[1]
+	ldaw r11, cp[g_crc_constants]			// load crc polynominal to use (0xEDB88320, per lib_random) into r4
+	ldw r4, r11[0]
+	ldaw r11, sp[S_CONTROL_VARIABLES]		// set r11 to point on stack
+	ldw r3, r11[S_IMPULSE_INDEX]			// load previous crc (reusing S_IMPULSE_INDEX for storage)
+	crc32 r3, r1, r4				// compute crc
+	stw r3, r11[S_IMPULSE_INDEX]			// Store updated crc value, leaving r3 unchanged to output
+#endif
+
+	// output is in r3; load on MIC_ARRAY_CH0 is a pointless
+	// refill for next iteration (overwrtten in line 146)
+        ldw r1, r11[S_OUT_PORT_3]
+	{out res[r1], r3; ldc r9, MIC_ARRAY_CH0}
+
+	ldd r3, r4, r10[4]
+	std r3, r4, r10[5]
+
+	ldd r3, r4, r10[3]
+	std r3, r4, r10[4]
+
+	ldd r3, r4, r10[2]
+	{bitrev r3, r3; bitrev r4, r4}
+	{byterev r3, r3; byterev r4, r4}
+	std r3, r4, r10[3]
+
+	ldd r3, r4, r10[1]
+	std r3, r4, r10[2]
+
+	ldd r3, r4, r10[0]
+	std r3, r4, r10[1]
 	bl pdm_rx_8ch_loop
 
 .pdm_rx_asm_tmp:
@@ -244,73 +259,4 @@ pdm_rx_8ch_loop:
 	.globl	pdm_rx_asm.maxtimers
 	.set	pdm_rx_asm.maxchanends,0
 	.globl	pdm_rx_asm.maxchanends
-
-
-#define EPT_MARCO(ID, PASS) \
-.cc_top cc_a ## ID ## _ ## PASS,input_ ## ID ## _ ## PASS ;\
-	.ascii	"";\
-	.byte	0;\
-	.long	0;\
-	.long	input_ ## ID ## _ ## PASS;\
-.cc_bottom cc_a ## ID ## _ ## PASS
-
-	.section	.xtaendpoint,"",@progbits
-.Lentries_start0:
-	.long	.Lentries_end0-.Lentries_start0
-	.long	1
-	.ascii	""
-    .byte	0
-
-	.ascii	"pdm_rx_4ch_loop_ep"
-	.byte	0
-	.ascii	""
-	.byte	0
-	.long	0
-	.long	.Laddr_end0 -.Laddr_start0
-	.Laddr_start0:
-	.cc_top cc_0 ,pdm_rx_4ch_loop
-	.long	pdm_rx_4ch_loop
-	.byte	0
-	.cc_bottom cc_0
-	.Laddr_end0 :
-
-	.ascii	"pdm_rx_8ch_loop_ep"
-	.byte	0
-	.ascii	""
-	.byte	0
-	.long	0
-	.long	.Laddr_end1 -.Laddr_start1
-	.Laddr_start1:
-	.cc_top cc_1 ,pdm_rx_8ch_loop
-	.long	pdm_rx_8ch_loop
-	.byte	0
-	.cc_bottom cc_1
-	.Laddr_end1 :
-.Laddr_end9:
-
-.Lentries_end0:
-
-	.section	.xtaendpointtable,"",@progbits
-.Lentries_start1:
-	.long	.Lentries_end1-.Lentries_start1
-	.long	0
-	.ascii	""
-	.byte	0
-
-.cc_top cc_a0,pdm_rx_4ch_loop
-	.ascii	""
-	.byte	0
-	.long	0
-	.long	pdm_rx_4ch_loop
-.cc_bottom cc_a0
-
-.cc_top cc_a1,pdm_rx_8ch_loop
-	.ascii	""
-	.byte	0
-	.long	0
-	.long	pdm_rx_8ch_loop
-.cc_bottom cc_a1
-
-
-.Lentries_end1:
 

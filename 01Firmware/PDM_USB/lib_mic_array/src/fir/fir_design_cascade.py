@@ -8,8 +8,8 @@ Clean filter coefficient generator for XMOS microphone array decimation filters.
 
 This script generates three stages of FIR filters:
 1. First stage: PDM to 384 kHz (8:1 decimation) using lookup tables
-2. Second stage: 384 kHz to 96 kHz (4:1 decimation) using Type I FIR
-3. Third stage: 96 kHz to 24 kHz (4:1 decimation) using symmetric FIR (not used in current application)
+2. Second stage: 384 kHz to 192 kHz (2:1 decimation) using Type I FIR
+3. Third stage: 192 kHz to 96 kHz (2:1 decimation) using Type I FIR
 
 Key design principle: Separation of coefficient generation from file formatting.
 - Coefficient generation functions return data structures
@@ -22,6 +22,9 @@ import ctypes
 import numpy as np
 from scipy import signal
 from dataclasses import dataclass
+import matplotlib
+matplotlib.use('Agg')  # Non-interactive backend; renders to file without requiring a display
+import matplotlib.pyplot as plt
 
 # ============================================================================
 # CONSTANTS
@@ -38,10 +41,9 @@ INT64_MAX = np.int64(np.iinfo(np.int64).max)
 class FilterSpec:
     """Specification for a single filter variant."""
     num_taps: int
-    cutoff_khz: float
+    passband_khz: float
     transition_khz: float
     min_attenuation: float
-    use_kaiser: bool = False
 
 
 
@@ -61,36 +63,38 @@ FIRST_STAGE_CONFIG = {
     'use_low_ripple': False  # Set True for multi-null design
 }
 
-# Second stage: 384 kHz -> 96 kHz (decimation by 4)
-# Generate filters for different microphone types with different cutoff frequencies
-# Type I filters: odd number of taps, non-zero at Nyquist, output all coefficients
-# Stop band is cutoff + transition width
+# Second stage: 384 kHz -> 192 kHz (decimation by 2)
+# Generate a Type 1 FIR low pass filter designed to address these issues:
+# 1) avoid signal aliasing prior to a 2:1 downsample to 192 kHz
+# 2) maximize flatness of the frequency response at or below 48 kHz,
+#    the Nyquist frequency of the third stage output.
 
-second_stage_taps = 35
-min_atten = -30.0
+second_stage_taps = 47
+min_atten = -60.0
 
+# Stop band is passband_khz + transition_khz
 SECOND_STAGE_FILTERS = [
-    FilterSpec(num_taps=second_stage_taps, cutoff_khz=32.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=second_stage_taps, cutoff_khz=28.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=second_stage_taps, cutoff_khz=24.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=second_stage_taps, cutoff_khz=20.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=second_stage_taps, cutoff_khz=16.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=second_stage_taps, cutoff_khz=12.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
+    FilterSpec(num_taps=second_stage_taps, passband_khz=48.0, transition_khz = 48.0, min_attenuation = min_atten),
 ]
 
-# Third stage: 48 kHz -> 12 kHz (decimation by 4)
-# Windowed FIR filters
+# Third stage: 192 kHz -> 96 kHz (decimation by 2)
+# Generate a Type 1 FIR low pass filter designed to address these issues:
+# 1) avoid signal aliasing prior to a 2:1 downsample to 96 kHz
+# 2) avoid non-linearity in the microphone response, especially
+#    with the Vesper VM3000, which has a resonance at ~12.5 kHz
+# Generate filters for different microphone types with different cutoff frequencies
 
-third_stage_taps = 32
+third_stage_taps = 47
+min_atten = -40.0
 
+# Stop band is passband_khz + transition_khz
 THIRD_STAGE_FILTERS = [
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=47.999, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False, ),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=40.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=32.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=24.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=16.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz=12.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
-    FilterSpec(num_taps=third_stage_taps, cutoff_khz= 8.0, transition_khz = 15.0, min_attenuation = min_atten, use_kaiser=False),
+    FilterSpec(num_taps=third_stage_taps, passband_khz=40.0, transition_khz =  8.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, passband_khz=24.0, transition_khz = 12.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, passband_khz=16.0, transition_khz = 12.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, passband_khz=12.0, transition_khz = 12.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, passband_khz=10.0, transition_khz = 10.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, passband_khz= 8.0, transition_khz =  8.0, min_attenuation = min_atten),
 ]
 
 # ============================================================================
@@ -272,63 +276,51 @@ def generate_first_stage_coefficients():
     }
 
 
-def generate_second_stage_coefficients(stage_sample_rate: float, filterSpec : FilterSpec):
+def generate_filter_coefficients(stage_sample_rate: float, filterSpec : FilterSpec):
     """
-    Generate second stage Type I filter for given cutoff frequency.
-
-    Second stage decimates 384 kHz to 96 kHz (4:1 decimation).
-    Type I: 31 taps (odd), non-zero at Nyquist.
+    Generate second/third stage Type I filter for given filter specification
 
     Args:
-        cutoff_khz: Cutoff frequency in kHz
+        stage_sample_rate: input sample rate in kHz
+        filterSpec: filter specification
 
     Returns:
         dict with keys:
-            'coefs': Filter coefficients (all 31 taps)
+            'coefs': Filter coefficients (all taps, zero-padded if num coefs is odd)
             'name': Filter name (e.g., '36kHz')
     """
 
     # Normalize frequencies
-    passband = filterSpec.cutoff_khz / stage_sample_rate
+    passband = filterSpec.passband_khz / stage_sample_rate
     transition_width = filterSpec.transition_khz / stage_sample_rate
 
-    # Use Kaiser window for maximum bandwidth filter (47.999 kHz)
-    if filterSpec.use_kaiser:
-        # Kaiser window design for maximum bandwidth
-        # With more taps, we can achieve sharper transition
-        nyquist = stage_sample_rate / 2.0
-        cutoff_normalized = filterSpec.cutoff_khz / nyquist
+    stopband = passband + transition_width
 
-        # Design Kaiser window FIR
-        # Increase beta for sharper transition
-        beta = 12.0  # Sharper transition, better stopband attenuation
-        coefs = signal.firwin(filterSpec.num_taps, cutoff_normalized, window=('kaiser', beta))
-    else:
-        # Two-band Remez design: simple passband and stopband
-        # Stopband starts at passband + transition width
-        stopband = passband + transition_width
+    a = [1, 0]  # Passband gain = 1, Stopband gain = 0
+    w = [1, 1]  # Equal weighting for passband and stopband
+    bands = [0, passband,
+                stopband, 0.5]
 
-        a = [1, 0]  # Passband gain = 1, Stopband gain = 0
-        w = [1, 1]  # Equal weighting for passband and stopband
-        bands = [0, passband,
-                 stopband, 0.5]
+    h = signal.remez(filterSpec.num_taps, bands, a, weight=w)
+    (_, H) = signal.freqz(h, worN=2048)
+    [stop_band_atten, _, _] = measure_stopband_and_ripple(bands, a, H)
 
-        _, coefs = generate_stage_remez(
-            filterSpec.num_taps, bands, a, w,
-            stopband_attenuation=filterSpec.min_attenuation
-        )
+    if stop_band_atten > filterSpec.min_attenuation:
+        print(f"  Warning: stop band attenuation {stop_band_atten} for {filterSpec.passband_khz} is less than target {filterSpec.min_attenuation}")
 
-        # Check if filter generation succeeded
-        if coefs is None:
-            raise ValueError(f"Failed to generate {filterSpec.num_taps}-tap filter for {filterSpec.cutoff_khz} kHz cutoff. "
-                           f"Try adjusting transition width, number of taps, or cutoff frequency.")
+    coefs = h
+    # Check if filter generation succeeded
+    if coefs is None:
+        raise ValueError(f"Failed to generate {filterSpec.num_taps}-tap filter for {filterSpec.passband_khz} kHz cutoff. "
+                        f"Try adjusting transition width, number of taps, or cutoff frequency.")
 
     # Normalize to prevent overflow
     coefs /= sum(abs(coefs))
 
-    # Generate name based on normalized passband frequency
-    normalized_freq = passband * 384  # Convert to kHz equivalent
-    name = f"{int(round(normalized_freq))}kHz"
+    # Squish near-zero values (numerical noise from Remez) to exactly zero
+    coefs[np.abs(coefs) < 1.0e-8] = 0.0
+
+    name = f"{int(round(filterSpec.passband_khz))}kHz"
 
     return {
         'coefs': coefs,
@@ -336,50 +328,83 @@ def generate_second_stage_coefficients(stage_sample_rate: float, filterSpec : Fi
     }
 
 
-def generate_third_stage_coefficients(stage_sample_rate: float, filterSpec : FilterSpec):
-    """
-    Generate third stage filter using windowed design.
 
-    Third stage decimates 48 kHz to 12 kHz (4:1 decimation).
-    Uses Hamming window for simple, effective design.
+# ============================================================================
+# PLOTTING FUNCTIONS
+# ============================================================================
+
+def plot_stage_filters(stagename, sample_rate_khz, filter_data_list, spec_list, show_title=False):
+    """
+    Plot frequency responses for all filters in a stage and save to PDF.
 
     Args:
-        cutoff_khz: Cutoff frequency in kHz
-
-    Returns:
-        dict with keys:
-            'coefs': Filter coefficients (symmetric, only first half stored)
-            'name': Filter name (e.g., '24kHz')
+        stagename: Name of the stage (e.g., 'second_to_third')
+        sample_rate_khz: Input sample rate in kHz
+        filter_data_list: List of dicts from generate_filter_coefficients
+        spec_list: List of FilterSpec objects corresponding to filter_data_list
     """
+    # IEEE page-wide figure (7.16 in) with golden-ratio height
+    PHI = (1.0 + np.sqrt(5.0)) / 2.0
+    fig_width = 7.16          # inches — IEEE page width
+    fig_height = fig_width / PHI
 
-    N = filterSpec.num_taps
-    Fs = stage_sample_rate
-    fc = filterSpec.cutoff_khz
+    FONT_SIZE_LABEL  = 10
+    FONT_SIZE_TICK   =  9
+    FONT_SIZE_LEGEND =  9
+    FONT_SIZE_TITLE  = 10
+    LINE_WIDTH_DATA  = 1.5
+    LINE_WIDTH_EDGE  = 1.0
+    LINE_WIDTH_NYQUIST = 1.5
 
-    # Generate windowed sinc filter
-    coefs = np.zeros(N)
-    for n in range(N):
-        m = n - ((N - 1) / 2)
-        gamma = (2.0 * math.pi * fc) / Fs
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+    colors = [plt.cm.tab10(i) for i in range(len(filter_data_list))]
+    worN = 8192
 
-        # Sinc function
-        h = math.sin(m * gamma) / (m * math.pi) if m != 0 else gamma / math.pi
+    for i, (fdata, spec) in enumerate(zip(filter_data_list, spec_list)):
+        coefs = fdata['coefs']
+        name = f"{fdata['name']} passband"
+        color = colors[i]
 
-        # Hamming window
-        n_w = n - (N / 2)
-        h_w = 0.54 + 0.46 * math.cos((math.pi * (2.0 * n_w + 1)) / (N - 1.0))
+        _, H = signal.freqz(coefs, worN=worN)
+        freqs_khz = np.linspace(0, sample_rate_khz / 2.0, worN)
+        mag_db = 20.0 * np.log10(np.maximum(np.abs(H), 1e-12))
 
-        coefs[n] = h * h_w
+        ax.plot(freqs_khz, mag_db, color=color, label=name, linewidth=LINE_WIDTH_DATA)
 
-    # Normalize to prevent overflow
-    coefs /= sum(abs(coefs))
+        stopband_khz = spec.passband_khz + spec.transition_khz
+        ax.axvline(spec.passband_khz, color=color, linestyle='--', linewidth=LINE_WIDTH_EDGE, alpha=0.7)
+        ax.axvline(stopband_khz,      color=color, linestyle=':',  linewidth=LINE_WIDTH_EDGE, alpha=0.7)
 
-    name = f"{int(round(filterSpec.cutoff_khz))}kHz"
 
-    return {
-        'coefs': coefs,
-        'name': name
-    }
+    ax.set_xlabel('Frequency (kHz)', fontsize=FONT_SIZE_LABEL)
+    ax.set_ylabel('Magnitude (dB)', fontsize=FONT_SIZE_LABEL)
+    ax.tick_params(axis='both', labelsize=FONT_SIZE_TICK)
+    if show_title:
+        ax.set_title(
+            f'{stagename} — Frequency Response\n'
+            f'Input: {sample_rate_khz:.0f} kHz  |  '
+            f'Dashed: passband edge  |  Dotted: stopband edge',
+            fontsize=FONT_SIZE_TITLE
+        )
+    ax.set_xlim(0, 0.3125 * sample_rate_khz)
+    ax.set_ylim(-70, 5)
+    if sample_rate_khz > 300:
+        ax.xaxis.set_major_locator(plt.MultipleLocator(12.0))
+    else:
+        ax.xaxis.set_major_locator(plt.MultipleLocator(4.0))
+    ax.legend(loc='lower left', fontsize=FONT_SIZE_LEGEND)
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+
+    filename = f'filter_response_{stagename}.pdf'
+    try:
+        fig.savefig(filename, bbox_inches='tight', dpi=300)
+        print(f"  Saved plot: {filename}")
+    except Exception:
+        filename = f'filter_response_{stagename}.png'
+        fig.savefig(filename, bbox_inches='tight', dpi=300)
+        print(f"  Saved plot: {filename}")
+    plt.close(fig)
 
 
 # ============================================================================
@@ -417,11 +442,11 @@ def write_first_stage(header, body, coef_data):
     header.write("\n")
 
 
-def write_second_stage(header, body, coef_data):
-    """Write second stage Type I filter coefficients to files."""
+def write_stage(stagename, header, body, coef_data):
+    """Write [stagename] stage Type I filter coefficients to files."""
     coefs = coef_data['coefs']
     name = coef_data['name']
-    # actual number of taps e.g. "31"
+    # actual number of taps e.g. "47"
     num_taps = len(coefs)
 
     # Type I filters: Output all coefficients plus padding zero for alignment
@@ -432,12 +457,12 @@ def write_second_stage(header, body, coef_data):
     num_output_coefs = coefs.shape[0]
 
     dc_gain = coefs.sum()
-    body.write(f"const float g_second_stage_fir{num_taps}_{name}_gain = {dc_gain};\n\n")
+    body.write(f"const float g_{stagename}_fir{num_taps}_{name}_gain = {dc_gain};\n\n")
 
-    body.write(f"const int g_second_stage_fir{num_taps}_{name}_gain_scaling_factor = {int(1.0/dc_gain)};\n\n")
+    body.write(f"const int g_{stagename}_fir{num_taps}_{name}_gain_scaling_factor = {int(1.0/dc_gain)};\n\n")
 
-    header.write(f"extern const int g_second_stage_fir{num_taps}_{name}[{num_output_coefs}];\n")
-    body.write(f"const int g_second_stage_fir{num_taps}_{name}[{num_output_coefs}] = {{\n    ")
+    header.write(f"extern const int g_{stagename}_fir{num_taps}_{name}[{num_output_coefs}];\n")
+    body.write(f"const int g_{stagename}_fir{num_taps}_{name}[{num_output_coefs}] = {{\n    ")
 
     # Write all coefficients
     for i in range(num_output_coefs):
@@ -448,9 +473,9 @@ def write_second_stage(header, body, coef_data):
     body.write("};\n\n")
 
     # Write debug coefficients (full precision decimal, including padding)
-    header.write(f"extern const int g_second_stage_fir{num_taps}_{name}_debug[{num_output_coefs}];\n")
+    header.write(f"extern const int g_{stagename}_fir{num_taps}_{name}_debug[{num_output_coefs}];\n")
     header.write("\n")
-    body.write(f"const int g_second_stage_fir{num_taps}_{name}_debug[{num_output_coefs}] = {{\n    ")
+    body.write(f"const int g_{stagename}_fir{num_taps}_{name}_debug[{num_output_coefs}] = {{\n    ")
 
     for i, coef in enumerate(coefs):
         decimalized_coef = int(float(INT32_MAX) * coef)
@@ -458,25 +483,6 @@ def write_second_stage(header, body, coef_data):
         body.write(break_every_8(i))
 
     body.write("};\n\n")
-
-
-def write_third_stage(header, body, coef_data):
-    """Write third stage filter coefficients to files."""
-    coefs = coef_data['coefs']
-    name = coef_data['name']
-
-    # Only output first half of coefficients (symmetric filter)
-    num_output_coefs = len(coefs) // 2
-
-    header.write(f"extern const int g_third_stage_fir_{name}[{num_output_coefs}];\n")
-    body.write(f"const int g_third_stage_fir_{name}[{num_output_coefs}] = {{\n    ")
-
-    for i in range(num_output_coefs):
-        d_int = np.int32(coefs[i] * float(INT32_MAX) * 2.0)
-        body.write(f"0x{ctypes.c_uint(d_int).value:08x},")
-        body.write(break_every_8(i))
-    body.write("};\n\n")
-
 
 def write_constants(header, body):
     """Write constant definitions and disabled filter."""
@@ -487,21 +493,6 @@ def write_constants(header, body):
     body.write("const int g_crc_constants[2] = {0xEDB88320, 0xFFFFFFFF};\n")
     body.write("\n")
 
-    # Disabled third stage filter (all zeros)
-    num_taps = THIRD_STAGE_FILTERS[0].num_taps
-    num_output_coefs = num_taps // 2
-    name = 'g_third_stage_fir_disabled'
-
-    body.write("// Fake filter used to disable third stage entirely.\n")
-    header.write(f"extern const int {name}[{num_output_coefs}];\n")
-    body.write(f"const int {name}[{num_output_coefs}] = {{\n    ")
-
-    for i in range(num_output_coefs):
-        body.write("0x00000000,")
-        body.write(break_every_8(i))
-    body.write("};\n\n")
-
-
 # ============================================================================
 # MAIN
 # ============================================================================
@@ -510,45 +501,61 @@ def main():
     """Generate all filter coefficients and write to output files."""
 
     # Open output files
-    header = open("fir_coefs.h", 'w', newline='')
-    body = open("fir_coefs.xc", 'w', newline='')
+    header = open("fir_coefs_cascade.h", 'w', newline='')
+    body = open("fir_coefs_cascade.xc", 'w', newline='')
 
     # Write copyright headers
     year = datetime.datetime.now().year
     header.write(f"// Copyright (c) {year}, XMOS Ltd, All rights reserved\n")
+    header.write(f"// Copyright (c) {year}, SoundThinking Inc.\n")
     body.write(f"// Copyright (c) {year}, XMOS Ltd, All rights reserved\n")
+    body.write(f"// Copyright (c) {year}, SoundThinking Inc.\n")
 
-    # Generate and write first stage
-    print("Generating first stage filter...")
-    first_stage_data = generate_first_stage_coefficients()
-    write_first_stage(header, body, first_stage_data)
+    # Avoid conflicts with the old code
+    print_first_stage = False
+    if print_first_stage:
+        # Generate and write first stage
+        print("Generating first stage filter...")
+        first_stage_data = generate_first_stage_coefficients()
+        write_first_stage(header, body, first_stage_data)
 
-    # Print summary matching original script format
-    if first_stage_data['total_abs_sum'] > INT32_MAX:
-        print("WARNING: error in first stage too large")
-    else:
-        print(f"Max output of first stage: {first_stage_data['total_abs_sum']}")
+        # Print summary matching original script format
+        if first_stage_data['total_abs_sum'] > INT32_MAX:
+            print("WARNING: error in first stage too large")
+        else:
+            print(f"Max output of first stage: {first_stage_data['total_abs_sum']}")
 
     # Generate and write second stage filters
     print("\nGenerating second stage filters...")
+    second_stage_results = []
+    second_stage_rate = PDM_SAMPLE_RATE_KHZ / 8.0
     for filter_spec in SECOND_STAGE_FILTERS:
-        print(f"  {filter_spec.cutoff_khz} kHz cutoff")
-        second_stage_data = generate_second_stage_coefficients(PDM_SAMPLE_RATE_KHZ / 8.0, filter_spec)
-        write_second_stage(header, body, second_stage_data)
-
-    # Write constants and disabled filter
-    write_constants(header, body)
+        print(f"  {filter_spec.passband_khz} kHz passband")
+        second_stage_data = generate_filter_coefficients(second_stage_rate, filter_spec)
+        second_stage_results.append(second_stage_data)
+        write_stage("second_to_third", header, body, second_stage_data)
+    plot_stage_filters("second_to_third", second_stage_rate, second_stage_results, SECOND_STAGE_FILTERS)
 
     # Generate and write third stage filters
     print("\nGenerating third stage filters...")
+    third_stage_results = []
+    third_stage_rate = PDM_SAMPLE_RATE_KHZ / (8.0 * 2.0)
     for filter_spec in THIRD_STAGE_FILTERS:
-        print(f"  {filter_spec.cutoff_khz} kHz cutoff")
-        third_stage_data = generate_third_stage_coefficients(PDM_SAMPLE_RATE_KHZ / (8.0 * 4.0), filter_spec)
-        write_third_stage(header, body, third_stage_data)
+        print(f"  {filter_spec.passband_khz} kHz passband")
+        third_stage_data = generate_filter_coefficients(third_stage_rate, filter_spec)
+        third_stage_results.append(third_stage_data)
+        write_stage("third_to_output", header, body, third_stage_data)
+    plot_stage_filters("third_to_output", third_stage_rate, third_stage_results, THIRD_STAGE_FILTERS)
 
-    # Write third stage define at the end
-    num_taps = THIRD_STAGE_FILTERS[0].num_taps
-    header.write(f"#define THIRD_STAGE_COEFS_PER_STAGE ({num_taps})\n")
+    if print_first_stage:
+        # Write third stage define at the end
+        num_taps = THIRD_STAGE_FILTERS[0].num_taps
+        header.write(f"#define THIRD_STAGE_COEFS_PER_STAGE ({num_taps})\n")
+
+
+    if print_first_stage:
+        # Write constants
+        write_constants(header, body)
 
     # Close files
     header.close()

@@ -23,7 +23,7 @@ extern unsigned int g_curSamFreqMultiplier;
 unsigned g_speed;
 unsigned g_freqChange = 0;
 
-unsigned char fb_clocks[16];
+unsigned int fb_clocks[4];
 
 #define FB_TOLERANCE 0x100
 
@@ -74,7 +74,7 @@ void buffer(register chanend c_aud_out, register chanend c_aud_in, chanend c_sof
     SET_SHARED_GLOBAL(g_aud_to_host_flag, 1);
 #endif
 
-    (fb_clocks, unsigned[])[0] = 0;
+    fb_clocks[0] = 0;
 
     /* Mark OUT endpoints ready to receive data from host */
     while(1)
@@ -245,11 +245,11 @@ void buffer(register chanend c_aud_out, register chanend c_aud_in, chanend c_sof
 
                             if (usb_speed == XUD_SPEED_HS)
                             {
-                                (fb_clocks, unsigned[])[0] = clocks;
+                                fb_clocks[0] = clocks;
                             }
                             else
                             {
-                                (fb_clocks, unsigned[])[0] = clocks >> 2;
+                                fb_clocks[0] = clocks >> 2;
                             }
                         }
 #ifdef FB_TOLERANCE_TEST

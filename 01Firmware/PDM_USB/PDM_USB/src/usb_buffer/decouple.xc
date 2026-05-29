@@ -114,6 +114,9 @@ void handle_audio_request(chanend c_mix_out)
     /* Input word that triggered interrupt and handshake back */
     /********* TODO: Compiler says it is unused, when commented out no audio is passed ********/
     unsigned underflowSample = inuint(c_mix_out);
+    /* Since this is evidently needed, cast to void so that compiler stops complaining */
+    /* from https://stackoverflow.com/questions/1486904/how-do-i-best-silence-a-warning-about-unused-variables */
+    (void)underflowSample;
 
 //#if (NUM_USB_CHAN_OUT == 0)
     outuint(c_mix_out, 0);
