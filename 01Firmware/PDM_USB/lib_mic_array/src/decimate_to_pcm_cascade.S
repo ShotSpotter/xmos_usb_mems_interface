@@ -528,7 +528,7 @@ config_third_stage_0x0E:
     ldaw r11, cp[g_third_to_output_fir47_12kHz]  // IM72D128
     bu config_third_stage_done
 config_third_stage_0x0C:
-    ldaw r11, cp[g_third_to_output_fir47_40kHz] // EM215
+    ldaw r11, cp[g_third_to_output_fir47_44kHz] // EM215
     bu config_third_stage_done
 config_third_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
