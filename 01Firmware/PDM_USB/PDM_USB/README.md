@@ -12,9 +12,9 @@ the required libraries and removes unrelated hardware. We have made the followin
 
 | Fuse | Microphone        | Sensitivity | AOP        | Resonance | Pass freq | Stop freq | filter attenuation (DC)    | digital gain |
 |------|-------------------|-------------|------------|-----------|-----------|-----------|----------------------------|--------------|
-|  0xF | Vesper VM3000     | -26 dBFS    | 122 dB SPL | ~12.5 kHz |  12.0 kHz | 24.0 kHz  | 0.6747 * 0.6642 = -6.97 dB |  1  |
-|  0xE | Infineon IM72D128 | -36 dBFS    | 130 dB SPL | ~37.0 kHz |  12.0 kHz | 24.0 kHz  | 0.6747 * 0.6642 = -6.97 dB |  3  |
-|  0xC | Primo EM215       | -67 dBFS    | 150 dB SPL | > 40 kHz  |  40.0 kHz | 48.0 kHz  | 0.6747 * 0.5137 = -9.20 dB |  1  |
+|  0xF | Vesper VM3000     | -26 dBFS    | 122 dB SPL | ~12.5 kHz |  10.0 kHz | 20.0 kHz  | 0.604 * 0.679 = -7.74 dB |  1  |
+|  0xE | Infineon IM72D128 | -36 dBFS    | 130 dB SPL | ~37.0 kHz |  12.0 kHz | 24.0 kHz  | 0.604 * 0.664 = -7.93 dB |  3  |
+|  0xC | Primo EM215       | -67 dBFS    | 150 dB SPL | > 40 kHz  |  44.0 kHz | 52.0 kHz  | 0.604 * 0.559 = -9.43 dB |  1  |
 
 Sensitivity is relative to 1 kHz 94 dB SPL unless otherwise noted.
 
@@ -37,14 +37,14 @@ PDM to PCM converter, low-pass anti-aliasing filter and 4:1 decimator, implement
 * Taps: 48 (fixed)
 
 #### Second stage
-This is a Type I (odd) half-band filter. Every other coefficient is zero, except for the center coefficient. filter is implemented double-word load (`ldd`) instructions that walk over all 48 coefficients (47 taps plus a pad zero).
+This is a Type I filter. Filter is implemented double-word load (`ldd`) instructions that walk over all 48 coefficients (47 taps plus a pad zero).
 * low-pass anti-aliasing filter and 2:1 decimation
 * Input: 384 kHz
 * Output: 192 kHz
 * Taps: 47 (48 coefficients with pad word)
 
 #### Third stage
-This is a Type I (odd) filter. Unlike the second stage filter, it does not have any special properties. This filter is also implemented double-word load (`ldd`) instructions that walk over all 48 coefficients (47 taps plus a pad zero).
+This is a Type I (odd) filter. This filter is also implemented double-word load (`ldd`) instructions that walk over all 48 coefficients (47 taps plus a pad zero). I am using a half-band filter for the EM215, but since the same code is code for all microphones, no optimizaitons are made.
 * low-pass anti-aliasing filter and 2:1 decimation
 * Input: 192 kHz
 * Output: 96 kHz
@@ -223,6 +223,8 @@ xflash --factory-version 15.3 --upgrade 6 bin/SST-XMOS-001_v3.0.1.xe -o SST-XMOS
 xflash --factory-version 14.4 --upgrade 6 bin/SST-XMOS-001_v3.0.1.xe -o SST-XMOS-001_v3.0.1.xflash_14.4.bin
 xflash --factory-version 15.3 --upgrade 7 bin/SST-XMOS-001_v3.0.3.xe -o SST-XMOS-001_v3.0.3.xflash_15.3.bin
 xflash --factory-version 14.4 --upgrade 7 bin/SST-XMOS-001_v3.0.3.xe -o SST-XMOS-001_v3.0.3.xflash_14.4.bin
+xflash --factory-version 15.3 --upgrade 8 bin/SST-XMOS-001_v3.0.7.xe -o SST-XMOS-001_v3.0.7.xflash_15.3.bin
+xflash --factory-version 14.4 --upgrade 8 bin/SST-XMOS-001_v3.0.7.xe -o SST-XMOS-001_v3.0.7.xflash_14.4.bin
 ```
 
 
