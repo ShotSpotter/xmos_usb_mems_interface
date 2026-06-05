@@ -28,10 +28,10 @@
 // The filters used are defined by at runtime by hardware fuses that
 // are passed into this code via the boardrev argument. Hardware uses
 // 4-bit fuses (0-15). Currently, three boardrev values are defined:
-// 0x0F (15) 7-mic board with Vesper VM3000 digital microphone     (resonance ~12.5 kHz => 8 kHz cutoff)
-// 0x0E (14) 7-mic board with Infineon IM72D128 digital microphone (resonance ~37 kHz  => 24 kHz cutoff)
+// 0x0F (15) 7-mic board with Vesper VM3000 digital microphone     (resonance ~12.5 kHz => 10 kHz pass, 20 kHz stop)
+// 0x0E (14) 7-mic board with Infineon IM72D128 digital microphone (resonance ~37 kHz   => 12 kHz pass, 24 kHz stop)
 // 0x0D (13) unused
-// 0x0C (12) 8-mic board with Primo EM215 analog mic + PDM ADC     (want as high as we can => 43.999 kHz cutoff)
+// 0x0C (12) 8-mic board with Primo EM215 analog mic + PDM ADC     (high as possible    => 40 kHz pass, 48 kHz stop)
 
 // If runtime filter selection is not required, the jump tables can
 // be removed.
@@ -528,7 +528,7 @@ config_third_stage_0x0E:
     ldaw r11, cp[g_third_to_output_fir47_12kHz]  // IM72D128
     bu config_third_stage_done
 config_third_stage_0x0C:
-    ldaw r11, cp[g_third_to_output_fir47_44kHz] // EM215
+    ldaw r11, cp[g_third_to_output_fir47_40kHz] // EM215
     bu config_third_stage_done
 config_third_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
