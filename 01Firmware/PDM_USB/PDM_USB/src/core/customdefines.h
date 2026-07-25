@@ -99,7 +99,7 @@
 
 #define BCD_DEVICE_J            3
 #define BCD_DEVICE_M            0
-#define BCD_DEVICE_N            10
+#define BCD_DEVICE_N            12
 
 #define AUDIO_CLASS             2
 #define AUDIO_CLASS_FALLBACK    0
