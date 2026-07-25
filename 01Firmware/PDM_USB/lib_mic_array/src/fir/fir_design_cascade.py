@@ -95,7 +95,9 @@ THIRD_STAGE_FILTERS = [
     FilterSpec(num_taps=third_stage_taps, passband_khz=16.0, transition_khz = 12.0, min_attenuation = min_atten),
     FilterSpec(num_taps=third_stage_taps, passband_khz=12.0, transition_khz = 12.0, min_attenuation = min_atten),
     FilterSpec(num_taps=third_stage_taps, passband_khz=10.0, transition_khz = 10.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, passband_khz= 8.0, transition_khz =  8.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, passband_khz= 8.0, transition_khz = 12.0, min_attenuation = min_atten),  # stop at 20 kHz; comfortable margin for 47 taps
+    FilterSpec(num_taps=third_stage_taps, passband_khz= 8.0, transition_khz = 10.0, min_attenuation = min_atten),  # stop at 18 kHz; moderate margin for 47 taps
+    FilterSpec(num_taps=third_stage_taps, passband_khz= 8.0, transition_khz =  8.0, min_attenuation = min_atten),  # stop at 16 kHz; at Harris-rule limit for 47 taps
 ]
 
 # ============================================================================
@@ -321,7 +323,13 @@ def generate_filter_coefficients(stage_sample_rate: float, filterSpec : FilterSp
     # Squish near-zero values (numerical noise from Remez) to exactly zero
     coefs[np.abs(coefs) < 1.0e-8] = 0.0
 
-    name = f"{int(round(filterSpec.passband_khz))}kHz"
+    stopband_khz = filterSpec.passband_khz + filterSpec.transition_khz
+    if filterSpec.transition_khz == filterSpec.passband_khz:
+        # Original naming convention: just the passband frequency
+        name = f"{int(round(filterSpec.passband_khz))}kHz"
+    else:
+        # Include stopband to disambiguate filters with the same passband
+        name = f"{int(round(filterSpec.passband_khz))}kHz_to_{int(round(stopband_khz))}kHz"
 
     return {
         'coefs': coefs,

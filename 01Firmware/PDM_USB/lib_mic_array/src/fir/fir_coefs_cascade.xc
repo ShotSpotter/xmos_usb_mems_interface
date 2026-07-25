@@ -22,11 +22,11 @@ const int g_second_to_third_fir47_48kHz_debug[48] = {
        1908220,     982008,    -319411,    -524505,    -120937,     104402,      65537,          0,
     };
 
-const float g_third_to_output_fir47_44kHz_gain = 0.5587580612590322;
+const float g_third_to_output_fir47_44kHz_to_52kHz_gain = 0.5587580612590322;
 
-const int g_third_to_output_fir47_44kHz_gain_scaling_factor = 1;
+const int g_third_to_output_fir47_44kHz_to_52kHz_gain_scaling_factor = 1;
 
-const int g_third_to_output_fir47_44kHz[48] = {
+const int g_third_to_output_fir47_44kHz_to_52kHz[48] = {
     0xff793add, 0x00000000, 0x0063a2ac, 0x00000000, 0xff7781e5, 0x00000000, 0x00b6b324, 0x00000000,
     0xff0ef0b3, 0x00000000, 0x013c0037, 0x00000000, 0xfe60cc9e, 0x00000000, 0x0228ed98, 0x00000000,
     0xfd07a55a, 0x00000000, 0x045ee5ce, 0x00000000, 0xf879392c, 0x00000000, 0x16f358f8, 0x241fac5b,
@@ -35,7 +35,7 @@ const int g_third_to_output_fir47_44kHz[48] = {
     0x00b6b324, 0x00000000, 0xff7781e5, 0x00000000, 0x0063a2ac, 0x00000000, 0xff793add, 0x00000000,
     };
 
-const int g_third_to_output_fir47_44kHz_debug[48] = {
+const int g_third_to_output_fir47_44kHz_to_52kHz_debug[48] = {
       -8832291,          0,    6529708,          0,   -8945179,          0,   11973412,          0,
      -15798093,          0,   20709431,          0,  -27210594,          0,   36236696,          0,
      -49830566,          0,   73328078,          0, -126273236,          0,  385046776,  606055515,
@@ -44,11 +44,11 @@ const int g_third_to_output_fir47_44kHz_debug[48] = {
       11973412,          0,   -8945179,          0,    6529708,          0,   -8832291,          0,
     };
 
-const float g_third_to_output_fir47_40kHz_gain = 0.5137208404183797;
+const float g_third_to_output_fir47_40kHz_to_48kHz_gain = 0.5137208404183797;
 
-const int g_third_to_output_fir47_40kHz_gain_scaling_factor = 1;
+const int g_third_to_output_fir47_40kHz_to_48kHz_gain_scaling_factor = 1;
 
-const int g_third_to_output_fir47_40kHz[48] = {
+const int g_third_to_output_fir47_40kHz_to_48kHz[48] = {
     0x006d2476, 0x0025308e, 0xff9da573, 0xffd986fb, 0x0054f190, 0x006f6b84, 0xff92343d, 0xff651895,
     0x004b563e, 0x00f6d405, 0xffd49bca, 0xfebfcabd, 0xffca6600, 0x01a427a5, 0x00ba4b82, 0xfe0cc8c1,
     0xfe5bb454, 0x0247c8bb, 0x031c6f81, 0xfd80f6c2, 0xf9b9ad19, 0x02ab8ba5, 0x147d7411, 0x1dd7be6b,
@@ -57,7 +57,7 @@ const int g_third_to_output_fir47_40kHz[48] = {
     0xff92343d, 0x006f6b84, 0x0054f190, 0xffd986fb, 0xff9da573, 0x0025308e, 0x006d2476, 0x00000000,
     };
 
-const int g_third_to_output_fir47_40kHz_debug[48] = {
+const int g_third_to_output_fir47_40kHz_to_48kHz_debug[48] = {
        7152758,    2437262,   -6445709,   -2521349,    5566864,    7302020,   -7195587,  -10151787,
        4937278,   16176133,   -2843702,  -20985155,   -3512832,   27535269,   12209026,  -32716607,
      -27544492,   38258875,   52195201,  -41879870, -105272039,   44796837,  343766033,  500678251,
@@ -66,11 +66,11 @@ const int g_third_to_output_fir47_40kHz_debug[48] = {
       -7195587,    7302020,    5566864,   -2521349,   -6445709,    2437262,    7152758,          0,
     };
 
-const float g_third_to_output_fir47_24kHz_gain = 0.5861794188371074;
+const float g_third_to_output_fir47_24kHz_to_36kHz_gain = 0.5861794188371074;
 
-const int g_third_to_output_fir47_24kHz_gain_scaling_factor = 1;
+const int g_third_to_output_fir47_24kHz_to_36kHz_gain_scaling_factor = 1;
 
-const int g_third_to_output_fir47_24kHz[48] = {
+const int g_third_to_output_fir47_24kHz_to_36kHz[48] = {
     0xffec3076, 0x0012d45e, 0x002ce3e0, 0x002a4b23, 0xfff48aa7, 0xffacfcce, 0xffa07231, 0xfffda8d6,
     0x008cb94b, 0x00c044b3, 0x00338704, 0xff2fb624, 0xfea2ccd8, 0xff5a9068, 0x0115b749, 0x025dc031,
     0x0199c688, 0xfeada1c5, 0xfbb9ba51, 0xfc01b8f1, 0x017bd8e0, 0x0ad8c425, 0x13c0dd85, 0x176974c5,
@@ -79,7 +79,7 @@ const int g_third_to_output_fir47_24kHz[48] = {
     0xffa07231, 0xffacfcce, 0xfff48aa7, 0x002a4b23, 0x002ce3e0, 0x0012d45e, 0xffec3076, 0x00000000,
     };
 
-const int g_third_to_output_fir47_24kHz_debug[48] = {
+const int g_third_to_output_fir47_24kHz_to_36kHz_debug[48] = {
       -1298314,    1234014,    2941920,    2771747,    -750937,   -5440306,   -6262223,    -153386,
        9222475,   12600499,    3376900,  -13650396,  -22885160,  -10842008,   18200393,   39698481,
       26855048,  -22175291,  -71714223,  -66995983,   24893664,  181978149,  331406725,  392787141,
@@ -88,11 +88,11 @@ const int g_third_to_output_fir47_24kHz_debug[48] = {
       -6262223,   -5440306,    -750937,    2771747,    2941920,    1234014,   -1298314,          0,
     };
 
-const float g_third_to_output_fir47_16kHz_gain = 0.6322645959564356;
+const float g_third_to_output_fir47_16kHz_to_28kHz_gain = 0.6322645959564356;
 
-const int g_third_to_output_fir47_16kHz_gain_scaling_factor = 1;
+const int g_third_to_output_fir47_16kHz_to_28kHz_gain_scaling_factor = 1;
 
-const int g_third_to_output_fir47_16kHz[48] = {
+const int g_third_to_output_fir47_16kHz_to_28kHz[48] = {
     0xffe29ece, 0xffff0ca1, 0x001a7622, 0x003b48a9, 0x0048615f, 0x002a27bc, 0xffdd8444, 0xff803e36,
     0xff4aacc3, 0xff73ed6e, 0x000b703a, 0x00de3e32, 0x017dade0, 0x016ebab6, 0x0071f165, 0xfec07b58,
     0xfd17f53b, 0xfc819ba4, 0xfde36eaa, 0x018972ad, 0x06e15f25, 0x0c91287d, 0x10ea066d, 0x128a63ce,
@@ -101,7 +101,7 @@ const int g_third_to_output_fir47_16kHz[48] = {
     0xffdd8444, 0x002a27bc, 0x0048615f, 0x003b48a9, 0x001a7622, 0xffff0ca1, 0xffe29ece, 0x00000000,
     };
 
-const int g_third_to_output_fir47_16kHz_debug[48] = {
+const int g_third_to_output_fir47_16kHz_to_28kHz_debug[48] = {
       -1925426,     -62303,    1734178,    3885225,    4743519,    2762684,   -2259900,   -8372682,
      -11883325,   -9179794,     749626,   14564914,   25013728,   24033974,    7467365,  -20939944,
      -48761541,  -58614876,  -35426646,   25785005,  115433253,  210839677,  283772525,  311059406,
@@ -152,6 +152,50 @@ const int g_third_to_output_fir47_10kHz_debug[48] = {
      217959475,  190663616,  150088659,  102534948,   54970224,   13703893,  -16731036,  -34235109,
      -39225254,  -34208205,  -22969252,   -9599080,    2390241,   10672015,   14341144,   13784828,
       10285137,    5496883,     940233,   -2345981,   -3939818,   -3978975,   -4892045,          0,
+    };
+
+const float g_third_to_output_fir47_8kHz_to_20kHz_gain = 0.7171145012011106;
+
+const int g_third_to_output_fir47_8kHz_to_20kHz_gain_scaling_factor = 1;
+
+const int g_third_to_output_fir47_8kHz_to_20kHz[48] = {
+    0xffd6a9a8, 0xffe7af31, 0xfff1a1db, 0x000b93f2, 0x003407c5, 0x0063360e, 0x008b1791, 0x0099ea13,
+    0x007eb249, 0x002f1872, 0xffad16f4, 0xff0add71, 0xfe6b2949, 0xfdfd2e65, 0xfdf44b7b, 0xfe7cf2a9,
+    0xffb11537, 0x018ecb4d, 0x03f3f764, 0x06a07b76, 0x093f43b9, 0x0b74420d, 0x0ced5979, 0x0d71bd16,
+    0x0ced5979, 0x0b74420d, 0x093f43b9, 0x06a07b76, 0x03f3f764, 0x018ecb4d, 0xffb11537, 0xfe7cf2a9,
+    0xfdf44b7b, 0xfdfd2e65, 0xfe6b2949, 0xff0add71, 0xffad16f4, 0x002f1872, 0x007eb249, 0x0099ea13,
+    0x008b1791, 0x0063360e, 0x003407c5, 0x000b93f2, 0xfff1a1db, 0xffe7af31, 0xffd6a9a8, 0x00000000,
+    };
+
+const int g_third_to_output_fir47_8kHz_to_20kHz_debug[48] = {
+      -2709080,   -1593551,    -941605,     758770,    3409861,    6501902,    9115537,   10086931,
+       8303177,    3086450,   -5433612,  -16065167,  -26531511,  -33739163,  -34321541,  -25365847,
+      -5171913,   26135373,   66320228,  111180662,  155141049,  192168461,  216881529,  225557782,
+     216881529,  192168461,  155141049,  111180662,   66320228,   26135373,   -5171913,  -25365847,
+     -34321541,  -33739163,  -26531511,  -16065167,   -5433612,    3086450,    8303177,   10086931,
+       9115537,    6501902,    3409861,     758770,    -941605,   -1593551,   -2709080,          0,
+    };
+
+const float g_third_to_output_fir47_8kHz_to_18kHz_gain = 0.7147752310481044;
+
+const int g_third_to_output_fir47_8kHz_to_18kHz_gain_scaling_factor = 1;
+
+const int g_third_to_output_fir47_8kHz_to_18kHz[48] = {
+    0xffbdc142, 0x000e17e3, 0x0027e43d, 0x004cad6f, 0x0072ec8a, 0x008dcd91, 0x008f7429, 0x006c32b0,
+    0x001e5976, 0xffa9880a, 0xff1ca48b, 0xfe91bda8, 0xfe2b4180, 0xfe0ed2ea, 0xfe5e8812, 0xff312858,
+    0x008d0817, 0x0262dd0d, 0x048e2f9d, 0x06d90310, 0x090276bf, 0x0ac89441, 0x0bf2a8eb, 0x0c5a8122,
+    0x0bf2a8eb, 0x0ac89441, 0x090276bf, 0x06d90310, 0x048e2f9d, 0x0262dd0d, 0x008d0817, 0xff312858,
+    0xfe5e8812, 0xfe0ed2ea, 0xfe2b4180, 0xfe91bda8, 0xff1ca48b, 0xffa9880a, 0x001e5976, 0x006c32b0,
+    0x008f7429, 0x008dcd91, 0x0072ec8a, 0x004cad6f, 0x0027e43d, 0x000e17e3, 0xffbdc142, 0x00000000,
+    };
+
+const int g_third_to_output_fir47_8kHz_to_18kHz_debug[48] = {
+      -4341438,     923619,    2614333,    5025135,    7531658,    9293201,    9401385,    7090864,
+       1988982,   -5666806,  -14900085,  -24003160,  -30719616,  -32582934,  -27359214,  -13555624,
+       9242647,   40033549,   76427165,  114885392,  151156415,  180917313,  200452331,  207257890,
+     200452331,  180917313,  151156415,  114885392,   76427165,   40033549,    9242647,  -13555624,
+     -27359214,  -32582934,  -30719616,  -24003160,  -14900085,   -5666806,    1988982,    7090864,
+       9401385,    9293201,    7531658,    5025135,    2614333,     923619,   -4341438,          0,
     };
 
 const float g_third_to_output_fir47_8kHz_gain = 0.7107172953105094;
