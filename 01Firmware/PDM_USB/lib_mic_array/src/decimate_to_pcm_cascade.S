@@ -28,10 +28,10 @@
 // The filters used are defined by at runtime by hardware fuses that
 // are passed into this code via the boardrev argument. Hardware uses
 // 4-bit fuses (0-15). Currently, three boardrev values are defined:
-// 0x0F (15) 7-mic board with Vesper VM3000 digital microphone     (resonance ~12.5 kHz => 8 kHz pass, 18 kHz stop)
-// 0x0E (14) 7-mic board with Infineon IM72D128 digital microphone (PDM noise hump ~14 kHz => 8 kHz pass, 18 kHz stop)
+// 0x0F (15) 7-mic board with Vesper VM3000 digital microphone     (resonance ~12.5 kHz => 6 kHz pass, 18 kHz stop)
+// 0x0E (14) 7-mic board with Infineon IM72D128 digital microphone (PDM noise hump ~14 kHz => 6 kHz pass, 18 kHz stop)
 // 0x0D (13) unused
-// 0x0C (12) 8-mic board with Primo EM215 analog mic + PDM ADC     (high as possible    => 40 kHz pass, 48 kHz stop; HPF k=10 => ~15 Hz)
+// 0x0C (12) 8-mic board with Primo EM215 analog mic + PDM ADC     (high as possible    => 36 kHz pass, 48 kHz stop; HPF k=10 => ~15 Hz)
 
 // If runtime filter selection is not required, the jump tables can
 // be removed.
@@ -520,16 +520,16 @@ config_second_stage_done:
     eq r9, r8, r9
     bt r9, config_third_stage_0x0C
     // Default case
-    ldaw r11, cp[g_third_to_output_fir47_8kHz_to_18kHz]  // default like IM72D128
+    ldaw r11, cp[g_third_to_output_fir47_6kHz_to_18kHz]  // default like IM72D128
     bu config_third_stage_done
 config_third_stage_0x0F:
-    ldaw r11, cp[g_third_to_output_fir47_8kHz_to_18kHz]  // VM3000: 8kHz pass suppresses 12.5kHz resonance + PDM noise
+    ldaw r11, cp[g_third_to_output_fir47_6kHz_to_18kHz]  // VM3000: 6kHz pass, ML-compatible, suppresses 12.5kHz resonance + PDM noise
     bu config_third_stage_done
 config_third_stage_0x0E:
-    ldaw r11, cp[g_third_to_output_fir47_8kHz_to_18kHz]  // IM72D128: 8kHz pass suppresses ~14kHz PDM noise hump
+    ldaw r11, cp[g_third_to_output_fir47_6kHz_to_18kHz]  // IM72D128: 6kHz pass, ML-compatible, suppresses ~14kHz PDM noise hump
     bu config_third_stage_done
 config_third_stage_0x0C:
-    ldaw r11, cp[g_third_to_output_fir47_40kHz_to_48kHz] // EM215
+    ldaw r11, cp[g_third_to_output_fir47_36kHz_to_48kHz] // EM215: 36kHz pass, wider transition than prior 40/8 for better stopband depth
     bu config_third_stage_done
 config_third_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]

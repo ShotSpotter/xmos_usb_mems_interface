@@ -89,15 +89,13 @@ min_atten = -40.0
 
 # Stop band is passband_khz + transition_khz
 THIRD_STAGE_FILTERS = [
-    FilterSpec(num_taps=third_stage_taps, passband_khz=44.0, transition_khz =  8.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, passband_khz=40.0, transition_khz =  8.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, passband_khz=40.0, transition_khz =  8.0, min_attenuation = min_atten), # max acoustic bandwidth: Critical Infrastructure
+    FilterSpec(num_taps=third_stage_taps, passband_khz=36.0, transition_khz = 12.0, min_attenuation = min_atten), # good acoustic bandwidth, better noise: Critical Infrastructure
     FilterSpec(num_taps=third_stage_taps, passband_khz=24.0, transition_khz = 12.0, min_attenuation = min_atten),
     FilterSpec(num_taps=third_stage_taps, passband_khz=16.0, transition_khz = 12.0, min_attenuation = min_atten),
     FilterSpec(num_taps=third_stage_taps, passband_khz=12.0, transition_khz = 12.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, passband_khz=10.0, transition_khz = 10.0, min_attenuation = min_atten),
-    FilterSpec(num_taps=third_stage_taps, passband_khz= 8.0, transition_khz = 12.0, min_attenuation = min_atten),  # stop at 20 kHz; comfortable margin for 47 taps
-    FilterSpec(num_taps=third_stage_taps, passband_khz= 8.0, transition_khz = 10.0, min_attenuation = min_atten),  # stop at 18 kHz; moderate margin for 47 taps
-    FilterSpec(num_taps=third_stage_taps, passband_khz= 8.0, transition_khz =  8.0, min_attenuation = min_atten),  # stop at 16 kHz; at Harris-rule limit for 47 taps
+    FilterSpec(num_taps=third_stage_taps, passband_khz= 8.0, transition_khz = 12.0, min_attenuation = min_atten),
+    FilterSpec(num_taps=third_stage_taps, passband_khz= 6.0, transition_khz = 12.0, min_attenuation = min_atten), # min noise, best compatiblity with existing 12 kHz dataset
 ]
 
 # ============================================================================
