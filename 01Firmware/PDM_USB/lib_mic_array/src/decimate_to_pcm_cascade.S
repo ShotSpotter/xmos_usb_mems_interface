@@ -31,7 +31,7 @@
 // 0x0F (15) 7-mic board with Vesper VM3000 digital microphone     (resonance ~12.5 kHz => 8 kHz pass, 18 kHz stop)
 // 0x0E (14) 7-mic board with Infineon IM72D128 digital microphone (PDM noise hump ~14 kHz => 8 kHz pass, 18 kHz stop)
 // 0x0D (13) unused
-// 0x0C (12) 8-mic board with Primo EM215 analog mic + PDM ADC     (high as possible    => 40 kHz pass, 48 kHz stop => g_third_to_output_fir47_40kHz_to_48kHz)
+// 0x0C (12) 8-mic board with Primo EM215 analog mic + PDM ADC     (high as possible    => 40 kHz pass, 48 kHz stop; HPF k=10 => ~15 Hz)
 
 // If runtime filter selection is not required, the jump tables can
 // be removed.
@@ -103,6 +103,7 @@
 #define S_D_PREV_Y_01                   2
 #define S_D_PREV_Y_0                    2
 #define S_D_PREV_Y_1                    3
+#define S_DC_OFFSET_LOG2                4   // runtime HPF log2, selected per boardrev
 
 #define DC_ELIMINATE_STACK_SIZE         12
 
@@ -251,7 +252,7 @@
 
 #define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
     ldd r6, r5, r4[PREV_Y];\
-    ldc r7, MIC_ARRAY_DC_OFFSET_LOG2;\
+    ldw r7, r4[S_DC_OFFSET_LOG2];\
     ashr r9, r6, r7;\
     lextract r8, r6, r5, r7, 32;\
     lsub r11, r5, r5, r8, r4;\
@@ -533,6 +534,34 @@ config_third_stage_0x0C:
 config_third_stage_done:
     ldaw r0, sp[S_SETTINGS_OFFSET]
     stw r11, r0[S_THIRD_STAGE_FILTER_PTR]
+
+    // Select DC offset removal HPF cutoff based on boardrev (r8 still contains boardrev)
+    // HPF pole alpha = 1 - 2^(-k); cutoff = fs/(2*pi) * 2^(-k) at fs=96kHz output
+    // k= 8 => ~60 Hz  (MEMS mics: removes DC without affecting sub-bass)
+    // k=10 => ~15 Hz  (EM215 condenser: preserves muzzle blast at ~100 Hz)
+    ldc r9, 0x0F
+    eq r9, r8, r9
+    bt r9, config_hpf_0x0F
+    ldc r9, 0x0E
+    eq r9, r8, r9
+    bt r9, config_hpf_0x0E
+    ldc r9, 0x0C
+    eq r9, r8, r9
+    bt r9, config_hpf_0x0C
+    // Default case
+    ldc r11, 8              // default: ~60 Hz HPF
+    bu config_hpf_done
+config_hpf_0x0F:
+    ldc r11, 8              // VM3000: ~60 Hz HPF
+    bu config_hpf_done
+config_hpf_0x0E:
+    ldc r11, 8              // IM72D128: ~60 Hz HPF
+    bu config_hpf_done
+config_hpf_0x0C:
+    ldc r11, 10             // EM215: ~15 Hz HPF preserves low-frequency acoustic content
+config_hpf_done:
+    ldaw r0, sp[S_DC_ELIMINATE]
+    stw r11, r0[S_DC_OFFSET_LOG2]
 
 init_frame_index:
     ldaw r11, sp[S_FRAME_OFFSET]
