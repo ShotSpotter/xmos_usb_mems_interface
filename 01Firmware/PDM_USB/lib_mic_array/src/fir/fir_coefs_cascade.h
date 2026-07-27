@@ -3,6 +3,9 @@
 extern const int g_second_to_third_fir47_48kHz[48];
 extern const int g_second_to_third_fir47_48kHz_debug[48];
 
+extern const int g_second_to_third_fir47_24kHz_to_96kHz[48];
+extern const int g_second_to_third_fir47_24kHz_to_96kHz_debug[48];
+
 extern const int g_third_to_output_fir47_40kHz_to_48kHz[48];
 extern const int g_third_to_output_fir47_40kHz_to_48kHz_debug[48];
 

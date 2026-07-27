@@ -74,7 +74,16 @@ min_atten = -60.0
 
 # Stop band is passband_khz + transition_khz
 SECOND_STAGE_FILTERS = [
+    # Critical Infrastructure (EM215, boardrev 0x0C) and default/fallback: unchanged.
+    # Third stage for EM215 needs a flat passband out to 36-40 kHz, so this stage
+    # must stay flat well beyond that.
     FilterSpec(num_taps=second_stage_taps, passband_khz=48.0, transition_khz = 48.0, min_attenuation = min_atten),
+    # Public safety (VM3000 0x0F, IM72D128 0x0E): third stage only ever needs a flat
+    # passband out to 24 kHz (see THIRD_STAGE_FILTERS below), so this stage can give
+    # up unused passband above 24 kHz in exchange for a much wider (72 kHz) transition
+    # band, which meaningfully reduces time-domain sidelobe ringing (measured ~18.8% ->
+    # ~15.4% sidelobe/mainlobe ratio for the same 47 taps and stopband edge at 96 kHz).
+    FilterSpec(num_taps=second_stage_taps, passband_khz=24.0, transition_khz = 72.0, min_attenuation = min_atten),
 ]
 
 # Third stage: 192 kHz -> 96 kHz (decimation by 2)

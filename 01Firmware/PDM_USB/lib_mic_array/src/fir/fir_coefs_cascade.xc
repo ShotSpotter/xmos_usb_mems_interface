@@ -22,6 +22,28 @@ const int g_second_to_third_fir47_48kHz_debug[48] = {
        1908220,     982008,    -319411,    -524505,    -120937,     104402,      65537,          0,
     };
 
+const float g_second_to_third_fir47_24kHz_to_96kHz_gain = 0.6717399078389972;
+
+const int g_second_to_third_fir47_24kHz_to_96kHz_gain_scaling_factor = 1;
+
+const int g_second_to_third_fir47_24kHz_to_96kHz[48] = {
+    0x00000918, 0x00003bda, 0x00009b19, 0x000070c9, 0xfffe4595, 0xfffa2e21, 0xfff96ba1, 0x0004c530,
+    0x001bce84, 0x0026ab3a, 0x0000c879, 0xffa8fa4a, 0xff6da9f5, 0xffc65197, 0x00c671a2, 0x01a4a34d,
+    0x01166628, 0xfea42cd6, 0xfbe7512f, 0xfc249183, 0x01e25aa3, 0x0c33deaf, 0x1655caac, 0x1a901ab3,
+    0x1655caac, 0x0c33deaf, 0x01e25aa3, 0xfc249183, 0xfbe7512f, 0xfea42cd6, 0x01166628, 0x01a4a34d,
+    0x00c671a2, 0xffc65197, 0xff6da9f5, 0xffa8fa4a, 0x0000c879, 0x0026ab3a, 0x001bce84, 0x0004c530,
+    0xfff96ba1, 0xfffa2e21, 0xfffe4595, 0x000070c9, 0x00009b19, 0x00003bda, 0x00000918, 0x00000000,
+    };
+
+const int g_second_to_third_fir47_24kHz_to_96kHz_debug[48] = {
+          2328,      15322,      39705,      28873,    -113259,    -381407,    -431199,     312624,
+       1822340,    2534202,      51321,   -5703094,   -9590283,   -3780201,   13005218,   27566925,
+      18245160,  -22795050,  -68726481,  -64712317,   31611555,  204725935,  374721196,  445651635,
+     374721196,  204725935,   31611555,  -64712317,  -68726481,  -22795050,   18245160,   27566925,
+      13005218,   -3780201,   -9590283,   -5703094,      51321,    2534202,    1822340,     312624,
+       -431199,    -381407,    -113259,      28873,      39705,      15322,       2328,          0,
+    };
+
 const float g_third_to_output_fir47_40kHz_to_48kHz_gain = 0.5137208404183797;
 
 const int g_third_to_output_fir47_40kHz_to_48kHz_gain_scaling_factor = 1;
