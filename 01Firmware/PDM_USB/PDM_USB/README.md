@@ -231,12 +231,15 @@ xflash --factory-version 14.4 --upgrade 8 bin/SST-XMOS-001_v3.0.7.xe -o SST-XMOS
 #
 xflash --factory-version 15.3 --upgrade 9 bin/SST-XMOS-001_v3.0.9.xe -o SST-XMOS-001_v3.0.9.xflash_15.3.bin
 xflash --factory-version 14.4 --upgrade 9 bin/SST-XMOS-001_v3.0.9.xe -o SST-XMOS-001_v3.0.9.xflash_14.4.bin
-#
+# Note this is not a legal USB BCD version
 xflash --factory-version 15.3 --upgrade 10 bin/SST-XMOS-001_v3.0.11.xe -o SST-XMOS-001_v3.0.11.xflash_15.3.bin
 xflash --factory-version 14.4 --upgrade 10 bin/SST-XMOS-001_v3.0.11.xe -o SST-XMOS-001_v3.0.11.xflash_14.4.bin
-# 3.0.12/3.0.13: lower pass band
+# 3.0.12/3.0.13: lower pass band. Note this is not a legal USB BCD version
 xflash --factory-version 15.3 --upgrade 10 bin/SST-XMOS-001_v3.0.13.xe -o SST-XMOS-001_v3.0.13.xflash_15.3.bin
 xflash --factory-version 14.4 --upgrade 10 bin/SST-XMOS-001_v3.0.13.xe -o SST-XMOS-001_v3.0.13.xflash_14.4.bin
+# 3.1.0/3.1.1: same as above, but legal USB BCD version
+xflash --factory-version 15.3 --upgrade 11 bin/SST-XMOS-001_v3.1.1.xe -o SST-XMOS-001_v3.1.1.xflash_15.3.bin
+xflash --factory-version 14.4 --upgrade 11 bin/SST-XMOS-001_v3.1.1.xe -o SST-XMOS-001_v3.1.1.xflash_14.4.bin
 ```
 
 
