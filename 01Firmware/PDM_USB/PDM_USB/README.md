@@ -243,6 +243,13 @@ xflash --factory-version 14.4 --upgrade 11 bin/SST-XMOS-001_v3.1.1.xe -o SST-XMO
 sha256sum SST-XMOS-001_v3.1.1.xflash_14.4.bin > SST-XMOS-001_v3.1.1.xflash_14.4.bin.hash
 sha256sum SST-XMOS-001_v3.1.1.xflash_15.3.bin > SST-XMOS-001_v3.1.1.xflash_15.3.bin.hash
 rm *.ppb
+# 3.1.2/3.1.3: increase third-stage passband frequency and gain
+xflash --factory-version 15.3 --upgrade 12 bin/SST-XMOS-001_v3.1.3.xe -o SST-XMOS-001_v3.1.3.xflash_15.3.bin
+xflash --factory-version 14.4 --upgrade 12 bin/SST-XMOS-001_v3.1.3.xe -o SST-XMOS-001_v3.1.3.xflash_14.4.bin
+sha256sum SST-XMOS-001_v3.1.3.xflash_14.4.bin > SST-XMOS-001_v3.1.3.xflash_14.4.bin.hash
+sha256sum SST-XMOS-001_v3.1.3.xflash_15.3.bin > SST-XMOS-001_v3.1.3.xflash_15.3.bin.hash
+rm *.ppb
+
 ```
 
 
