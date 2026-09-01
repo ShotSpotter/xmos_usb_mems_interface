@@ -20,7 +20,7 @@ void user_pdm_init(int boardrev){
         // See https://soundthinking.atlassian.net/browse/SAPP-639
         // 18 Aug 2026: Increase gain to 3 based on SAPP-664 (probably toque effect)
         case 0x0F:  // 15 decimal
-            gain = 4;
+            gain = 3;
             break;
         // Infineon IM72D128: AOP 128 dB SPL
         // This mic has 10 dB lower sensitivity than the VM3000 and 6 dB more range
@@ -28,7 +28,7 @@ void user_pdm_init(int boardrev){
         // target is 128 dB SPL at 0 dBFS.
         // 18 Aug 2026: Increase gain to 11 based on SAPP-664 (probably toque effect)
         case 0x0E:  // 14 decimal
-            gain = 11;
+            gain = 9;
             break;
         // Primo EM215. This mic + amplifier chain has approximately 24 dB lower
         // sensitivity than the VM3000, but the board will be identified as Scepter3_HDR
