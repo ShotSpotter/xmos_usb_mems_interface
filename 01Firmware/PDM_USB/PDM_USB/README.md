@@ -250,6 +250,20 @@ sha256sum SST-XMOS-001_v3.1.3.xflash_14.4.bin > SST-XMOS-001_v3.1.3.xflash_14.4.
 sha256sum SST-XMOS-001_v3.1.3.xflash_15.3.bin > SST-XMOS-001_v3.1.3.xflash_15.3.bin.hash
 rm *.ppb
 
+# 3.1.4/3.1.5: hack around defective fuses, OS-6357. changes NOT commmited, burn these version #s.
+xflash --factory-version 15.3 --upgrade 13 bin/SST-XMOS-001_v3.1.5.xe -o SST-XMOS-001_v3.1.5.xflash_15.3.bin
+xflash --factory-version 14.4 --upgrade 13 bin/SST-XMOS-001_v3.1.5.xe -o SST-XMOS-001_v3.1.5.xflash_14.4.bin
+sha256sum SST-XMOS-001_v3.1.5.xflash_14.4.bin > SST-XMOS-001_v3.1.5.xflash_14.4.bin.hash
+sha256sum SST-XMOS-001_v3.1.5.xflash_15.3.bin > SST-XMOS-001_v3.1.5.xflash_15.3.bin.hash
+rm *.ppb
+
+# 3.1.6/3.1.7: fix DC offset issues.
+xflash --factory-version 15.3 --upgrade 13 bin/SST-XMOS-001_v3.1.7.xe -o SST-XMOS-001_v3.1.7.xflash_15.3.bin
+xflash --factory-version 14.4 --upgrade 13 bin/SST-XMOS-001_v3.1.7.xe -o SST-XMOS-001_v3.1.7.xflash_14.4.bin
+sha256sum SST-XMOS-001_v3.1.7.xflash_14.4.bin > SST-XMOS-001_v3.1.7.xflash_14.4.bin.hash
+sha256sum SST-XMOS-001_v3.1.7.xflash_15.3.bin > SST-XMOS-001_v3.1.7.xflash_15.3.bin.hash
+rm *.ppb
+
 ```
 
 

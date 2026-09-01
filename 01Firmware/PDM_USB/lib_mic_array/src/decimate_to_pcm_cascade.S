@@ -103,7 +103,9 @@
 #define S_D_PREV_Y_01                   2
 #define S_D_PREV_Y_0                    2
 #define S_D_PREV_Y_1                    3
-#define S_DC_OFFSET_LOG2                4   // runtime HPF log2, selected per boardrev
+// S_D_PREV_Y_0/1 are ldd/std indices, scaled x2 words each -> occupy words 4-7.
+// S_DC_OFFSET_LOG2 must avoid that range (word 4 collided with S_D_PREV_Y_0's Y[n] state).
+#define S_DC_OFFSET_LOG2                8   // runtime HPF log2, selected per boardrev
 
 #define DC_ELIMINATE_STACK_SIZE         12
 
@@ -248,6 +250,29 @@
     ldd r5, r4, r7[DATA_INDEX]; \
     maccs r0, r1, r4, r2;
     // r3 is 0.0 => skip "maccs r0, r1, r5, r3;"
+
+// DC offset remval with board specific HPF setting S_DC_OFFSET_LOG2
+// Calls are made with these offset vars:
+// ldaw r4, sp[S_DC_ELIMINATE]
+// DC_OFFSET_REMOVAL(2, 0, r0);
+// DC_OFFSET_REMOVAL(3, 1, r1);
+// ldd loads double words, document register and stack usage relative to S_DC_ELIMINATE:
+// r4 is base ptr to S_DC_ELIMINATE
+// r8, r9, r10, r11 are locals
+// r2, r3 are unused
+// S_DC_ELIMINATE + (2,3,9,10,11) unused
+// first pass:
+// r0 is REGISTER
+// r6 <- S_DC_ELIMINATE + 4
+// r5 <- S_DC_ELIMINATE + 5
+// r7 <- S_DC_ELIMINATE + 8
+// r7 <- S_DC_ELIMINATE + 0 (reassigment, ok)
+// next call
+// r1 is REGISTER
+// r6 <- S_DC_ELIMINATE + 6
+// r5 <- S_DC_ELIMINATE + 7
+// r7 <- S_DC_ELIMINATE + 8
+// r7 <- S_DC_ELIMINATE + 1 (reassigment, ok)
 
 
 #define DC_OFFSET_REMOVAL(PREV_Y, PREV_X, REGISTER) \
