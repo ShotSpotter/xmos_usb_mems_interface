@@ -257,11 +257,18 @@ sha256sum SST-XMOS-001_v3.1.5.xflash_14.4.bin > SST-XMOS-001_v3.1.5.xflash_14.4.
 sha256sum SST-XMOS-001_v3.1.5.xflash_15.3.bin > SST-XMOS-001_v3.1.5.xflash_15.3.bin.hash
 rm *.ppb
 
-# 3.1.6/3.1.7: fix DC offset issues.
+# 3.1.6/3.1.7: fix DC offset issues (unfielded)
 xflash --factory-version 15.3 --upgrade 13 bin/SST-XMOS-001_v3.1.7.xe -o SST-XMOS-001_v3.1.7.xflash_15.3.bin
 xflash --factory-version 14.4 --upgrade 13 bin/SST-XMOS-001_v3.1.7.xe -o SST-XMOS-001_v3.1.7.xflash_14.4.bin
 sha256sum SST-XMOS-001_v3.1.7.xflash_14.4.bin > SST-XMOS-001_v3.1.7.xflash_14.4.bin.hash
 sha256sum SST-XMOS-001_v3.1.7.xflash_15.3.bin > SST-XMOS-001_v3.1.7.xflash_15.3.bin.hash
+rm *.ppb
+
+# 3.1.8/3.1.9: field DC offset issue and tweak digital gain by ~2.3 dB
+xflash --factory-version 15.3 --upgrade 13 bin/SST-XMOS-001_v3.1.9.xe -o SST-XMOS-001_v3.1.9.xflash_15.3.bin
+xflash --factory-version 14.4 --upgrade 13 bin/SST-XMOS-001_v3.1.9.xe -o SST-XMOS-001_v3.1.9.xflash_14.4.bin
+sha256sum SST-XMOS-001_v3.1.9.xflash_14.4.bin > SST-XMOS-001_v3.1.9.xflash_14.4.bin.hash
+sha256sum SST-XMOS-001_v3.1.9.xflash_15.3.bin > SST-XMOS-001_v3.1.9.xflash_15.3.bin.hash
 rm *.ppb
 
 ```
