@@ -63,7 +63,7 @@ typedef struct {
 #else
     int32_t data[MIC_ARRAY_NUM_MICS][1<<MIC_ARRAY_MAX_FRAME_SIZE_LOG2];/**< Raw audio data*/
 #endif
-    mic_array_metadata_t metadata[(MIC_ARRAY_NUM_MICS+3)/4]; /**< Frame metadata*/
+    mic_array_metadata_t metadata[(MIC_ARRAY_NUM_MICS+3)/2]; /**< Frame metadata*/
 } mic_array_frame_time_domain;
 
 /** A frame of frequency domain audio in Cartesian coordinates.*/
