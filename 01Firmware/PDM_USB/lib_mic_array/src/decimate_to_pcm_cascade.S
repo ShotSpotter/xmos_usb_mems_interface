@@ -212,8 +212,10 @@
     {stw r0, dp[DP_STAGE_3_CH0 + OFFSET]};\
     {stw r0, dp[DP_STAGE_3_CH0 + THIRD_STAGE_HISTORY_SIZE + OFFSET]};
 
-// input in r0, store in third stage buffer
+// input from second stage is in r0.
+// apply a factor of 2 digital gain and store in third stage buffer
 #define SECOND_STAGE_TO_THIRD_STAGE_CH1(OFFSET)\
+    shl r0, r0, 1;\
     {stw r0, dp[DP_STAGE_3_CH1 + OFFSET]};\
     {stw r0, dp[DP_STAGE_3_CH1 + THIRD_STAGE_HISTORY_SIZE + OFFSET]};
 
