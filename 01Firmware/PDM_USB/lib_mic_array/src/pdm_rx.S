@@ -63,6 +63,7 @@
 #define S_OUT_PORT_1			(3)
 #define S_OUT_PORT_2			(4)
 #define S_OUT_PORT_3			(5)
+#define S_TEST_PATTERN_CACHE    (6)
 #define S_CONTROL_VARIABLES_SIZE 	(12)
 
 #define S_BUFFER			(S_CONTROL_VARIABLES + S_CONTROL_VARIABLES_SIZE)
@@ -70,9 +71,62 @@
 #define S_BUFFER_MASK			(S_BUFFER_SIZE - 1)
 #define S_IMPULSE_PERIOD		(65536)
 
+// you may define ONE of these to generate a test pattern
 //#define OUTPUT_IMPULSE
 //#define OUTPUT_SAWTOOTH
-//#define OUTPUT_RANDOM
+
+// Define 0 to 7 of these as desired to replace PDM input data with the test pattern.
+//#define TEST_PATTERN_CH0
+//#define TEST_PATTERN_CH1
+//#define TEST_PATTERN_CH2
+//#define TEST_PATTERN_CH3
+//#define TEST_PATTERN_CH4
+//#define TEST_PATTERN_CH5
+//#define TEST_PATTERN_CH6
+//#define TEST_PATTERN_CH7
+
+// one-line, zero-cost-when-undefined override for each channel slot
+#ifdef TEST_PATTERN_CH0
+#define TEST_PATTERN_OVERRIDE_CH0 ldw r3, r11[S_TEST_PATTERN_CACHE]
+#else
+#define TEST_PATTERN_OVERRIDE_CH0
+#endif
+#ifdef TEST_PATTERN_CH1
+#define TEST_PATTERN_OVERRIDE_CH1 ldw r3, r11[S_TEST_PATTERN_CACHE]
+#else
+#define TEST_PATTERN_OVERRIDE_CH1
+#endif
+#ifdef TEST_PATTERN_CH2
+#define TEST_PATTERN_OVERRIDE_CH2 ldw r3, r11[S_TEST_PATTERN_CACHE]
+#else
+#define TEST_PATTERN_OVERRIDE_CH2
+#endif
+#ifdef TEST_PATTERN_CH3
+#define TEST_PATTERN_OVERRIDE_CH3 ldw r3, r11[S_TEST_PATTERN_CACHE]
+#else
+#define TEST_PATTERN_OVERRIDE_CH3
+#endif
+#ifdef TEST_PATTERN_CH4
+#define TEST_PATTERN_OVERRIDE_CH4 ldw r3, r11[S_TEST_PATTERN_CACHE]
+#else
+#define TEST_PATTERN_OVERRIDE_CH4
+#endif
+#ifdef TEST_PATTERN_CH5
+#define TEST_PATTERN_OVERRIDE_CH5 ldw r3, r11[S_TEST_PATTERN_CACHE]
+#else
+#define TEST_PATTERN_OVERRIDE_CH5
+#endif
+#ifdef TEST_PATTERN_CH6
+#define TEST_PATTERN_OVERRIDE_CH6 ldw r3, r11[S_TEST_PATTERN_CACHE]
+#else
+#define TEST_PATTERN_OVERRIDE_CH6
+#endif
+#ifdef TEST_PATTERN_CH7
+#define TEST_PATTERN_OVERRIDE_CH7 ldw r3, r11[S_TEST_PATTERN_CACHE]
+#else
+#define TEST_PATTERN_OVERRIDE_CH7
+#endif
+
 
 #define STACKWORDS			(S_BUFFER + S_BUFFER_SIZE)
 
@@ -112,9 +166,10 @@ pdm_rx_asm:
         stw r2, r11[S_OUT_PORT_1]
         stw r3, r11[S_OUT_PORT_2]
         stw r4, r11[S_OUT_PORT_3]
-	// initialize S_IMPULSE_INDEX
+	// initialize S_IMPULSE_INDEX, S_TEST_PATTERN_CACHE
 	ldc r0, 0
 	stw r0, r11[S_IMPULSE_INDEX]
+	stw r0, r11[S_TEST_PATTERN_CACHE]
 
 	ldc r11, 0x5555
 	shl r11, r11, 16; mov r9, r11
@@ -139,7 +194,41 @@ pdm_rx_asm:
 	.align 8
 
 pdm_rx_8ch_loop:
+
 	ldaw r11, sp[S_CONTROL_VARIABLES]
+
+// These options generate test patterns
+// OUTPUT_IMPULSE/OUTPUT_SAWTOOTH are mutually exclusive
+#ifdef OUTPUT_IMPULSE
+// Periodic impulse for filter frequency response analysis.
+// Output injected at 384 kHz into stage 2 + stage 3 filters.
+// FFT the captured output to see the complete magnitude response.
+
+	ldw r4, r11[S_IMPULSE_INDEX]	// Load impulse counter
+	add r4, r4, 1					// Increment counter
+	ldc r3, S_IMPULSE_PERIOD-1		// Load period mask
+	and r4, r4, r3					// Wrap counter to [0, PERIOD-1]
+	stw r4, r11[S_IMPULSE_INDEX]	// Store updated counter
+	eq r3, r4, 0					// r3 = 1 if counter==0, else 0
+	neg r3, r3						// r3 = 0xFFFFFFFF if impulse, else 0
+	shr r3, r3, 1					// r3 = 0x7FFFFFFF if impulse, else 0
+	stw r3, r11[S_TEST_PATTERN_CACHE]  // store r3 so we can reuse
+#endif
+
+#ifdef OUTPUT_SAWTOOTH
+// Sawtooth wave for general stage 2 + stage 3 debugging
+// Output is 1 kHz sawtooth wave at 384 kHz sample rate
+
+	ldw r4, r11[S_IMPULSE_INDEX]	// Load impulse counter
+	ldc r3, 171						// Load increment value
+	add r4, r4, r3					// Increment counter by 171 for ~1 kHz
+	ldc r3, S_IMPULSE_PERIOD-1		// Load period mask
+	and r4, r4, r3					// Wrap counter to [0, PERIOD-1]
+	stw r4, r11[S_IMPULSE_INDEX]	// Store updated counter
+	shl r3, r4, 16					// r3 = counter << 16 (sawtooth output)
+	stw r3, r11[S_TEST_PATTERN_CACHE]  // store r3 so we can reuse
+#endif
+
 	ldw r3, r11[S_IN_PORT]
 	in r4, res[r3]
 	in r3, res[r3]
@@ -148,84 +237,44 @@ pdm_rx_8ch_loop:
 	unzip r3, r4, 0
 	std r3, r4, r10[0]
 
-        //
-        // Map to output ports 0, 2, 0, 2, 1, 3, 1 so that microphone sequence becomes
-        // mic 0, 1, 2, 3, 4, 5, 6, 7 (as opposed to 0, 4, 1, 5, 2, 6, 3 as previously)
-        //
+	//
+	// Map to output ports:          0, 2, 0, 2, 1, 3, 1, 3
+	// so that mic sequence becomes: 0, 1, 2, 3, 4, 5, 6, 7
+	//
 	ldc r9, MIC_ARRAY_CH0
 	FIR();						// FIR filter result is in r3
-        ldw r1, r11[S_OUT_PORT_0]			// Get first output port
+	TEST_PATTERN_OVERRIDE_CH0
+	ldw r1, r11[S_OUT_PORT_0]			// Get first output port
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH4}
 	FIR();						// FIR filter based on r9, result is in r3
-        ldw r1, r11[S_OUT_PORT_2]			// Get second output port
+	TEST_PATTERN_OVERRIDE_CH1
+	ldw r1, r11[S_OUT_PORT_2]			// Get second output port
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH1}
 	FIR();
-        ldw r1, r11[S_OUT_PORT_0]
+	TEST_PATTERN_OVERRIDE_CH2
+    ldw r1, r11[S_OUT_PORT_0]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH5}
 	FIR();
-        ldw r1, r11[S_OUT_PORT_2]
+	TEST_PATTERN_OVERRIDE_CH3
+	ldw r1, r11[S_OUT_PORT_2]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH2}
 	FIR();
+	TEST_PATTERN_OVERRIDE_CH4
         ldw r1, r11[S_OUT_PORT_1]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH6}
 	FIR();
-        ldw r1, r11[S_OUT_PORT_3]
+	TEST_PATTERN_OVERRIDE_CH5
+	ldw r1, r11[S_OUT_PORT_3]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH3}
 	FIR();
-        ldw r1, r11[S_OUT_PORT_1]
+	TEST_PATTERN_OVERRIDE_CH6
+	ldw r1, r11[S_OUT_PORT_1]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH7}
-        FIR();							// CH7 FIR filter result is in r3
-
-// These options replace channel 8 with debug patterns
-// OUTPUT_RANDOM/OUTPUT_IMPULSE/OUTPUT_SAWTOOTH are mutually exclusive
-
-#ifdef OUTPUT_IMPULSE
-// Periodic impulse for filter frequency response analysis.
-// Output is the impulse response of stage 2 + stage 3 filters.
-// FFT the captured output to see the complete magnitude response.
-
-	ldw r4, r11[S_IMPULSE_INDEX]			// Load impulse counter
-	add r4, r4, 1					// Increment counter
-	ldc r3, S_IMPULSE_PERIOD-1			// Load period mask
-	and r4, r4, r3					// Wrap counter to [0, PERIOD-1]
-	stw r4, r11[S_IMPULSE_INDEX]			// Store updated counter
-	eq r3, r4, 0					// r3 = 1 if counter==0, else 0
-	neg r3, r3					// r3 = 0xFFFFFFFF if impulse, else 0
-	shr r3, r3, 1					// r3 = 0x7FFFFFFF if impulse, else 0
-#endif
-
-#ifdef OUTPUT_SAWTOOTH
-// Sawtooth wave for filter frequency response analysis.
-// Output is the sawtooth wave processed through stage 2 + stage 3 filters.
-
-	ldw r4, r11[S_IMPULSE_INDEX]			// Load impulse counter
-	ldc r3, 171					// Load increment value
-	add r4, r4, r3					// Increment counter by 171 for ~1 kHz
-	ldc r3, S_IMPULSE_PERIOD-1			// Load period mask
-	and r4, r4, r3					// Wrap counter to [0, PERIOD-1]
-	stw r4, r11[S_IMPULSE_INDEX]			// Store updated counter
-	shl r3, r4, 16					// r3 = counter << 16 (sawtooth output)
-#endif
-
-
-#ifdef OUTPUT_RANDOM
-// Enable white noise output to support analysis of 2nd stage filter frequency response.
-// We are not seeding this with the xmos hardware RNG so the output
-// is deterministic. See lib_random for how to seed with hardware.
-
-	ldaw r11, cp[g_crc_constants]			// load data to checksum (-1, per lib_random) into r1
-	ldw r1, r11[1]
-	ldaw r11, cp[g_crc_constants]			// load crc polynominal to use (0xEDB88320, per lib_random) into r4
-	ldw r4, r11[0]
-	ldaw r11, sp[S_CONTROL_VARIABLES]		// set r11 to point on stack
-	ldw r3, r11[S_IMPULSE_INDEX]			// load previous crc (reusing S_IMPULSE_INDEX for storage)
-	crc32 r3, r1, r4				// compute crc
-	stw r3, r11[S_IMPULSE_INDEX]			// Store updated crc value, leaving r3 unchanged to output
-#endif
-
+	FIR();							// CH7 FIR filter result is in r3
 	// output is in r3; load on MIC_ARRAY_CH0 is a pointless
 	// refill for next iteration (overwrtten in line 146)
-        ldw r1, r11[S_OUT_PORT_3]
+	TEST_PATTERN_OVERRIDE_CH7
+	ldw r1, r11[S_OUT_PORT_3]
 	{out res[r1], r3; ldc r9, MIC_ARRAY_CH0}
 
 	ldd r3, r4, r10[4]
