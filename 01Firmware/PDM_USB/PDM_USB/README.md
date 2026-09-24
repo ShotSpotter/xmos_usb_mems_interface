@@ -10,11 +10,11 @@ the required libraries and removes unrelated hardware. We have made the followin
 * Use one decimator instance (see `decimate_to_pcm4ch.S`) for every two mics instead of one for every four. This removes a computatal performance limitation with that prevented the use of longer FIR filters. Note this reduces the total mic capacity of the board to 8 channels.
 * The four buttons/switches on the reference schematic have been repurposed as board revision fuses, allowing 16 board variants. Three variants are currently defined:
 
-| Fuse | Microphone        | Sensitivity | AOP        | Resonance | Pass freq | Stop freq | filter attenuation (DC)    | digital gain |
-|------|-------------------|-------------|------------|-----------|-----------|-----------|----------------------------|--------------|
-|  0xF | Vesper VM3000     | -26 dBFS    | 122 dB SPL | ~12.5 kHz |  10.0 kHz | 20.0 kHz  | 0.604 * 0.679 = -7.74 dB |  1  |
-|  0xE | Infineon IM72D128 | -36 dBFS    | 130 dB SPL | ~37.0 kHz |  12.0 kHz | 24.0 kHz  | 0.604 * 0.664 = -7.93 dB |  3  |
-|  0xC | Primo EM215       | -67 dBFS    | 150 dB SPL | > 40 kHz  |  44.0 kHz | 52.0 kHz  | 0.604 * 0.559 = -9.43 dB |  1  |
+| Fuse | Microphone        | Sensitivity | AOP        | Resonance | Pass freq | Stop freq | filter attenuation (DC)      | digital gain  | adjusted sensitivity |
+|------|-------------------|-------------|------------|-----------|-----------|-----------|------------------------------|---------------|----------------------|
+|  0xF | Vesper VM3000     | -26 dBFS    | 122 dB SPL | ~12.5 kHz |  8.0 kHz  | 20.0 kHz  | 0.604 * 2 * 0.717 = -1.24 dB | * 2 (6.02 dB) | -21.2 dB @ 94 dB SPL |
+|  0xE | Infineon IM72D128 | -36 dBFS    | 130 dB SPL | ~37.0 kHz |  8.0 kHz  | 24.0 kHz  | 0.604 * 2 * 0.718 = -1.24 dB | * 6 (15.6 dB) | -21.6 dB @ 94 dB SPL |
+|  0xC | Primo EM215       | -67 dBFS    | 150 dB SPL | > 40 kHz  |  24.0 kHz | 48.0 kHz  | 0.604 * 2 * 0.604 = -2.73 dB | * 4 (12.0 dB) | -57.7 dB @ 94 dB SPL |
 
 Sensitivity is relative to 1 kHz 94 dB SPL unless otherwise noted.
 
@@ -269,6 +269,13 @@ xflash --factory-version 15.3 --upgrade 13 bin/SST-XMOS-001_v3.1.9.xe -o SST-XMO
 xflash --factory-version 14.4 --upgrade 13 bin/SST-XMOS-001_v3.1.9.xe -o SST-XMOS-001_v3.1.9.xflash_14.4.bin
 sha256sum SST-XMOS-001_v3.1.9.xflash_14.4.bin > SST-XMOS-001_v3.1.9.xflash_14.4.bin.hash
 sha256sum SST-XMOS-001_v3.1.9.xflash_15.3.bin > SST-XMOS-001_v3.1.9.xflash_15.3.bin.hash
+rm *.ppb
+
+# 3.2.0/3.2.1 fix gain on ch 1, 3, 5, 7 and tweak filters
+xflash --factory-version 15.3 --upgrade 14 bin/SST-XMOS-001_v3.2.1.xe -o SST-XMOS-001_v3.2.1.xflash_15.3.bin
+xflash --factory-version 14.4 --upgrade 14 bin/SST-XMOS-001_v3.2.1.xe -o SST-XMOS-001_v3.2.1.xflash_14.4.bin
+sha256sum SST-XMOS-001_v3.2.1.xflash_14.4.bin > SST-XMOS-001_v3.2.1.xflash_14.4.bin.hash
+sha256sum SST-XMOS-001_v3.2.1.xflash_15.3.bin > SST-XMOS-001_v3.2.1.xflash_15.3.bin.hash
 rm *.ppb
 
 ```

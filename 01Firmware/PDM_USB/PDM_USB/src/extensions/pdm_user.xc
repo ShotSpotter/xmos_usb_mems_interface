@@ -18,17 +18,17 @@ void user_pdm_init(int boardrev){
         // Vesper VM3000: AOP 122 dB SPL
         // target is 124 dB SPL at 0 dBFS.
         // See https://soundthinking.atlassian.net/browse/SAPP-639
-        // 18 Aug 2026: Increase gain to 3 based on SAPP-664 (probably toque effect)
+        // 18 Aug 2026: Increase gain to 6 dB based on SAPP-664 (probably touque effect)
         case 0x0F:  // 15 decimal
-            gain = 3;
+            gain = 2;
             break;
         // Infineon IM72D128: AOP 128 dB SPL
         // This mic has 10 dB lower sensitivity than the VM3000 and 6 dB more range
         // but SensApp will treat both boards as "Scepter3", so scale by 10^(10/20) = 3.162 => 3 as an int
         // target is 128 dB SPL at 0 dBFS.
-        // 18 Aug 2026: Increase gain to 11 based on SAPP-664 (probably toque effect)
+        // 18 Aug 2026: Increase gain to 15.6 dB based on SAPP-664 (probably touque effect)
         case 0x0E:  // 14 decimal
-            gain = 9;
+            gain = 6;
             break;
         // Primo EM215. This mic + amplifier chain has approximately 24 dB lower
         // sensitivity than the VM3000, but the board will be identified as Scepter3_HDR
